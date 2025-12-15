@@ -1,14 +1,14 @@
-import {userEffect, userRef, userState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 
 const WS_URL = 'wss://chat.longapp.site/chat/chat';
 
 export const useChatSocket = ()=>{
-    const socketRef = userRef(null); // luu ket noi
+    const socketRef = useRef(null); // luu ket noi
 
-    const [messages, setMessages] = userState([]); // list tin nhan
-    const [isReady, setIsReady] = userState(false); // trang thai ket noi
+    const [messages, setMessages] = useState([]); // list tin nhan
+    const [isReady, setIsReady] = useState(false); // trang thai ket noi
 
-    userEffect(()=>{
+    useEffect(()=>{
         // 1. Tao ket noi WebSocket
         const socket = new WebSocket(WS_URL);
         socketRef.current = socket;
@@ -23,6 +23,7 @@ export const useChatSocket = ()=>{
         socket.onmessage = (event)=>{
             const response = JSON.parse(event.data); // String -> Object
             console.log('Tin nhan moi:', response);
+            setMessages((prev) => [...prev, response]);
         };
 
         // Khi mat ket noi
