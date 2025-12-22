@@ -1,7 +1,7 @@
 // Xử lý tin nhắn đến
 export const handleSocketMessage = (response, dispatchers) => {
     // dispatchers là một object chứa các hàm setState từ Context truyền qua
-    const { setMessages, setPeople, setUser, setError } = dispatchers;
+    const { setMessages, setPeople, setUser, setError, setRegisterSuccess} = dispatchers;
 
     switch (response.event) {
         case "LOGIN":
@@ -20,9 +20,11 @@ export const handleSocketMessage = (response, dispatchers) => {
 
         case "REGISTER":
             if (response.status === "success") {
-                alert("Đăng ký thành công! Hãy đăng nhập.");
+                // Set state báo đăng ký thành công
+                if (setRegisterSuccess) setRegisterSuccess(true);
             } else {
                 setError(response.mes || "Đăng ký lỗi");
+                if (setRegisterSuccess) setRegisterSuccess(false);
             }
             break;
 
