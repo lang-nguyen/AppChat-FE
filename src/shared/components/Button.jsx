@@ -1,11 +1,12 @@
 import React from 'react';
 import colors from "../constants/colors.js";
 
-const Button = ({ text, disabled }) => {
+const Button = ({ children, disabled, onClick, style = {} }) => {
 	return (
 		<button
-			type="submit"
+			type="button"
 			disabled={disabled}
+			onClick={onClick}
 			style={{
 				width: '100%',
 				padding: '12px 0',
@@ -17,10 +18,11 @@ const Button = ({ text, disabled }) => {
 				borderRadius: 8,
 				fontSize: 16,
 				fontWeight: 600,
-				cursor: disabled ? 'not-allowed' : 'pointer'
+				cursor: disabled ? 'not-allowed' : 'pointer',
+				...style
 			}}
 		>
-			{text}
+			{children}
 		</button>
 	);
 };
