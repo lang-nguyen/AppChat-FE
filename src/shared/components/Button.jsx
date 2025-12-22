@@ -1,21 +1,23 @@
 import React from 'react';
+import colors from "../constants/colors.js";
 
-const Button = ({ text, onClick, disabled = false }) => {
+const Button = ({ text, disabled }) => {
 	return (
 		<button
-			onClick={onClick}
+			type="submit"
 			disabled={disabled}
 			style={{
 				width: '100%',
 				padding: '12px 0',
-				backgroundColor: disabled ? '#ccc' : '#7A003C',
+				backgroundColor: disabled
+					? colors.disabledButton
+					: colors.primaryButton,
 				color: '#fff',
 				border: 'none',
 				borderRadius: 8,
 				fontSize: 16,
 				fontWeight: 600,
-				cursor: disabled ? 'not-allowed' : 'pointer',
-				transition: '0.3s'
+				cursor: disabled ? 'not-allowed' : 'pointer'
 			}}
 		>
 			{text}

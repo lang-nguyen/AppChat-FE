@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Button from './Button';
+import colors from "../constants/colors.js";
 
 const Login = ({
 	               username,
@@ -17,12 +18,12 @@ const Login = ({
 				width: 360,
 				padding: 30,
 				borderRadius: 12,
-				background: '#FFD3E6',
+				background: colors.cardBackground,
 				boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
 				textAlign: 'center'
 			}}
 		>
-			<h2 style={{ color: '#7A003C', marginBottom: 20 }}>
+			<h2 style={{ color: colors.primaryText, marginBottom: 20 }}>
 				LangChat - SubeoApp
 			</h2>
 
@@ -30,7 +31,7 @@ const Login = ({
 				<div
 					style={{
 						background: '#ffe6ea',
-						color: '#b00020',
+						color: colors.errorText,
 						padding: 10,
 						borderRadius: 6,
 						marginBottom: 15,
@@ -88,7 +89,7 @@ const Login = ({
 				Bạn chưa có tài khoản?{' '}
 				<Link
 					to="/register"
-					style={{ color: '#7A003C', fontWeight: 600 }}
+					style={{ color: colors.primaryText, fontWeight: 600 }}
 				>
 					Tạo tài khoản tại đây
 				</Link>
