@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSocket } from '../../app/providers/SocketProvider.jsx';
 import { Link, useNavigate } from 'react-router-dom';
+import styles from './RegisterPage.module.css';
 
 const RegisterPage = () => {
     const { actions, error, setError, isReady, registerSuccess, setRegisterSuccess } = useSocket();
@@ -58,84 +59,83 @@ const RegisterPage = () => {
     };
 
     return (
-        <div style={{ maxWidth: 400, margin: '50px auto', padding: 30, border: '1px solid #ddd', borderRadius: 10, boxShadow: '0 4px 8px rgba(0,0,0,0.1)' }}>
-            <h2 style={{ textAlign: 'center', color: '#333' }}>Đăng Ký Tài Khoản</h2>
+        <div className={styles.page}>
+        <div className={styles.container}>
+            <h2 className={styles.title}>Đăng Ký Tài Khoản</h2>
 
             {/* Trạng thái Server */}
-            <div style={{ textAlign: 'center', marginBottom: 20, fontSize: 14 }}>
+            <div className={styles.serverStatus}>
                 Server:
-                <span style={{ color: isReady ? 'green' : 'red', fontWeight: 'bold', marginLeft: 5 }}>
+                <span
+                    className={[
+                        styles.serverDot,
+                        isReady ? styles.online : styles.offline
+                    ].join(' ')}
+                >
                     {isReady ? "● Online" : "● Offline"}
                 </span>
             </div>
 
             {/* Hiển thị lỗi (Ưu tiên lỗi từ server, sau đó đến lỗi local) */}
             {(error || localError) && (
-                <div style={{ background: '#ffebee', color: '#c62828', padding: 10, borderRadius: 5, marginBottom: 15, fontSize: 14 }}>
+                <div className={styles.errorBox}>
                      {error || localError}
                 </div>
             )}
 
             <form onSubmit={handleRegister}>
-                <div style={{ marginBottom: 15 }}>
-                    <label style={{ display: 'block', marginBottom: 5, fontWeight: 500 }}>Tài khoản:</label>
+                <div className={styles.field}>
+                    <label className={styles.label}>Tài khoản:</label>
                     <input
                         type="text"
                         value={username}
                         onChange={(e) => handleTyping(setUsername, e.target.value)}
                         required
                         placeholder="Chọn tên đăng nhập..."
-                        style={{ width: '100%', padding: 10, borderRadius: 5, border: '1px solid #ccc', boxSizing: 'border-box' }}
+                        className={styles.input}
                     />
                 </div>
 
-                <div style={{ marginBottom: 15 }}>
-                    <label style={{ display: 'block', marginBottom: 5, fontWeight: 500 }}>Mật khẩu:</label>
+                <div className={styles.field}>
+                    <label className={styles.label}>Mật khẩu:</label>
                     <input
                         type="password"
                         value={password}
                         onChange={(e) => handleTyping(setPassword, e.target.value)}
                         required
                         placeholder="Nhập mật khẩu..."
-                        style={{ width: '100%', padding: 10, borderRadius: 5, border: '1px solid #ccc', boxSizing: 'border-box' }}
+                        className={styles.input}
                     />
                 </div>
 
-                <div style={{ marginBottom: 20 }}>
-                    <label style={{ display: 'block', marginBottom: 5, fontWeight: 500 }}>Nhập lại mật khẩu:</label>
+                <div className={styles.fieldLast}>
+                    <label className={styles.label}>Nhập lại mật khẩu:</label>
                     <input
                         type="password"
                         value={confirmPass}
                         onChange={(e) => handleTyping(setConfirmPass, e.target.value)}
                         required
                         placeholder="Xác nhận mật khẩu..."
-                        style={{ width: '100%', padding: 10, borderRadius: 5, border: '1px solid #ccc', boxSizing: 'border-box' }}
+                        className={styles.input}
                     />
                 </div>
 
                 <button
                     type="submit"
                     disabled={!isReady}
-                    style={{
-                        width: '100%',
-                        padding: 12,
-                        background: isReady ? '#28a745' : '#ccc', // Màu xanh lá cho đăng ký
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: 5,
-                        fontSize: 16,
-                        fontWeight: 'bold',
-                        cursor: isReady ? 'pointer' : 'not-allowed',
-                        transition: '0.3s'
-                    }}
+                    className={[
+                        styles.button,
+                        isReady ? styles.buttonEnabled : styles.buttonDisabled
+                    ].join(' ')}
                 >
                     {isReady ? "Đăng Ký Ngay" : "Đang kết nối..."}
                 </button>
             </form>
 
-            <p style={{ marginTop: 20, textAlign: 'center', fontSize: 14 }}>
-                Đã có tài khoản? <Link to="/login" style={{ color: '#007bff', textDecoration: 'none' }}>Đăng nhập</Link>
+            <p className={styles.footer}>
+                Đã có tài khoản? <Link to="/login" className={styles.link}>Đăng nhập</Link>
             </p>
+        </div>
         </div>
     );
 };

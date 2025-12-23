@@ -1,7 +1,8 @@
 // Quản lý kết nối và giữ kho dữ liệu (State)
 import React, { createContext, useContext, useEffect, useRef, useState, useMemo } from 'react';
-import { handleSocketMessage } from '../../utils/socketHandlers.js';
-import {socketActions} from '../../utils/socketActions.js';
+import {socketActions} from "../../realtime/socketActions.js";
+import {handleSocketMessage} from "../../realtime/socketHandlers.js";
+
 // Tạo context
 const SocketContext = createContext(null);
 
