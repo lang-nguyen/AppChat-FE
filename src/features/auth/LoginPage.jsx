@@ -32,6 +32,9 @@ const LoginPage = () => {
             return;
         }
 
+        // Lưu trước username vào LocalStorage (để dành cho re-login)
+        localStorage.setItem('user_name', username);
+
         actions.login(username, password);
     };
 
@@ -48,14 +51,14 @@ const LoginPage = () => {
             <div style={{ textAlign: 'center', marginBottom: 20, fontSize: 14 }}>
                 Server:
                 <span style={{ color: isReady ? 'green' : 'red', fontWeight: 'bold', marginLeft: 5 }}>
-                    {isReady ? "● Online" : "● Offline"}
+                    {isReady ? "Online" : "Offline"}
                 </span>
             </div>
 
             {/* Thông báo lỗi nếu có */}
             {error && (
                 <div style={{ background: '#ffebee', color: '#c62828', padding: 10, borderRadius: 5, marginBottom: 15, fontSize: 14 }}>
-                    ⚠️ {error}
+                     {error}
                 </div>
             )}
 

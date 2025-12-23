@@ -22,7 +22,7 @@ export const socketActions = {
     },
 
     reLogin: (socketRef, username, reLoginCode) => {
-        sendRawData(socketRef, "RE_LOGIN", { user: username, RE_LOGIN_CODE: reLoginCode });
+        sendRawData(socketRef, "RE_LOGIN", { user: username, code: reLoginCode });
     },
 
     register: (socketRef, username, password) => {

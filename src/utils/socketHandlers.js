@@ -1,20 +1,59 @@
 // Xử lý tin nhắn đến
 export const handleSocketMessage = (response, dispatchers) => {
     // dispatchers là một object chứa các hàm setState từ Context truyền qua
-    const { setMessages, setPeople, setUser, setError, setRegisterSuccess} = dispatchers;
+    const {setMessages, setPeople, setUser, setError, setRegisterSuccess} = dispatchers;
 
     switch (response.event) {
         case "LOGIN":
+            if (response.status === "success") {
+                console.log("Đăng nhập thành công, Code:", response.data?.RE_LOGIN_CODE);
+
+                // luu code vao localStorage
+                if (response.data.RE_LOGIN_CODE) {
+                    localStorage.setItem('re_login_code', response.data.RE_LOGIN_CODE);
+                }
+                // lay user name da luu o localStorage
+                const currentName = localStorage.getItem('user_name') || "User";
+
+                setUser({
+                    ...response.data, // Copy tất cả những gì server trả về
+                    name: currentName // bo sung name
+                });
+
+                setError("");
+            } else {
+                setError(response.mes || "Đăng nhập thất bại");
+            }
+            break;
+
         case "RE_LOGIN":
             if (response.status === "success") {
                 if (response.data?.RE_LOGIN_CODE) {
                     localStorage.setItem('re_login_code', response.data.RE_LOGIN_CODE);
-                    localStorage.setItem('user_name', response.data.user || "User");
-                    setUser(response.data); // đã login
-                    setError("");
                 }
+
+                // Ưu tiên lấy tên từ Server trả về, nếu không có thì giữ nguyên tên cũ trong LocalStorage
+                const serverUser = response.data.user;
+                const localUser = localStorage.getItem('user_name');
+
+                // Chỉ cập nhật vào storage nếu server thực sự trả về tên mới
+                if (serverUser) {
+                    localStorage.setItem('user_name', serverUser);
+                }
+                // Set State (Kết hợp dữ liệu server và tên đang có)
+                // Dùng (serverUser || localUser) để đảm bảo không bị mất tên
+                setUser({
+                    ...response.data,
+                    name: serverUser || localUser || "User"
+                });
+
+                setError("");
             } else {
-                setError(response.mes || "Đăng nhập thất bại");
+                console.log("Re-login thất bại, mã hết hạn hoặc lỗi.");
+                localStorage.removeItem('re_login_code');
+                setError("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.");
+                // Đảm bảo user là null để PrivateRoute đá về Login
+                setUser(null);
             }
             break;
 

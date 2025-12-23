@@ -65,7 +65,7 @@ const RegisterPage = () => {
             <div style={{ textAlign: 'center', marginBottom: 20, fontSize: 14 }}>
                 Server:
                 <span style={{ color: isReady ? 'green' : 'red', fontWeight: 'bold', marginLeft: 5 }}>
-                    {isReady ? "● Online" : "● Offline"}
+                    {isReady ? "Online" : "Offline"}
                 </span>
             </div>
 

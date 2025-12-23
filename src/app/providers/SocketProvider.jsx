@@ -29,10 +29,15 @@ export const SocketProvider = ({ children }) => {
             setError(""); // Xóa lỗi cũ nếu có
 
             // Tự động Re-login dùng hàm từ socketActions
+            // Lấy code và username từ localStorage
             const code = localStorage.getItem('re_login_code');
             const savedUser = localStorage.getItem('user_name');
+            // Nếu có thì gọi hàm reLogin
             if(code && savedUser) {
+                console.log(`Phát hiện phiên cũ của [${savedUser}], đang Re-login...`);
                 socketActions.reLogin(socketRef, savedUser, code);
+            }else {
+                console.log("Không tìm thấy phiên đăng nhập cũ.");
             }
         };
 
