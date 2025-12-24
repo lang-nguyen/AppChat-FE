@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { useSocket } from '../../app/providers/SocketProvider.jsx';
-import { Link, useNavigate } from 'react-router-dom';
+import React, {useState, useEffect} from 'react';
+import {useSocket} from '../../app/providers/SocketProvider.jsx';
+import {Link, useNavigate} from 'react-router-dom';
+import styles from './LoginPage.module.css';
 
 // Test socket
 const LoginPage = () => {
     // 1. Lấy "đồ nghề" từ Context mới
-    const { actions, user, error, setError, isReady } = useSocket();
+    const {actions, user, error, setError, isReady} = useSocket();
 
     // Hook điều hướng trang
     const navigate = useNavigate();
@@ -35,37 +36,79 @@ const LoginPage = () => {
         actions.login(username, password);
     };
 
-	const handleUsernameChange = (e) => {
-		setUsername(e.target.value);
-		if (error) setError('');
-	};
+    const handleTyping = (setter, value) => {
+        setter(value);
+        if (error) setError("");
+    };
 
-	const handlePasswordChange = (e) => {
-		setPassword(e.target.value);
-		if (error) setError('');
-	};
+    return (
+        <div className={styles.page}>
+            <div className={styles.container}>
+                <h2 className={styles.title}>Đăng Nhập Chat</h2>
 
-	return (
-		<div
-			style={{
-				minHeight: '100vh',
-				display: 'flex',
-				alignItems: 'center',
-				justifyContent: 'center',
-				background: 'linear-gradient(135deg, #FFB2CD, #FF5BCB)'
-			}}
-		>
-			<Login
-				username={username}
-				password={password}
-				error={error}
-				isReady={isReady}
-				onUsernameChange={handleUsernameChange}
-				onPasswordChange={handlePasswordChange}
-				onSubmit={handleLogin}
-			/>
-		</div>
-	);
+                {/* Đèn báo trạng thái Socket */}
+                <div className={styles.serverStatus}>
+                    Server:
+                    <span
+                        className={[
+                            styles.serverDot,
+                            isReady ? styles.online : styles.offline
+                        ].join(' ')}
+                    >
+                    {isReady ? "● Online" : "● Offline"}
+                </span>
+                </div>
+
+                {/* Thông báo lỗi nếu có */}
+                {error && (
+                    <div className={styles.errorBox}>
+                        ⚠️ {error}
+                    </div>
+                )}
+
+                <form onSubmit={handleLogin}>
+                    <div className={styles.field}>
+                        <label className={styles.label}>Tài khoản:</label>
+                        <input
+                            type="text"
+                            value={username}
+                            onChange={(e) => handleTyping(setUsername, e.target.value)}
+                            required
+                            placeholder="Nhập username..."
+                            className={styles.input}
+                        />
+                    </div>
+
+                    <div className={styles.fieldLast}>
+                        <label className={styles.label}>Mật khẩu:</label>
+                        <input
+                            type="password"
+                            value={password}
+                            onChange={(e) => handleTyping(setPassword, e.target.value)}
+                            required
+                            placeholder="Nhập mật khẩu..."
+                            className={styles.input}
+                        />
+                    </div>
+
+                    <button
+                        type="submit"
+                        disabled={!isReady}
+                        className={[
+                            styles.button,
+                            isReady ? styles.buttonEnabled : styles.buttonDisabled
+                        ].join(' ')}
+                    >
+                        {isReady ? "Đăng Nhập" : "Đang kết nối..."}
+                    </button>
+                </form>
+
+                <p className={styles.footer}>
+                    Chưa có tài khoản? <Link to="/register" className={styles.link}>Đăng ký ngay</Link>
+                </p>
+            </div>
+        </div>
+    );
 };
 
 export default LoginPage;

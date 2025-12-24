@@ -1,0 +1,108 @@
+.page {
+    min-height: 100vh;
+    width: 100%;
+    display: grid;
+    place-items: center;
+    background: white; /* hoặc màu nền khác */
+    padding: 24px;
+}
+
+.container {
+  max-width: 400px;
+  margin: 50px auto;
+  padding: 30px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background: #fff;
+}
+
+.title {
+  text-align: center;
+  color: #333;
+  margin: 0 0 16px;
+}
+
+.serverStatus {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+.serverDot {
+  font-weight: bold;
+  margin-left: 5px;
+}
+
+.online {
+  color: green;
+}
+
+.offline {
+  color: red;
+}
+
+.errorBox {
+  background: #ffebee;
+  color: #c62828;
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 15px;
+  font-size: 14px;
+}
+
+.field {
+  margin-bottom: 15px;
+}
+
+.fieldLast {
+  margin-bottom: 20px;
+}
+
+.label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+}
+
+.button {
+  width: 100%;
+  padding: 12px;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.buttonEnabled {
+  background: #28a745;
+}
+
+.buttonDisabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.footer {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.link {
+  color: #007bff;
+  text-decoration: none;
+}
+
+
