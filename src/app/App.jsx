@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "../features/auth/LoginPage.jsx";
 import RegisterPage from "../features/auth/RegisterPage.jsx";
-import ChatPage from "../features/chat/ChatPage.jsx";
+import ChatPage from "../features/chat/pages/ChatPage.jsx";
 
 export default function App() {
   return (
