@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useSocket } from '../../app/providers/SocketProvider.jsx';
+import { useSocket } from '../../../app/providers/SocketProvider.jsx';
 
 const ChatPage = () => {
     const { actions: { sendChat }, messages, isReady } = useSocket();
