@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import LoginPage from "../features/auth/LoginPage.jsx";
-import RegisterPage from "../features/auth/RegisterPage.jsx";
+import LoginPage from "../features/auth/pages/LoginPage.jsx";
+import RegisterPage from "../features/auth/pages/RegisterPage.jsx";
 import ChatPageLast from "../features/chat/pages/ChatPageLast.jsx";
 
 export default function App() {

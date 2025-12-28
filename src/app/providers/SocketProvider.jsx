@@ -1,14 +1,14 @@
 // Quản lý kết nối và giữ kho dữ liệu (State)
 import React, { createContext, useContext, useEffect, useRef, useState, useMemo } from 'react';
-import {socketActions} from "../../realtime/socketActions.js";
-import {handleSocketMessage} from "../../realtime/socketHandlers.js";
+import { socketActions } from "../../realtime/socketActions.js";
+import { handleSocketMessage } from "../../realtime/socketHandlers.js";
 
 // Tạo context
 const SocketContext = createContext(null);
 
 // Tạo provider
 export const SocketProvider = ({ children }) => {
-    const WS_URL = 'wss://chat.longapp.site/chat/chat';
+    const WS_URL = import.meta.env.VITE_WS_URL;
     const socketRef = useRef(null); // luu ket noi
     const [messages, setMessages] = useState([]); // list tin nhan
     const [isReady, setIsReady] = useState(false); // trang thai ket noi
@@ -18,13 +18,13 @@ export const SocketProvider = ({ children }) => {
     const [registerSuccess, setRegisterSuccess] = useState(false);
 
 
-    useEffect(()=>{
+    useEffect(() => {
         // 1. Tao ket noi WebSocket
         const socket = new WebSocket(WS_URL);
         socketRef.current = socket;
 
         // khi ket noi thanh cong
-        socket.onopen = ()=>{
+        socket.onopen = () => {
             console.log('WebSocket da ket noi');
             setIsReady(true);
             setError(""); // Xóa lỗi cũ nếu có
@@ -33,20 +33,33 @@ export const SocketProvider = ({ children }) => {
             // Lấy code và username từ localStorage
             const code = localStorage.getItem('re_login_code');
             const savedUser = localStorage.getItem('user_name');
+
+
+
             // Nếu có thì gọi hàm reLogin
-            if(code && savedUser) {
+            if (code && savedUser) {
                 console.log(`Phát hiện phiên cũ của [${savedUser}], đang Re-login...`);
                 socketActions.reLogin(socketRef, savedUser, code);
-            }else {
+            } else {
                 console.log("Không tìm thấy phiên đăng nhập cũ.");
             }
+
+            // --- HEARTBEAT START ---
+            // Gửi ping mỗi 30s để giữ kết nối
+            const pingInterval = setInterval(() => {
+                socketActions.ping(socketRef);
+            }, 30000);
+            // Lưu interval ID vào object socket để clear khi close (trick: gán thô vào object)
+            socket.pingInterval = pingInterval;
         };
 
         socket.onmessage = (event) => {
             // Cần try-catch để tránh crash app nếu server gửi JSON lỗi
             try {
                 const response = JSON.parse(event.data);
-                console.log("Tin nhan moi:", response);
+                if (response.event !== "GET_USER_LIST") {
+                    console.log("Tin nhan moi:", response);
+                }
 
                 // Gọi hàm handler tách biệt
                 handleSocketMessage(response, {
@@ -62,9 +75,10 @@ export const SocketProvider = ({ children }) => {
         };
 
         // Khi mat ket noi
-        socket.onclose = ()=>{
+        socket.onclose = () => {
             console.log('WebSocket da ngat ket noi');
             setIsReady(false);
+            if (socket.pingInterval) clearInterval(socket.pingInterval);
         };
 
         socket.onerror = (err) => {

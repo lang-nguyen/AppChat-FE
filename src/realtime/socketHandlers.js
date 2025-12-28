@@ -1,7 +1,7 @@
 // Xử lý tin nhắn đến
 export const handleSocketMessage = (response, dispatchers) => {
     // dispatchers là một object chứa các hàm setState từ Context truyền qua
-    const {setMessages, setPeople, setUser, setError, setRegisterSuccess} = dispatchers;
+    const { setMessages, setPeople, setUser, setError, setRegisterSuccess } = dispatchers;
 
     switch (response.event) {
         case "LOGIN":

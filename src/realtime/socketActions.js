@@ -35,6 +35,13 @@ export const socketActions = {
 
     getUserList: (socketRef) => {
         sendRawData(socketRef, "GET_USER_LIST", {});
+    },
+
+    ping: (socketRef) => {
+        if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+            // Dùng GET_USER_LIST làm heartbeat để giữ kết nối vì server không hiểu action PING
+            // Đây là một workaround an toàn
+            socketActions.getUserList(socketRef);
+        }
     }
 }
-
