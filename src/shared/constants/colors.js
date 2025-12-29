@@ -1,4 +1,4 @@
-const colors = {
+export const colors = {
 	// Gradient
 	gradientStart: '#FFB2CD',
 	gradientEnd: '#FF5BCB',
