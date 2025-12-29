@@ -15,6 +15,7 @@ const colors = {
 
 	// Text
 	normalText: '#000000',
+	regularText: '#5b5b5b',
 
 	// Button
 	primaryButton: '#7A003C',
@@ -24,6 +25,10 @@ const colors = {
 	chatHeaderBackground: '#FF5596',
 	chatReceiverBackground: '#FFFFFF',
 	chatSenderBackground: '#FF5596',
+
+	// Online
+	online: '#00FF00',
+	offline: '#808080',
 };
 
 export default colors;
