@@ -76,6 +76,15 @@ export const handleSocketMessage = (response, dispatchers) => {
             setPeople(response.data);
             break;
 
+        case "LOGOUT":
+            // Xóa thông tin đăng nhập local
+            localStorage.removeItem('re_login_code');
+            localStorage.removeItem('user_name');
+            // Reset state user về null để kích hoạt chuyển hướng
+            setUser(null);
+            setMessages([]); // Clear tin nhắn cũ
+            break;
+
         default:
             console.warn("Unknown event:", response.event);
             break;

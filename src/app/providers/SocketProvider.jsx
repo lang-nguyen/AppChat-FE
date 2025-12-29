@@ -99,7 +99,8 @@ export const SocketProvider = ({ children }) => {
     const actions = useMemo(() => ({
         login: (u, p) => socketActions.login(socketRef, u, p),
         register: (u, p) => socketActions.register(socketRef, u, p),
-        sendChat: (to, mes, chatType = "people") => socketActions.sendChat(socketRef, to, mes, chatType)
+        sendChat: (to, mes, chatType = "people") => socketActions.sendChat(socketRef, to, mes, chatType),
+        logout: () => socketActions.logout(socketRef)
     }), []); // [] dependency vì socketRef là ref, nó không trigger render
 
     // Gia tri cung cap cho toan bo component con

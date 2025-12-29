@@ -43,5 +43,9 @@ export const socketActions = {
             // Đây là một workaround an toàn
             socketActions.getUserList(socketRef);
         }
+    },
+
+    logout: (socketRef) => {
+        sendRawData(socketRef, "LOGOUT", {});
     }
 }
