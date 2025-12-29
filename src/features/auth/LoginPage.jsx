@@ -2,11 +2,17 @@ import React, {useState, useEffect} from 'react';
 import {useSocket} from '../../app/providers/SocketProvider.jsx';
 import {Link, useNavigate} from 'react-router-dom';
 import styles from './LoginPage.module.css';
+import {useDispatch, useSelector} from "react-redux";
+import {clearError} from "../../state/auth/authSlice.js";
 
 // Test socket
 const LoginPage = () => {
     // 1. Lấy "đồ nghề" từ Context mới
-    const {actions, user, error, setError, isReady} = useSocket();
+    const {actions, isReady} = useSocket();
+
+    const dispatch = useDispatch();
+    const user = useSelector((s) => s.auth.user);
+    const error = useSelector((s) => s.auth.error);
 
     // Hook điều hướng trang
     const navigate = useNavigate();
@@ -24,6 +30,7 @@ const LoginPage = () => {
         }
     }, [user, navigate]);
 
+
     // 3. Xử lý khi bấm nút Đăng Nhập
     const handleLogin = (e) => {
         e.preventDefault();
@@ -38,7 +45,7 @@ const LoginPage = () => {
 
     const handleTyping = (setter, value) => {
         setter(value);
-        if (error) setError("");
+        if (error) dispatch(clearError());
     };
 
     return (
@@ -48,7 +55,7 @@ const LoginPage = () => {
 
                 {/* Đèn báo trạng thái Socket */}
                 <div className={styles.serverStatus}>
-                    Server:
+                    Server: 
                     <span
                         className={[
                             styles.serverDot,

@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "../features/auth/LoginPage.jsx";
 import RegisterPage from "../features/auth/RegisterPage.jsx";
-import ChatPageLast from "../features/chat/pages/ChatPageLast.jsx";
+import ChatPage from "../features/chat/pages/ChatPage.jsx";
 
 export default function App() {
   return (
@@ -13,7 +13,7 @@ export default function App() {
         {/* Pages */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/chat" element={<ChatPageLast />} />
+        <Route path="/chat" element={<ChatPage/>} />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/login" replace />} />
