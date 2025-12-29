@@ -1,9 +1,10 @@
 import React from 'react';
 import Card from '../../../../shared/components/Card.jsx';
 
-const RoomCard = ({ name, lastMessage, active }) => (
+const RoomCard = ({ name, lastMessage, active, badge, onClick }) => (
 	<Card
 		active={active}
+		onClick={onClick}
 		style={{
 			margin: '8px 16px',
 			display: 'flex',
@@ -30,8 +31,22 @@ const RoomCard = ({ name, lastMessage, active }) => (
 		</div>
 
 		<div style={{ flex: 1, minWidth: 0 }}>
-			<div style={{ fontSize: 18, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-				{name}
+			<div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+				<div style={{ fontSize: 18, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+					{name}
+				</div>
+				{badge && (
+					<span style={{
+						fontSize: 12,
+						padding: '2px 8px',
+						borderRadius: 999,
+						background: '#ffffffaa',
+						whiteSpace: 'nowrap',
+						flexShrink: 0
+					}}>
+						{badge}
+					</span>
+				)}
 			</div>
 			<div style={{ fontSize: 15, opacity: 0.7, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
 				{lastMessage}

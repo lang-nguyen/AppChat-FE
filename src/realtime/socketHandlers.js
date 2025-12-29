@@ -1,21 +1,22 @@
-import {addMessage, setPeople} from "../state/chat/chatSlice";
-import {setUser, setError, clearError, setRegisterSuccess} from "../state/auth/authSlice";
+import { addMessage, setPeople } from "../state/chat/chatSlice";
+import { setUser, setError, clearError, setRegisterSuccess } from "../state/auth/authSlice";
 
 export const handleSocketMessage = (response, dispatch) => {
     switch (response.event) {
         case "LOGIN":
-        case "RE_LOGIN":
+        case "RE_LOGIN": {
             if (response.status === "success") {
                 if (response.data?.RE_LOGIN_CODE) {
-                    localStorage.setItem('re_login_code', response.data.RE_LOGIN_CODE);
-                    localStorage.setItem('user_name', response.data.user || "User");
+                    localStorage.setItem("re_login_code", response.data.RE_LOGIN_CODE);
+                    localStorage.setItem("user_name", response.data.user || "User");
                 }
-                dispatch(setUser(response.data)); // đã login
+                dispatch(setUser(response.data));
                 dispatch(clearError());
             } else {
                 dispatch(setError(response.mes || "Đăng nhập thất bại"));
             }
             break;
+        }
 
         case "REGISTER": {
             if (response.status === "success") {

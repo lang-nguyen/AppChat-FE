@@ -37,8 +37,16 @@ export const SocketProvider = ({children}) => {
             // Cần try-catch để tránh crash app nếu server gửi JSON lỗi
             try {
                 const response = JSON.parse(event.data);
+
+                // Log response để debug
+                // in đẹp toàn bộ object
+                console.log("WS IN:", JSON.stringify(response, null, 2));
+                // in dạng bảng cho array/object
+                console.table(Array.isArray(response.data) ? response.data : [response.data]);
+
                 // Gọi hàm handler tách biệt
                 handleSocketMessage(response, dispatch);
+
             } catch (err) {
                 console.error("Lỗi parse JSON:", err);
             }

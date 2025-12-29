@@ -2,7 +2,8 @@ import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
     messages: [],
-    people: [],
+    people: [], // list trả về từ GET_USER_LIST: [{ name, type, actionTime }, ...]
+    activeChat: null, // { name, type } | null
 };
 
 const chatSlice = createSlice({
@@ -11,6 +12,9 @@ const chatSlice = createSlice({
     reducers: {
         setPeople(state, action) {
             state.people = action.payload ?? [];
+        },
+        setActiveChat(state, action) {
+            state.activeChat = action.payload ?? null;
         },
         setMessages(state, action) {
             state.messages = action.payload ?? [];
@@ -21,9 +25,10 @@ const chatSlice = createSlice({
         clearChat(state) {
             state.messages = [];
             state.people = [];
+            state.activeChat = null;
         },
     },
 });
 
-export const { setPeople, setMessages, addMessage, clearChat } = chatSlice.actions;
+export const { setPeople, setActiveChat, setMessages, addMessage, clearChat } = chatSlice.actions;
 export default chatSlice.reducer;
