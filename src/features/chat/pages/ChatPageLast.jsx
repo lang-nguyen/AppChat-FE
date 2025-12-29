@@ -1,9 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import { useSocket } from '../../../app/providers/SocketProvider.jsx';
+import { setCheckUserResult } from "../../../state/chat/chatSlice";
 
 const ChatPage = () => {
-    const { actions, messages, isReady, user, checkUserResult, setCheckUserResult } = useSocket();
+    // 1. Chỉ lấy connection & actions từ SocketContext
+    const { actions, isReady } = useSocket();
+
+    // 2. Lấy Data từ Redux
+    const dispatch = useDispatch();
+    const user = useSelector(state => state.auth.user);
+    const messages = useSelector(state => state.chat.messages);
+    const checkUserResult = useSelector(state => state.chat.checkUserResult);
+
     const [text, setText] = useState("");
     const [receiverId, setReceiverId] = useState("");
     const [chatType, setChatType] = useState("people");
@@ -27,7 +37,7 @@ const ChatPage = () => {
         if (receiverId && chatType === 'people') {
             setUserExists(null); // Reset icon đang loading/chờ
             // Nếu có kết quả cũ trong store thì clear đi
-            if (setCheckUserResult) setCheckUserResult(null);
+            dispatch(setCheckUserResult(null));
 
             actions.checkUserExist(receiverId);
         }
@@ -36,7 +46,7 @@ const ChatPage = () => {
     const handleTypingReceiver = (e) => {
         setReceiverId(e.target.value);
         setUserExists(null); // Reset trạng thái khi gõ lại
-        if (setCheckUserResult) setCheckUserResult(null);
+        dispatch(setCheckUserResult(null));
     }
 
     const sendMessage = () => {

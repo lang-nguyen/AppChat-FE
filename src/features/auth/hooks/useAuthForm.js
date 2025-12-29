@@ -1,10 +1,16 @@
 import { useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { useSocket } from '../../../app/providers/SocketProvider';
 import { authService } from '../services/authService';
+import { setError, clearError } from "../../../state/auth/authSlice";
 
 // Custom Hook quản lý logic Form cho cả Login và Register
 export const useAuthForm = (mode = 'LOGIN') => {
-    const { actions, error, setError, isReady } = useSocket();
+    const { actions, isReady } = useSocket();
+    const dispatch = useDispatch();
+
+    // Lấy state từ Redux Store
+    const error = useSelector(state => state.auth.error);
 
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
@@ -20,7 +26,7 @@ export const useAuthForm = (mode = 'LOGIN') => {
 
         // Reset lỗi khi người dùng gõ
         if (localError) setLocalError("");
-        if (error) setError("");
+        if (error) dispatch(clearError());
     };
 
     const handleSubmit = () => {

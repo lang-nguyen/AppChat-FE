@@ -1,8 +1,9 @@
-// Xử lý tin nhắn đến
-export const handleSocketMessage = (response, dispatchers) => {
-    // dispatchers là một object chứa các hàm setState từ Context truyền qua
-    const { setMessages, setPeople, setUser, setError, setRegisterSuccess } = dispatchers;
 
+import { setUser, setError, clearError, setRegisterSuccess } from "../state/auth/authSlice";
+import { addMessage, setPeople, setMessages, setCheckUserResult } from "../state/chat/chatSlice";
+
+// Xử lý tin nhắn đến
+export const handleSocketMessage = (response, dispatch) => {
     switch (response.event) {
         case "AUTH":
             // Server bao loi authen, co the do goi API can login ma user chua login
@@ -20,14 +21,14 @@ export const handleSocketMessage = (response, dispatchers) => {
                 // lay user name da luu o localStorage
                 const currentName = localStorage.getItem('user_name') || "User";
 
-                setUser({
+                dispatch(setUser({
                     ...response.data, // Copy tất cả những gì server trả về
                     name: currentName // bo sung name
-                });
+                }));
 
-                setError("");
+                dispatch(clearError());
             } else {
-                setError(response.mes || "Đăng nhập thất bại");
+                dispatch(setError(response.mes || "Đăng nhập thất bại"));
             }
             break;
 
@@ -47,38 +48,38 @@ export const handleSocketMessage = (response, dispatchers) => {
                 }
                 // Set State (Kết hợp dữ liệu server và tên đang có)
                 // Dùng (serverUser || localUser) để đảm bảo không bị mất tên
-                setUser({
+                dispatch(setUser({
                     ...response.data,
                     name: serverUser || localUser || "User"
-                });
+                }));
 
-                setError("");
+                dispatch(clearError());
             } else {
                 console.log("Re-login thất bại, mã hết hạn hoặc lỗi.");
                 localStorage.removeItem('re_login_code');
-                setError("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.");
+                dispatch(setError("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại."));
                 // Đảm bảo user là null để PrivateRoute đá về Login
-                setUser(null);
+                dispatch(setUser(null));
             }
             break;
 
         case "REGISTER":
             if (response.status === "success") {
                 // Set state báo đăng ký thành công
-                if (setRegisterSuccess) setRegisterSuccess(true);
+                dispatch(setRegisterSuccess(true));
             } else {
-                setError(response.mes || "Đăng ký lỗi");
-                if (setRegisterSuccess) setRegisterSuccess(false);
+                dispatch(setError(response.mes || "Đăng ký lỗi"));
+                dispatch(setRegisterSuccess(false));
             }
             break;
 
         case "SEND_CHAT":
             // Thêm tin nhắn mới vào danh sách
-            setMessages((prev) => [...prev, response.data]);
+            dispatch(addMessage(response.data));
             break;
 
         case "GET_USER_LIST":
-            setPeople(response.data);
+            dispatch(setPeople(response.data));
             break;
 
         case "LOGOUT":
@@ -86,14 +87,12 @@ export const handleSocketMessage = (response, dispatchers) => {
             localStorage.removeItem('re_login_code');
             localStorage.removeItem('user_name');
             // Reset state user về null để kích hoạt chuyển hướng
-            setUser(null);
-            setMessages([]); // Clear tin nhắn cũ
+            dispatch(setUser(null));
+            dispatch(setMessages([])); // Clear tin nhắn cũ
             break;
 
         case "CHECK_USER_EXIST":
-            if (dispatchers.setCheckUserResult) {
-                dispatchers.setCheckUserResult(response.data);
-            }
+            dispatch(setCheckUserResult(response.data));
             break;
 
         default:

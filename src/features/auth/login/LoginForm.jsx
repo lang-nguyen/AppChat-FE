@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import { useSocket } from '../../../app/providers/SocketProvider.jsx';
+import React, { useEffect } from 'react';
+import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { useAuthForm } from '../hooks/useAuthForm';
 import colors from '../../../shared/constants/colors.js';
 import LoginHeader from './components/LoginHeader.jsx';
 import LoginFields from './components/LoginFields.jsx';
@@ -7,29 +9,20 @@ import LoginActions from './components/LoginActions.jsx';
 import LoginFooter from './components/LoginFooter.jsx';
 
 const LoginForm = () => {
-    const { actions, error, setError, isReady } = useSocket();
+    const {
+        username, password, error, isReady,
+        handleTyping, handleSubmit
+    } = useAuthForm('LOGIN');
 
-    const [username, setUsername] = useState("");
-    const [password, setPassword] = useState("");
+    const user = useSelector(state => state.auth.user);
+    const navigate = useNavigate();
 
-    const handleLogin = () => {
-        if (!isReady) {
-            alert("Mất kết nối server! Vui lòng tải lại trang.");
-            return;
+    // Tự động chuyển trang khi login thành công
+    useEffect(() => {
+        if (user) {
+            navigate("/chat");
         }
-
-        // Lưu trước username vào LocalStorage (để dành cho re-login)
-        localStorage.setItem('user_name', username);
-
-        actions.login(username, password);
-    };
-
-    const handleTyping = (field, value) => {
-        if (field === 'username') setUsername(value);
-        if (field === 'password') setPassword(value);
-
-        if (error) setError("");
-    };
+    }, [user, navigate]);
 
     return (
         <div style={{ width: 350 }}>
@@ -58,7 +51,7 @@ const LoginForm = () => {
 
             <LoginActions
                 isReady={isReady}
-                onLogin={handleLogin}
+                onLogin={handleSubmit}
             />
 
             <LoginFooter />

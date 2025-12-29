@@ -1,5 +1,6 @@
 // Quản lý kết nối và giữ kho dữ liệu (State)
 import React, { createContext, useContext, useEffect, useRef, useState, useMemo } from 'react';
+import { useDispatch } from 'react-redux';
 import { socketActions } from "../../realtime/socketActions.js";
 import { handleSocketMessage } from "../../realtime/socketHandlers.js";
 
@@ -10,14 +11,10 @@ const SocketContext = createContext(null);
 export const SocketProvider = ({ children }) => {
     const WS_URL = import.meta.env.VITE_WS_URL;
     const socketRef = useRef(null); // luu ket noi
-    const [messages, setMessages] = useState([]); // list tin nhan
     const [isReady, setIsReady] = useState(false); // trang thai ket noi
-    const [user, setUser] = useState(null); // state de biet login hay chua
-    const [people, setPeople] = useState([]); // list user
-    const [error, setError] = useState("");
-    const [registerSuccess, setRegisterSuccess] = useState(false);
-    const [checkUserResult, setCheckUserResult] = useState(null); // Kết quả kiểm tra user
 
+    // REDUX DISPATCH
+    const dispatch = useDispatch();
 
     useEffect(() => {
         let reconnectTimeout;
@@ -31,7 +28,6 @@ export const SocketProvider = ({ children }) => {
             socket.onopen = () => {
                 console.log('WebSocket da ket noi');
                 setIsReady(true);
-                setError(""); // Xóa lỗi cũ nếu có
 
                 // Tự động Re-login dùng hàm từ socketActions
                 // Lấy code và username từ localStorage
@@ -63,15 +59,8 @@ export const SocketProvider = ({ children }) => {
                         console.log("Tin nhan moi:", response);
                     }
 
-                    // Gọi hàm handler tách biệt
-                    handleSocketMessage(response, {
-                        setMessages,
-                        setPeople,
-                        setUser,
-                        setError,
-                        setRegisterSuccess,
-                        setCheckUserResult
-                    });
+                    // Gọi hàm handler tách biệt, truyền dispatch
+                    handleSocketMessage(response, dispatch);
                 } catch (err) {
                     console.error("Lỗi parse JSON:", err);
                 }
@@ -109,7 +98,7 @@ export const SocketProvider = ({ children }) => {
                 socketRef.current.close();
             }
         };
-    }, []); // [] -> Đảm bảo chỉ chạy 1 lần
+    }, [dispatch]); // [] -> Đảm bảo chỉ chạy 1 lần
 
     // Gom các hàm gửi lại thành 1 object actions
     // Dùng useMemo để tránh tạo lại object này mỗi lần render không cần thiết
@@ -125,17 +114,8 @@ export const SocketProvider = ({ children }) => {
     const value = useMemo(() => ({
         socket: socketRef.current,
         isReady,
-        messages,
-        people,
-        user,
-        error,
-        setError,
-        actions,
-        registerSuccess,
-        setRegisterSuccess,
-        checkUserResult,
-        setCheckUserResult
-    }), [isReady, messages, people, user, error, actions, registerSuccess, checkUserResult]);
+        actions
+    }), [isReady, actions]);
     return (
         <SocketContext.Provider value={value}>
             {children}

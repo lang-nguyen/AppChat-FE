@@ -1,3 +1,6 @@
+import { useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { setRegisterSuccess } from '../../../state/auth/authSlice.js';
 import { useAuthForm } from './../hooks/useAuthForm.js';
 import colors from '../../../shared/constants/colors.js';
 import RegisterHeader from './components/RegisterHeader.jsx';
@@ -10,6 +13,16 @@ const RegisterForm = ({ onRegisterSuccess }) => {
         username, password, confirmPass, localError, error, isReady,
         handleTyping, handleSubmit
     } = useAuthForm('REGISTER');
+
+    const registerSuccess = useSelector(state => state.auth.registerSuccess);
+    const dispatch = useDispatch();
+
+    useEffect(() => {
+        if (registerSuccess) {
+            onRegisterSuccess();
+            dispatch(setRegisterSuccess(false)); // Reset state
+        }
+    }, [registerSuccess, onRegisterSuccess, dispatch]);
 
     return (
         <div style={{ width: 350 }}>

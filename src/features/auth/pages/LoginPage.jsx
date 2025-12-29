@@ -1,19 +1,25 @@
 import React, { useEffect } from 'react';
-import { useSocket } from '../../../app/providers/SocketProvider.jsx';
+import { useSelector, useDispatch } from 'react-redux';
+import { setError } from '../../../state/auth/authSlice';
 import { useNavigate } from 'react-router-dom';
 import Card from '../../../shared/components/Card.jsx';
 import LoginForm from '../login/LoginForm.jsx';
 import styles from './AuthLayout.module.css';
 
 const LoginPage = () => {
-    // 1. Lấy "đồ nghề" từ Context mới
-    const { user } = useSocket();
+    // 1. Lấy user từ Redux
+    const user = useSelector(state => state.auth.user);
 
     // Hook điều hướng trang
     const navigate = useNavigate();
+    const dispatch = useDispatch();
 
-    // 2. Logic Tự động chuyển hướng
-    // Mỗi khi biến 'user' thay đổi (do file socketHandlers cập nhật), hàm này sẽ chạy
+    // 1b. Reset lỗi khi mới vào trang
+    useEffect(() => {
+        dispatch(setError(""));
+    }, [dispatch]);
+
+    // 2. Logic Tự động chuyển hướng nếu đã login
     useEffect(() => {
         if (user) {
             console.log("Đăng nhập thành công, đang chuyển trang...");
