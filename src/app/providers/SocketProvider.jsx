@@ -16,6 +16,7 @@ export const SocketProvider = ({ children }) => {
     const [people, setPeople] = useState([]); // list user
     const [error, setError] = useState("");
     const [registerSuccess, setRegisterSuccess] = useState(false);
+    const [checkUserResult, setCheckUserResult] = useState(null); // Kết quả kiểm tra user
 
 
     useEffect(() => {
@@ -68,7 +69,8 @@ export const SocketProvider = ({ children }) => {
                         setPeople,
                         setUser,
                         setError,
-                        setRegisterSuccess
+                        setRegisterSuccess,
+                        setCheckUserResult
                     });
                 } catch (err) {
                     console.error("Lỗi parse JSON:", err);
@@ -115,7 +117,8 @@ export const SocketProvider = ({ children }) => {
         login: (u, p) => socketActions.login(socketRef, u, p),
         register: (u, p) => socketActions.register(socketRef, u, p),
         sendChat: (to, mes, chatType = "people") => socketActions.sendChat(socketRef, to, mes, chatType),
-        logout: () => socketActions.logout(socketRef)
+        logout: () => socketActions.logout(socketRef),
+        checkUserExist: (username) => socketActions.checkUserExist(socketRef, username)
     }), []); // [] dependency vì socketRef là ref, nó không trigger render
 
     // Gia tri cung cap cho toan bo component con
@@ -130,7 +133,9 @@ export const SocketProvider = ({ children }) => {
         actions,
         registerSuccess,
         setRegisterSuccess,
-    }), [isReady, messages, people, user, error, actions, registerSuccess]);
+        checkUserResult,
+        setCheckUserResult
+    }), [isReady, messages, people, user, error, actions, registerSuccess, checkUserResult]);
     return (
         <SocketContext.Provider value={value}>
             {children}

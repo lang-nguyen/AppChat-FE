@@ -37,6 +37,10 @@ export const socketActions = {
         sendRawData(socketRef, "GET_USER_LIST", {});
     },
 
+    checkUserExist: (socketRef, username) => {
+        sendRawData(socketRef, "CHECK_USER_EXIST", { user: username });
+    },
+
     ping: (socketRef) => {
         if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
             // Dùng GET_USER_LIST làm heartbeat để giữ kết nối vì server không hiểu action PING

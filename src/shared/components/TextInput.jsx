@@ -29,7 +29,10 @@ const TextInput = ({ label, type = 'text', value, onChange, placeholder, style =
                         ...style
                     }}
                     onFocus={(e) => e.target.style.borderColor = colors.cardBorder}
-                    onBlur={(e) => e.target.style.borderColor = '#ddd'}
+                    onBlur={(e) => {
+                        e.target.style.borderColor = '#ddd';
+                        if (props.onBlur) props.onBlur(e);
+                    }}
                     {...props}
                 />
                 {isPassword && (

@@ -3,10 +3,41 @@ import { useNavigate } from 'react-router-dom';
 import { useSocket } from '../../../app/providers/SocketProvider.jsx';
 
 const ChatPage = () => {
-    const { actions, messages, isReady, user } = useSocket();
+    const { actions, messages, isReady, user, checkUserResult, setCheckUserResult } = useSocket();
     const [text, setText] = useState("");
-    const [receiverId, setReceiverId] = useState("ti");
+    const [receiverId, setReceiverId] = useState("");
     const [chatType, setChatType] = useState("people");
+    const [userExists, setUserExists] = useState(null); // null: chưa check, true: tồn tại, false: không tồn tại
+
+    // Effect xử lý kết quả check từ server
+    useEffect(() => {
+        if (checkUserResult) {
+            console.log("Check result in ChatPage:", checkUserResult);
+
+            // Server trả về status: true (tồn tại) hoặc false (không tồn tại)
+            if (checkUserResult.status === true) {
+                setUserExists(true);
+            } else {
+                setUserExists(false);
+            }
+        }
+    }, [checkUserResult]);
+
+    const handleCheckUser = () => {
+        if (receiverId && chatType === 'people') {
+            setUserExists(null); // Reset icon đang loading/chờ
+            // Nếu có kết quả cũ trong store thì clear đi
+            if (setCheckUserResult) setCheckUserResult(null);
+
+            actions.checkUserExist(receiverId);
+        }
+    };
+
+    const handleTypingReceiver = (e) => {
+        setReceiverId(e.target.value);
+        setUserExists(null); // Reset trạng thái khi gõ lại
+        if (setCheckUserResult) setCheckUserResult(null);
+    }
 
     const sendMessage = () => {
         if (!text) return;
@@ -50,11 +81,18 @@ const ChatPage = () => {
             {/* 2. Cấu hình gửi */}
             <div style={{ marginBottom: 10, border: '1px solid #ccc', padding: 10 }}>
                 <label>Gửi đến (ID): </label>
-                <input
-                    value={receiverId}
-                    onChange={(e) => setReceiverId(e.target.value)}
-                    placeholder="Nhập username..."
-                />
+                <div style={{ display: 'inline-flex', alignItems: 'center' }}>
+                    <input
+                        value={receiverId}
+                        onChange={handleTypingReceiver}
+                        onBlur={handleCheckUser}
+                        placeholder="Nhập username..."
+                    />
+                    {/* Icon trạng thái user */}
+                    {userExists === true && <span style={{ color: 'green', marginLeft: 5 }}>✅</span>}
+                    {userExists === false && <span style={{ color: 'red', marginLeft: 5 }}>❌</span>}
+                </div>
+
                 <br /><br />
                 <label>Loại chat: </label>
                 <select value={chatType} onChange={(e) => setChatType(e.target.value)}>

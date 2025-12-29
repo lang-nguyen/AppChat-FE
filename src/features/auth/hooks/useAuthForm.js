@@ -12,7 +12,9 @@ export const useAuthForm = (mode = 'LOGIN') => {
     const [localError, setLocalError] = useState("");
 
     const handleTyping = (field, value) => {
-        if (field === 'username') setUsername(value);
+        if (field === 'username') {
+            setUsername(value);
+        }
         if (field === 'password') setPassword(value);
         if (field === 'confirmPass') setConfirmPass(value);
 
@@ -62,3 +64,4 @@ export const useAuthForm = (mode = 'LOGIN') => {
         handleSubmit
     };
 };
+

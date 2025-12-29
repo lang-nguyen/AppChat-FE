@@ -4,6 +4,11 @@ export const handleSocketMessage = (response, dispatchers) => {
     const { setMessages, setPeople, setUser, setError, setRegisterSuccess } = dispatchers;
 
     switch (response.event) {
+        case "AUTH":
+            // Server bao loi authen, co the do goi API can login ma user chua login
+            console.warn("Authentication Error:", response.mes);
+            break;
+
         case "LOGIN":
             if (response.status === "success") {
                 console.log("Đăng nhập thành công, Code:", response.data?.RE_LOGIN_CODE);
@@ -83,6 +88,12 @@ export const handleSocketMessage = (response, dispatchers) => {
             // Reset state user về null để kích hoạt chuyển hướng
             setUser(null);
             setMessages([]); // Clear tin nhắn cũ
+            break;
+
+        case "CHECK_USER_EXIST":
+            if (dispatchers.setCheckUserResult) {
+                dispatchers.setCheckUserResult(response.data);
+            }
             break;
 
         default:
