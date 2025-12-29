@@ -19,77 +19,92 @@ export const SocketProvider = ({ children }) => {
 
 
     useEffect(() => {
-        // 1. Tao ket noi WebSocket
-        const socket = new WebSocket(WS_URL);
-        socketRef.current = socket;
+        let reconnectTimeout;
 
-        // khi ket noi thanh cong
-        socket.onopen = () => {
-            console.log('WebSocket da ket noi');
-            setIsReady(true);
-            setError(""); // Xóa lỗi cũ nếu có
+        const connect = () => {
+            // 1. Tao ket noi WebSocket
+            const socket = new WebSocket(WS_URL);
+            socketRef.current = socket;
 
-            // Tự động Re-login dùng hàm từ socketActions
-            // Lấy code và username từ localStorage
-            const code = localStorage.getItem('re_login_code');
-            const savedUser = localStorage.getItem('user_name');
+            // khi ket noi thanh cong
+            socket.onopen = () => {
+                console.log('WebSocket da ket noi');
+                setIsReady(true);
+                setError(""); // Xóa lỗi cũ nếu có
 
+                // Tự động Re-login dùng hàm từ socketActions
+                // Lấy code và username từ localStorage
+                const code = localStorage.getItem('re_login_code');
+                const savedUser = localStorage.getItem('user_name');
 
-
-            // Nếu có thì gọi hàm reLogin
-            if (code && savedUser) {
-                console.log(`Phát hiện phiên cũ của [${savedUser}], đang Re-login...`);
-                socketActions.reLogin(socketRef, savedUser, code);
-            } else {
-                console.log("Không tìm thấy phiên đăng nhập cũ.");
-            }
-
-            // --- HEARTBEAT START ---
-            // Gửi ping mỗi 30s để giữ kết nối
-            const pingInterval = setInterval(() => {
-                socketActions.ping(socketRef);
-            }, 30000);
-            // Lưu interval ID vào object socket để clear khi close (trick: gán thô vào object)
-            socket.pingInterval = pingInterval;
-        };
-
-        socket.onmessage = (event) => {
-            // Cần try-catch để tránh crash app nếu server gửi JSON lỗi
-            try {
-                const response = JSON.parse(event.data);
-                if (response.event !== "GET_USER_LIST") {
-                    console.log("Tin nhan moi:", response);
+                // Nếu có thì gọi hàm reLogin
+                if (code && savedUser) {
+                    console.log(`Phát hiện phiên cũ của [${savedUser}], đang Re-login...`);
+                    socketActions.reLogin(socketRef, savedUser, code);
+                } else {
+                    console.log("Không tìm thấy phiên đăng nhập cũ.");
                 }
 
-                // Gọi hàm handler tách biệt
-                handleSocketMessage(response, {
-                    setMessages,
-                    setPeople,
-                    setUser,
-                    setError,
-                    setRegisterSuccess
-                });
-            } catch (err) {
-                console.error("Lỗi parse JSON:", err);
-            }
+                // --- HEARTBEAT START ---
+                // Gửi ping mỗi 30s để giữ kết nối
+                const pingInterval = setInterval(() => {
+                    socketActions.ping(socketRef);
+                }, 30000);
+                // Lưu interval ID vào object socket để clear khi close (trick: gán thô vào object)
+                socket.pingInterval = pingInterval;
+            };
+
+            socket.onmessage = (event) => {
+                // Cần try-catch để tránh crash app nếu server gửi JSON lỗi
+                try {
+                    const response = JSON.parse(event.data);
+                    if (response.event !== "GET_USER_LIST") {
+                        console.log("Tin nhan moi:", response);
+                    }
+
+                    // Gọi hàm handler tách biệt
+                    handleSocketMessage(response, {
+                        setMessages,
+                        setPeople,
+                        setUser,
+                        setError,
+                        setRegisterSuccess
+                    });
+                } catch (err) {
+                    console.error("Lỗi parse JSON:", err);
+                }
+            };
+
+            // Khi mat ket noi
+            socket.onclose = () => {
+                console.log('WebSocket da ngat ket noi. Thu ket noi lai sau 3s...');
+                setIsReady(false);
+                if (socket.pingInterval) clearInterval(socket.pingInterval);
+
+                // Tự động kết nối lại sau 3 giây
+                reconnectTimeout = setTimeout(() => {
+                    console.log("Dang thu ket noi lai...");
+                    connect();
+                }, 3000);
+            };
+
+            socket.onerror = (err) => {
+                console.error("WebSocket lỗi:", err);
+                setIsReady(false);
+                socket.close(); // Gọi close để kích hoạt onclose và retry
+            };
         };
 
-        // Khi mat ket noi
-        socket.onclose = () => {
-            console.log('WebSocket da ngat ket noi');
-            setIsReady(false);
-            if (socket.pingInterval) clearInterval(socket.pingInterval);
-        };
-
-        socket.onerror = (err) => {
-            console.error("WebSocket lỗi:", err);
-            setIsReady(false);
-        };
+        connect();
 
         // Chạy khi Component bị hủy (Unmount)
         return () => {
-            if (socket.readyState === WebSocket.OPEN) {
-                socket.close();
+            if (reconnectTimeout) clearTimeout(reconnectTimeout);
+
+            if (socketRef.current) {
+                // Hủy onclose để không trigger reconnect khi unmount component
+                socketRef.current.onclose = null; // đóng luôn không reconnect
+                socketRef.current.close();
             }
         };
     }, []); // [] -> Đảm bảo chỉ chạy 1 lần
