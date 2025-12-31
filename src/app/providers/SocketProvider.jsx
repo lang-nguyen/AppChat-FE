@@ -34,12 +34,16 @@ export const SocketProvider = ({ children }) => {
                 const code = localStorage.getItem('re_login_code');
                 const savedUser = localStorage.getItem('user_name');
 
+                // Check nếu đang ở trang Login/Register thì KHÔNG tự động re-login
+                // Để tránh xung đột với các Tab khác đang mở
+                const isAuthPage = window.location.pathname === '/login' || window.location.pathname === '/register';
+
                 // Nếu có thì gọi hàm reLogin
-                if (code && savedUser) {
+                if (code && savedUser && !isAuthPage) {
                     console.log(`Phát hiện phiên cũ của [${savedUser}], đang Re-login...`);
                     socketActions.reLogin(socketRef, savedUser, code);
                 } else {
-                    console.log("Không tìm thấy phiên đăng nhập cũ.");
+                    console.log("Không tìm thấy phiên cũ hoặc đang ở trang Auth.");
                 }
 
                 // --- HEARTBEAT START ---
