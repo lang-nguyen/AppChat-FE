@@ -1,29 +1,32 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-    messages: [],
-    people: [],
+    messages: [], // Danh sách tin nhắn
+    people: [],   // Danh sách user online
+    checkUserResult: null, // Kết quả kiểm tra user
 };
 
 const chatSlice = createSlice({
     name: "chat",
     initialState,
     reducers: {
-        setPeople(state, action) {
-            state.people = action.payload ?? [];
-        },
         setMessages(state, action) {
-            state.messages = action.payload ?? [];
+            state.messages = action.payload;
         },
         addMessage(state, action) {
             state.messages.push(action.payload);
         },
-        clearChat(state) {
+        clearMessages(state) {
             state.messages = [];
-            state.people = [];
+        },
+        setPeople(state, action) {
+            state.people = action.payload;
+        },
+        setCheckUserResult(state, action) {
+            state.checkUserResult = action.payload;
         },
     },
 });
 
-export const { setPeople, setMessages, addMessage, clearChat } = chatSlice.actions;
+export const { setMessages, addMessage, clearMessages, setPeople, setCheckUserResult } = chatSlice.actions;
 export default chatSlice.reducer;
