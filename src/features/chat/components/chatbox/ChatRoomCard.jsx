@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useSocket } from '../../../../app/providers/SocketProvider';
 import { clearChat } from '../../../../state/chat/chatSlice';
+import styles from './ChatRoomCard.module.css';
 
 const ChatRoomCard = () => {
     const dispatch = useDispatch();
@@ -9,6 +10,7 @@ const ChatRoomCard = () => {
     const { activeChat, messages, onlineStatus } = useSelector((state) => state.chat);
     const currentUser = useSelector((state) => state.auth.user);
 
+    // Lấy username hiện tại để xác định tin nhắn của mình
     const myUsername = currentUser?.user || currentUser?.username || localStorage.getItem('user_name');
 
     const [inputText, setInputText] = useState('');
@@ -17,23 +19,26 @@ const ChatRoomCard = () => {
     const chatContainerRef = useRef(null);
     const prevScrollHeightRef = useRef(0);
 
+    // Khi activeChat thay đổi -> Reset và load lịch sử mới
     useEffect(() => {
         if (activeChat) {
             dispatch(clearChat());
             setPage(1);
             fetchMessages(1);
 
+            // Kiểm tra trạng thái online nếu là chat 1-1
             if (activeChat.type === 0 || activeChat.type === 'people') {
                 actions.checkOnline(activeChat.name);
             }
         }
     }, [activeChat]);
 
+    // Hàm gọi API lấy lịch sử chat
     const fetchMessages = (pageNum) => {
         if (!activeChat) return;
-        if (activeChat.type === 0 || activeChat.type === 'people') { // 0: people
+        if (activeChat.type === 0 || activeChat.type === 'people') { // 0: người dùng
             actions.chatHistory(activeChat.name, pageNum);
-        } else {
+        } else { // 1: nhóm
             actions.roomHistory(activeChat.name, pageNum);
         }
     };
@@ -42,10 +47,12 @@ const ChatRoomCard = () => {
         (activeChat.type === 0 || activeChat.type === 'people') &&
         onlineStatus[activeChat.name];
 
+    // Auto scroll xuống cuối khi trang đầu tiên được load hoặc tin nhắn mới
     useEffect(() => {
         if (page === 1) {
             scrollToBottom();
         } else {
+            // Nếu load trang cũ hơn, giữ vị trí scroll
             if (chatContainerRef.current) {
                 const newScrollHeight = chatContainerRef.current.scrollHeight;
                 chatContainerRef.current.scrollTop = newScrollHeight - prevScrollHeightRef.current;
@@ -57,6 +64,7 @@ const ChatRoomCard = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
 
+    // Xử lý scroll để load thêm tin nhắn cũ (Infinite Scroll)
     const handleScroll = () => {
         if (chatContainerRef.current) {
             const { scrollTop } = chatContainerRef.current;
@@ -75,10 +83,12 @@ const ChatRoomCard = () => {
         fetchMessages(nextPage);
     };
 
+    // Xử lý gửi tin nhắn
     const handleSend = (e) => {
         e.preventDefault();
         if (!inputText.trim() || !activeChat) return;
 
+        // Gửi qua socket
         if (activeChat.type === 0 || activeChat.type === 'people') {
             actions.sendChat(activeChat.name, inputText, 'people');
         } else {
@@ -90,69 +100,61 @@ const ChatRoomCard = () => {
     if (!activeChat) return null;
 
     return (
-        <div style={styles.container}>
-            {/* Header */}
-            <div style={styles.header}>
-                <div style={styles.avatarContainer}>
+        <div className={styles.container}>
+            {/* Phần Header: Tên và trạng thái */}
+            <div className={styles.header}>
+                <div className={styles.avatarContainer}>
                     <img
                         src={`https://ui-avatars.com/api/?name=${encodeURIComponent(activeChat.name)}&background=random&size=128`}
                         alt={activeChat.name}
-                        style={styles.avatar}
+                        className={styles.avatar}
                     />
-                    {isOnline && <div style={styles.onlineDot} />}
+                    {isOnline && <div className={styles.onlineDot} />}
                 </div>
-                <div style={styles.headerInfo}>
-                    <h3 style={styles.title}>{activeChat.name}</h3>
-                    <span style={{
-                        ...styles.status,
-                        color: isOnline ? '#4CAF50' : '#888'
-                    }}>
+                <div className={styles.headerInfo}>
+                    <h3 className={styles.title}>{activeChat.name}</h3>
+                    <span className={styles.status} style={{ color: isOnline ? '#4CAF50' : '#888' }}>
                         {(activeChat.type === 1 || activeChat.type === 'group' || activeChat.type === 'room')
-                            ? 'Group Chat'
-                            : (isOnline ? 'Online' : 'Offline')}
+                            ? 'Nhóm Chat'
+                            : (isOnline ? 'Đang hoạt động' : 'Ngoại tuyến')}
                     </span>
                 </div>
             </div>
 
-            {/* Messages Area */}
+            {/* Khu vực hiển thị tin nhắn */}
             <div
-                style={styles.messagesArea}
+                className={styles.messagesArea}
                 ref={chatContainerRef}
                 onScroll={handleScroll}
             >
-                {page > 1 && <div style={styles.loader}>Loading more...</div>}
+                {page > 1 && <div className={styles.loader}>Đang tải thêm...</div>}
 
                 {messages.map((msg, index) => {
+                    // Xác định tin nhắn là của mình hay người khác
                     const isMe = msg.name === myUsername;
                     return (
                         <div
                             key={index}
-                            style={{
-                                ...styles.messageRow,
-                                justifyContent: isMe ? 'flex-end' : 'flex-start'
-                            }}
+                            className={styles.messageRow}
+                            style={{ justifyContent: isMe ? 'flex-end' : 'flex-start' }}
                         >
                             {!isMe && (
                                 <img
                                     src={`https://ui-avatars.com/api/?name=${encodeURIComponent(msg.name)}&background=random&size=32`}
                                     alt={msg.name}
-                                    style={styles.smallAvatar}
+                                    className={styles.smallAvatar}
                                 />
                             )}
-                            <div style={{
-                                ...styles.bubble,
+                            <div className={styles.bubble} style={{
                                 backgroundColor: isMe ? '#007AFF' : '#fff',
                                 color: isMe ? '#fff' : '#333',
                                 borderBottomRightRadius: isMe ? 4 : 20,
                                 borderBottomLeftRadius: isMe ? 20 : 4,
                                 boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
                             }}>
-                                {!isMe && <div style={styles.senderName}>{msg.name}</div>}
+                                {!isMe && <div className={styles.senderName}>{msg.name}</div>}
                                 <div>{msg.mes}</div>
-                                <div style={{
-                                    ...styles.timestamp,
-                                    color: isMe ? 'rgba(255,255,255,0.7)' : '#999'
-                                }}>
+                                <div className={styles.timestamp} style={{ color: isMe ? 'rgba(255,255,255,0.7)' : '#999' }}>
                                     {msg.createAt || ''}
                                 </div>
                             </div>
@@ -162,152 +164,21 @@ const ChatRoomCard = () => {
                 <div ref={messagesEndRef} />
             </div>
 
-            {/* Input Area */}
-            <form style={styles.inputArea} onSubmit={handleSend}>
+            {/* Khu vực nhập tin nhắn */}
+            <form className={styles.inputArea} onSubmit={handleSend}>
                 <input
                     type="text"
-                    style={styles.input}
-                    placeholder="Type a message..."
+                    className={styles.input}
+                    placeholder="Nhập tin nhắn..."
                     value={inputText}
                     onChange={(e) => setInputText(e.target.value)}
                 />
-                <button type="submit" style={styles.sendButton}>
-                    Send
+                <button type="submit" className={styles.sendButton}>
+                    Gửi
                 </button>
             </form>
         </div>
     );
-};
-
-// CSS Styles
-const styles = {
-    container: {
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        backgroundColor: '#fff',
-        borderRadius: '16px',
-        overflow: 'hidden',
-        boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
-        fontFamily: "'Inter', sans-serif",
-    },
-    header: {
-        padding: '16px 24px',
-        borderBottom: '1px solid #f0f0f0',
-        display: 'flex',
-        alignItems: 'center',
-        background: 'rgba(255, 255, 255, 0.95)',
-        backdropFilter: 'blur(10px)',
-        zIndex: 10,
-    },
-    avatarContainer: {
-        position: 'relative',
-        marginRight: '16px',
-    },
-    avatar: {
-        width: '48px',
-        height: '48px',
-        borderRadius: '50%',
-        objectFit: 'cover',
-    },
-    onlineDot: {
-        position: 'absolute',
-        bottom: '2px',
-        right: '2px',
-        width: '12px',
-        height: '12px',
-        borderRadius: '50%',
-        backgroundColor: '#4CAF50',
-        border: '2px solid #fff',
-    },
-    headerInfo: {
-        display: 'flex',
-        flexDirection: 'column',
-    },
-    title: {
-        margin: 0,
-        fontSize: '18px',
-        fontWeight: '600',
-        color: '#333',
-    },
-    status: {
-        fontSize: '13px',
-        marginTop: '4px',
-    },
-    messagesArea: {
-        flex: 1,
-        padding: '20px',
-        overflowY: 'auto',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '12px',
-        backgroundColor: '#F9FAFB',
-    },
-    loader: {
-        textAlign: 'center',
-        color: '#999',
-        fontSize: '12px',
-        padding: '10px',
-    },
-    messageRow: {
-        display: 'flex',
-        alignItems: 'flex-end',
-        gap: '8px',
-    },
-    smallAvatar: {
-        width: '28px',
-        height: '28px',
-        borderRadius: '50%',
-        marginBottom: '4px',
-    },
-    bubble: {
-        maxWidth: '70%',
-        padding: '12px 16px',
-        borderRadius: '20px',
-        fontSize: '15px',
-        lineHeight: '1.4',
-        position: 'relative',
-        wordBreak: 'break-word',
-    },
-    senderName: {
-        fontSize: '11px',
-        fontWeight: 'bold',
-        marginBottom: '4px',
-        opacity: 0.7,
-        color: '#555',
-    },
-    timestamp: {
-        fontSize: '10px',
-        marginTop: '6px',
-        textAlign: 'right',
-    },
-    inputArea: {
-        padding: '20px',
-        borderTop: '1px solid #f0f0f0',
-        display: 'flex',
-        gap: '12px',
-        backgroundColor: '#fff',
-    },
-    input: {
-        flex: 1,
-        padding: '12px 20px',
-        borderRadius: '24px',
-        border: '1px solid #e0e0e0',
-        fontSize: '15px',
-        outline: 'none',
-        transition: 'border-color 0.2s',
-        backgroundColor: '#f5f5f5',
-    },
-    sendButton: {
-        padding: '12px 24px',
-        borderRadius: '24px',
-        border: 'none',
-        backgroundColor: '#007AFF',
-        color: '#fff',
-        fontWeight: '600',
-        cursor: 'pointer',
-        transition: 'background-color 0.2s',
-    }
 };
 
 export default ChatRoomCard;
