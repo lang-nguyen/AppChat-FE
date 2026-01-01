@@ -10,6 +10,7 @@ export function useChatSidebar() {
   const user = useSelector((s) => s.auth.user);
   const people = useSelector((s) => s.chat.people);
   const activeChat = useSelector((s) => s.chat.activeChat);
+  const onlineStatus = useSelector((s) => s.chat.onlineStatus);
 
   // Auto-fetch list sau khi socket ready + đã login/relogin
   useEffect(() => {
@@ -29,11 +30,15 @@ export function useChatSidebar() {
       badge: x.type === 1 ? "Group" : "People",
       lastMessage: x.actionTime ?? "",
       active: activeChat?.name === x.name && activeChat?.type === x.type,
+      isOnline: x.type === 1 ? undefined : onlineStatus[x.name], // Chỉ check online cho user
     }));
-  }, [people, activeChat]);
+  }, [people, activeChat, onlineStatus]);
 
   const selectRoom = useCallback(
-    (r) => dispatch(setActiveChat({ name: r.name, type: r.type })),
+    (r) => {
+      console.log("Selecting room:", r);
+      dispatch(setActiveChat({ name: r.name, type: r.type }));
+    },
     [dispatch]
   );
 
