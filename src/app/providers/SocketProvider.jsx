@@ -9,7 +9,7 @@ const SocketContext = createContext(null);
 
 // Tạo provider
 export const SocketProvider = ({ children }) => {
-    const WS_URL = import.meta.env.VITE_WS_URL;
+    const WS_URL = import.meta.env.VITE_WS_URL || 'wss://chat.longapp.site/chat/chat';
     const socketRef = useRef(null); // luu ket noi
     const [isReady, setIsReady] = useState(false); // trang thai ket noi
 

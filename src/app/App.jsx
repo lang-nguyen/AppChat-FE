@@ -13,7 +13,7 @@ export default function App() {
         {/* Pages */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/chat" element={<ChatPage />} />
+        <Route path="/chat" element={<ChatPageLast />} />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/login" replace />} />
