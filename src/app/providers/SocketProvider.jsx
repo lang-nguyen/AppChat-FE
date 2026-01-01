@@ -1,14 +1,14 @@
 // Quản lý kết nối và giữ kho dữ liệu (State)
-import React, {createContext, useContext, useEffect, useMemo, useRef, useState} from "react";
-import {useDispatch} from "react-redux";
-import {socketActions} from "../../realtime/socketActions.js";
-import {handleSocketMessage} from "../../realtime/socketHandlers.js";
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useDispatch } from "react-redux";
+import { socketActions } from "../../realtime/socketActions.js";
+import { handleSocketMessage } from "../../realtime/socketHandlers.js";
 
 // Tạo context
 const SocketContext = createContext(null);
 
 // Tạo provider
-export const SocketProvider = ({children}) => {
+export const SocketProvider = ({ children }) => {
     const WS_URL = 'wss://chat.longapp.site/chat/chat';
     const socketRef = useRef(null); // luu ket noi
     const dispatch = useDispatch();
@@ -76,6 +76,12 @@ export const SocketProvider = ({children}) => {
             login: (u, p) => socketActions.login(socketRef, u, p),
             register: (u, p) => socketActions.register(socketRef, u, p),
             sendChat: (to, mes, chatType = "people") => socketActions.sendChat(socketRef, to, mes, chatType),
+            chatHistory: (to, page) => socketActions.chatHistory(socketRef, to, page),
+            roomHistory: (room, page) => socketActions.roomHistory(socketRef, room, page),
+            createRoom: (name) => socketActions.createRoom(socketRef, name),
+            joinRoom: (name) => socketActions.joinRoom(socketRef, name),
+            checkOnline: (name) => socketActions.checkOnline(socketRef, name),
+            checkExist: (name) => socketActions.checkExist(socketRef, name),
             getUserList: () => socketActions.getUserList(socketRef),
         }),
         []
