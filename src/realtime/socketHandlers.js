@@ -77,7 +77,6 @@ export const handleSocketMessage = (response, dispatch) => {
         case "SEND_CHAT":
             // Thêm tin nhắn mới vào danh sách
             dispatch(addMessage(response.data));
-            dispatch(addMessage(response.data));
             break;
 
         case "GET_USER_LIST":

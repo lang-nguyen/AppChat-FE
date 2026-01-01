@@ -41,8 +41,11 @@ export const useAuthForm = (mode = 'LOGIN') => {
                 setLocalError("Mật khẩu nhập lại không khớp!");
                 return;
             }
-            if (password.length < 3) {
-                setLocalError("Mật khẩu phải dài hơn 3 ký tự!");
+            // Regex: Tối thiểu 6 ký tự, có chữ hoa và số
+            const strongPasswordRegex = /^(?=.*[A-Z])(?=.*\d).{6,}$/;
+
+            if (!strongPasswordRegex.test(password)) {
+                setLocalError("Mật khẩu yếu: Cần tối thiểu 6 ký tự, 1 chữ hoa và 1 số!");
                 return;
             }
 

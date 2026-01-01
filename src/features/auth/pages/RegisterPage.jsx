@@ -16,9 +16,6 @@ const RegisterPage = () => {
         dispatch(setRegisterSuccess(false));
     }, [dispatch]);
 
-    // Note: Logic chuyển trang thành công (alert + navigate) đã được chuyển vào trong RegisterForm
-    // hoặc có thể để RegisterForm tự xử lý việc thông báo
-
     return (
         <div className={styles.page}>
             <Card className={styles.card}>
