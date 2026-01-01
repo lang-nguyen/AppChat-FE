@@ -1,6 +1,6 @@
 
 import { setUser, setError, clearError, setRegisterSuccess } from "../state/auth/authSlice";
-import { addMessage, setPeople, setMessages } from "../state/chat/chatSlice";
+import { addMessage, setPeople, setMessages,setChatHistory, setOnlineStatus} from "../state/chat/chatSlice";
 
 // Xử lý tin nhắn đến
 export const handleSocketMessage = (response, dispatch) => {
@@ -10,7 +10,7 @@ export const handleSocketMessage = (response, dispatch) => {
             console.warn("Authentication Error:", response.mes);
             break;
 
-      case "LOGIN":
+        case "LOGIN":
         case "RE_LOGIN": {
             if (response.status === "success") {
                 if (response.data?.RE_LOGIN_CODE) {
@@ -68,13 +68,13 @@ export const handleSocketMessage = (response, dispatch) => {
         }
 
         case "SEND_CHAT":
-            // Thêm tin nhắn mới vào danh sách
             dispatch(addMessage(response.data));
             break;
 
         case "GET_USER_LIST":
             dispatch(setPeople(response.data));
             break;
+
 
         case "LOGOUT":
             // Xóa thông tin đăng nhập local
@@ -85,7 +85,35 @@ export const handleSocketMessage = (response, dispatch) => {
             dispatch(setMessages([])); // Clear tin nhắn cũ
             break;
 
+        case "GET_PEOPLE_CHAT_MES":
+        case "GET_ROOM_CHAT_MES":
+            dispatch(setChatHistory({
+                messages: Array.isArray(response.data) ? response.data : [],
+                page: response.page || 1
+            }));
+            break;
+
+        case "CREATE_ROOM":
+        case "JOIN_ROOM":
+            if (response.status === 'success') {
+            }
+            break;
+
+        case "CHECK_USER_ONLINE":
+            if (response.status === 'success' && response.data) {
+                dispatch(setOnlineStatus({
+                    user: response.data.user,
+                    isOnline: response.data.status
+                }));
+            }
+            break;
+
         case "CHECK_USER_EXIST":
+            if (response.status === 'success') {
+                console.log("Check User Exist: Tồn tại", response.data);
+            } else {
+                dispatch(setError("Người dùng không tồn tại hoặc lỗi kiểm tra."));
+            }
             break;
 
         default:

@@ -1,7 +1,7 @@
 import React from 'react';
 import Card from '../../../../shared/components/Card.jsx';
 
-const RoomCard = ({ name, lastMessage, active, badge, onClick }) => (
+const RoomCard = ({ name, lastMessage, active, badge, onClick, isOnline }) => (
 	<Card
 		active={active}
 		onClick={onClick}
@@ -21,13 +21,26 @@ const RoomCard = ({ name, lastMessage, active, badge, onClick }) => (
 			alignItems: 'center',
 			justifyContent: 'center',
 			flexShrink: 0,
-			overflow: 'hidden'
+			overflow: 'hidden',
+			position: 'relative'
 		}}>
 			<img
 				src={`https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`}
 				alt={name}
 				style={{ width: '100%', height: '100%', objectFit: 'cover' }}
 			/>
+			{isOnline !== undefined && (
+				<div style={{
+					position: 'absolute',
+					bottom: 2,
+					right: 2,
+					width: 12,
+					height: 12,
+					borderRadius: '50%',
+					backgroundColor: isOnline ? '#4CAF50' : '#ccc',
+					border: '2px solid #fff'
+				}} />
+			)}
 		</div>
 
 		<div style={{ flex: 1, minWidth: 0 }}>

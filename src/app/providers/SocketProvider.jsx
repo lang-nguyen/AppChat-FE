@@ -106,14 +106,22 @@ export const SocketProvider = ({ children }) => {
 
     // Gom các hàm gửi lại thành 1 object actions
     // Dùng useMemo để tránh tạo lại object này mỗi lần render không cần thiết
-    const actions = useMemo(() => ({
-        login: (u, p) => socketActions.login(socketRef, u, p),
-        register: (u, p) => socketActions.register(socketRef, u, p),
-        sendChat: (to, mes, chatType = "people") => socketActions.sendChat(socketRef, to, mes, chatType),
-        logout: () => socketActions.logout(socketRef),
-        getUserList: () => socketActions.getUserList(socketRef),
-        checkUserExist: (username) => socketActions.checkUserExist(socketRef, username)
-    }), []); // [] dependency vì socketRef là ref, nó không trigger render
+
+    const actions = useMemo(
+        () => ({
+            login: (u, p) => socketActions.login(socketRef, u, p),
+            register: (u, p) => socketActions.register(socketRef, u, p),
+            sendChat: (to, mes, chatType = "people") => socketActions.sendChat(socketRef, to, mes, chatType),
+            chatHistory: (to, page) => socketActions.chatHistory(socketRef, to, page),
+            roomHistory: (room, page) => socketActions.roomHistory(socketRef, room, page),
+            createRoom: (name) => socketActions.createRoom(socketRef, name),
+            joinRoom: (name) => socketActions.joinRoom(socketRef, name),
+            checkOnline: (name) => socketActions.checkOnline(socketRef, name),
+            checkExist: (name) => socketActions.checkExist(socketRef, name),
+            getUserList: () => socketActions.getUserList(socketRef),
+        }),
+        []
+    ); // [] dependency vì socketRef là ref, nó không trigger render
 
     // Gia tri cung cap cho toan bo component con
     const value = useMemo(() => ({
