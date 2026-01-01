@@ -18,9 +18,9 @@ export function useChatSidebar() {
   }, [isReady, user, actions]);
 
   const title = useMemo(() => {
-    const fromRedux = user?.user || user?.name || user?.username;
+    const fromRedux = user?.name || user?.user || user?.username;
     return fromRedux || localStorage.getItem("user_name") || "Tên người dùng";
-  }, [user]);
+}, [user]);
 
   const rooms = useMemo(() => {
     return (people ?? []).map((x) => ({

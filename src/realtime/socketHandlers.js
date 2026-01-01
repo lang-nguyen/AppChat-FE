@@ -11,19 +11,26 @@ export const handleSocketMessage = (response, dispatch) => {
             break;
 
         case "LOGIN":
-        case "RE_LOGIN": {
             if (response.status === "success") {
-                if (response.data?.RE_LOGIN_CODE) {
-                    localStorage.setItem("re_login_code", response.data.RE_LOGIN_CODE);
-                    localStorage.setItem("user_name", response.data.user || "User");
+                console.log("Đăng nhập thành công, Code:", response.data?.RE_LOGIN_CODE);
+
+                // luu code vao localStorage
+                if (response.data.RE_LOGIN_CODE) {
+                    localStorage.setItem('re_login_code', response.data.RE_LOGIN_CODE);
                 }
-                dispatch(setUser(response.data));
+                // lay user name da luu o localStorage
+                const currentName = localStorage.getItem('user_name') || "User";
+
+                dispatch(setUser({
+                    ...response.data, // Copy tất cả những gì server trả về
+                    name: currentName // bo sung name
+                }));
+
                 dispatch(clearError());
             } else {
                 dispatch(setError(response.mes || "Đăng nhập thất bại"));
             }
             break;
-        }
 
         case "RE_LOGIN":
             if (response.status === "success") {

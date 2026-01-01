@@ -73,7 +73,7 @@ const chatSlice = createSlice({
         clearMessages(state) {
             state.messages = [];
         },
-        clearMessages(state) {
+        clearChat(state) {
             state.messages = [];
             state.activeChat = null;
         },

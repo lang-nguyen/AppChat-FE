@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useSocket } from '../../../../app/providers/SocketProvider';
-import { clearMessages } from '../../../../state/chat/chatSlice';
+import { setMessages } from '../../../../state/chat/chatSlice';
 import styles from './ChatRoomCard.module.css';
 
 const ChatRoomCard = ({ onInfoClick }) => {
@@ -22,7 +22,7 @@ const ChatRoomCard = ({ onInfoClick }) => {
     // Khi activeChat thay đổi -> Reset và load lịch sử mới
     useEffect(() => {
         if (activeChat) {
-            dispatch(clearMessages());
+            dispatch(setMessages([]));
             setPage(1);
             fetchMessages(1);
 
