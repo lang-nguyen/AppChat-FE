@@ -16,7 +16,7 @@ const ChatPage = () => {
                     <SearchBox/>
                     <RoomList
                         rooms={rooms}
-                        onSelect={selectRoom}
+                        onSelect={selectRoom} 
                     />
                 </div>
                 <div className={styles["chat-main"]}>
