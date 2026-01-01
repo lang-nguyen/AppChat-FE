@@ -128,6 +128,5 @@ export const SocketProvider = ({ children }) => {
 };
 
 // hook de ben ngoai su dung
-export const useSocket = () => {
-    return useContext(SocketContext);
-}
+export const useSocket = () => useContext(SocketContext);
+

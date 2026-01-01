@@ -63,7 +63,7 @@ export const handleSocketMessage = (response, dispatch) => {
             }
             break;
 
-        case "REGISTER":
+        case "REGISTER": {
             if (response.status === "success") {
                 // Set state báo đăng ký thành công
                 dispatch(setRegisterSuccess(true));
@@ -72,9 +72,11 @@ export const handleSocketMessage = (response, dispatch) => {
                 dispatch(setRegisterSuccess(false));
             }
             break;
+        }
 
         case "SEND_CHAT":
             // Thêm tin nhắn mới vào danh sách
+            dispatch(addMessage(response.data));
             dispatch(addMessage(response.data));
             break;
 
