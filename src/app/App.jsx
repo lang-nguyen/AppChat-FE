@@ -1,8 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import LoginPage from "../features/auth/LoginPage.jsx";
-import RegisterPage from "../features/auth/RegisterPage.jsx";
+
+import LoginPage from "../features/auth/pages/LoginPage.jsx";
+import RegisterPage from "../features/auth/pages/RegisterPage.jsx";
 import ChatPage from "../features/chat/pages/ChatPage.jsx";
 import colors from "../shared/constants/colors.js";
+
 
 export default function App() {
     return (
@@ -11,7 +13,6 @@ export default function App() {
                 id="app-root"
                 style={{
                     minHeight: "100vh",
-
                     "--gradient-start": colors.gradientStart,
                     "--gradient-end": colors.gradientEnd,
 

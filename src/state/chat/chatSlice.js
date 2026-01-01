@@ -17,12 +17,12 @@ const chatSlice = createSlice({
             state.activeChat = action.payload ?? null;
         },
         setMessages(state, action) {
-            state.messages = action.payload ?? [];
+            state.messages = action.payload;
         },
         addMessage(state, action) {
             state.messages.push(action.payload);
         },
-        clearChat(state) {
+        clearMessages(state) {
             state.messages = [];
             state.people = [];
             state.activeChat = null;

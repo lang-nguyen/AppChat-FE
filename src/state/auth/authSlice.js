@@ -1,9 +1,9 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-    user: null,
-    error: "",
-    registerSuccess: false,
+    user: null, // Thông tin user đăng nhập
+    error: "",  // Lỗi toàn cục
+    registerSuccess: false, // Trạng thái đăng ký
 };
 
 const authSlice = createSlice({
