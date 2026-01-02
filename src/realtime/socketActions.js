@@ -33,6 +33,30 @@ export const socketActions = {
         sendRawData(socketRef, "SEND_CHAT", { type: chatType, to: to, mes: message });
     },
 
+    chatHistory: (socketRef, to, page = 1) => {
+        sendRawData(socketRef, "GET_PEOPLE_CHAT_MES", { name: to, page });
+    },
+
+    roomHistory: (socketRef, roomName, page = 1) => {
+        sendRawData(socketRef, "GET_ROOM_CHAT_MES", { room_name: roomName, page });
+    },
+
+    createRoom: (socketRef, roomName) => {
+        sendRawData(socketRef, "CREATE_ROOM", { room_name: roomName });
+    },
+
+    joinRoom: (socketRef, roomName) => {
+        sendRawData(socketRef, "JOIN_ROOM", { room_name: roomName });
+    },
+
+    checkOnline: (socketRef, username) => {
+        sendRawData(socketRef, "CHECK_USER_ONLINE", { name: username });
+    },
+
+    checkExist: (socketRef, username) => {
+        sendRawData(socketRef, "CHECK_USER_EXIST", { name: username });
+    },
+
     getUserList: (socketRef) => {
         sendRawData(socketRef, "GET_USER_LIST", {});
     },

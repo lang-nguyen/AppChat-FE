@@ -1,19 +1,17 @@
-/* ChatPageLast.module.css */
-
-html, body {
+.page {
     margin: 0;
     padding: 0;
-    height: 100%;
+    height: 100vh;
+    width: 100%;
     overflow: hidden;
-}
-
-body {
-    background: pink;
+    background: linear-gradient(to bottom, var(--gradient-start), var(--gradient-end));
+    display: flex;
 }
 
 .chat-container {
     display: flex;
-    height: 100%;
+    flex: 1;
+    min-height: 0;
     width: 100%;
     padding: 1rem;
     box-sizing: border-box;
@@ -22,22 +20,35 @@ body {
 
 
 .chat-sidebar {
-    width: 30%; /* width cố định cho desktop */
-    min-width: 280px; /* không nhỏ hơn 280px */
-    max-width: 400px; /* không lớn hơn 400px */
-    background: red;
-    overflow-y: auto; /* scroll nếu content dài */
-    flex-shrink: 0; /* không bị co lại */
+    width: 30%;
+    min-width: 280px;
+    max-width: 400px;
+    background: var(--card-bg);
+    overflow-y: auto;
+    flex-shrink: 0;
+    height: 100%;
+    border-radius: 30px;
 }
 
 .chat-main {
-    flex: 1; /* chiếm phần còn lại */
-    background: blue ;
+    flex: 1;
+    background: var(--card-bg);
     overflow-y: auto;
-    min-width: 0; /* fix flexbox overflow issue */
+    min-width: 0;
+    height: 100%;
+    border-radius: 30px;
 }
 
-/* Tablet: sidebar nhỏ hơn */
+.chat-info-sidebar {
+    width: 320px;
+    flex-shrink: 0;
+    height: 100%;
+    background: var(--card-bg);
+    overflow-y: auto;
+    border-radius: 30px;
+    border-left: 1px solid #eee;
+}
+
 @media (max-width: 1024px) {
     .chat-sidebar {
         width: 300px;
@@ -45,7 +56,6 @@ body {
     }
 }
 
-/* Mobile: sidebar ẩn, có thể toggle */
 @media (max-width: 768px) {
     .chat-container {
         position: relative;
@@ -58,13 +68,13 @@ body {
         bottom: 0;
         width: 280px;
         z-index: 100;
-        transform: translateX(-100%); /* ẩn mặc định */
+        transform: translateX(-100%);
         transition: transform 0.3s ease;
         box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
     }
 
     .chat-sidebar.open {
-        transform: translateX(0); /* hiện khi có class 'open' */
+        transform: translateX(0);
     }
 
     .chat-main {
@@ -75,6 +85,6 @@ body {
 /* Mobile nhỏ */
 @media (max-width: 480px) {
     .chat-sidebar {
-        width: 100%; /* full width trên mobile nhỏ */
+        width: 100%;
     }
 }

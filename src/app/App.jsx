@@ -1,23 +1,50 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+
 import LoginPage from "../features/auth/pages/LoginPage.jsx";
 import RegisterPage from "../features/auth/pages/RegisterPage.jsx";
-import ChatPageLast from "../features/chat/pages/ChatPageLast.jsx";
+import ChatPage from "../features/chat/pages/ChatPage.jsx";
+import colors from "../shared/constants/colors.js";
+
 
 export default function App() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        {/* Default route */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
+    return (
+        <BrowserRouter>
+            <div
+                id="app-root"
+                style={{
+                    minHeight: "100vh",
+                    "--gradient-start": colors.gradientStart,
+                    "--gradient-end": colors.gradientEnd,
 
-        {/* Pages */}
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/chat" element={<ChatPageLast />} />
+                    "--card-bg": colors.cardBackground,
+                    "--card-border": colors.cardBorder,
+                    "--card-shadow": colors.cardShadow,
 
-        {/* Fallback */}
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
-    </BrowserRouter>
-  );
+                    "--text-primary": colors.primaryText,
+                    "--text-normal": colors.normalText,
+                    "--text-error": colors.errorText,
+
+                    "--btn-primary": colors.primaryButton,
+                    "--btn-disabled": colors.disabledButton,
+
+                    "--chat-header-bg": colors.chatHeaderBackground,
+                    "--chat-sender-bg": colors.chatSenderBackground,
+                    "--chat-receiver-bg": colors.chatReceiverBackground,
+                }}
+            >
+                <Routes>
+                    {/* Default route */}
+                    <Route path="/" element={<Navigate to="/login" replace />} />
+
+                    {/* Pages */}
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/register" element={<RegisterPage />} />
+                    <Route path="/chat" element={<ChatPage />} />
+
+                    {/* Fallback */}
+                    <Route path="*" element={<Navigate to="/login" replace />} />
+                </Routes>
+            </div>
+        </BrowserRouter>
+    );
 }
