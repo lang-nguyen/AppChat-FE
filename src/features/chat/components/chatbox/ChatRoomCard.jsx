@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useSocket } from '../../../../app/providers/SocketProvider';
+import { useSocket } from "../../../../app/providers/useSocket.js";
 import { setMessages } from '../../../../state/chat/chatSlice';
 import styles from './ChatRoomCard.module.css';
 
