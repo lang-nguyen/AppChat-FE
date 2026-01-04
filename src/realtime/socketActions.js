@@ -10,7 +10,10 @@ const sendRawData = (socketRef, eventName, dataPayload) => {
             }
         };
         socketRef.current.send(JSON.stringify(payload));
-        console.log(`Da gui [${eventName}]:`, payload);
+        // Chỉ log cho các event quan trọng, không log mọi thứ
+        if (eventName !== "GET_USER_LIST" && eventName !== "SEND_CHAT") {
+            console.log(`[Socket] ${eventName}:`, dataPayload);
+        }
     } else {
         console.error("Socket chua ket noi, khong the gui:", eventName);
     }

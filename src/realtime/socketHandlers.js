@@ -75,6 +75,7 @@ export const handleSocketMessage = (response, dispatch) => {
         }
 
         case "SEND_CHAT":
+            // Không log để tránh spam console
             dispatch(addMessage(response.data));
             break;
 
@@ -94,9 +95,12 @@ export const handleSocketMessage = (response, dispatch) => {
 
         case "GET_PEOPLE_CHAT_MES":
         case "GET_ROOM_CHAT_MES":
+            // Server không trả về page number, nên lấy từ Redux state
+            const currentPage = window.__chatPendingPage || 1;
+            console.log(`[Socket] Nhận lịch sử tin nhắn - Page: ${currentPage}, Count: ${response.data?.length || 0}`);
             dispatch(setChatHistory({
                 messages: Array.isArray(response.data) ? response.data : [],
-                page: response.page || 1
+                page: currentPage
             }));
             break;
 
