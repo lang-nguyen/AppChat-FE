@@ -5,6 +5,7 @@ const initialState = {
     people: [], // list trả về từ GET_USER_LIST: [{ name, type, actionTime }, ...]
     activeChat: null, // { name, type } | null
     onlineStatus: {}, // { username: boolean }
+    hasMore: true, // Trạng thái còn dữ liệu để load hay không
 };
 
 const chatSlice = createSlice({
@@ -20,6 +21,7 @@ const chatSlice = createSlice({
         },
         setActiveChat(state, action) {
             state.activeChat = action.payload ?? null;
+            state.hasMore = true; // Reset hasMore khi đổi chat
         },
         setMessages(state, action) {
             state.messages = action.payload;
@@ -28,17 +30,14 @@ const chatSlice = createSlice({
             const newMessage = action.payload;
             const { activeChat } = state;
 
-            // 1. Nếu đang mở chat với người gửi (hoặc phòng nhận), thêm vào danh sách messages
+            // 1. Kiểm tra tin nhắn có thuộc phòng đang mở hay không
             let isRelevant = false;
             if (activeChat) {
-                // Nếu là chat 1-1: check nếu tin nhắn đến từ người đang chat HOẶC mình gửi cho họ
                 if (activeChat.type === 0 || activeChat.type === 'people') {
                     if (newMessage.name === activeChat.name || newMessage.to === activeChat.name) {
                         isRelevant = true;
                     }
-                }
-                // Nếu là chat nhóm: check nếu tin nhắn gửi đến phòng đang mở
-                else if (activeChat.name === newMessage.to) {
+                } else if (activeChat.name === newMessage.to) {
                     isRelevant = true;
                 }
             }
@@ -47,27 +46,31 @@ const chatSlice = createSlice({
                 state.messages.push(newMessage);
             }
 
-            // 2. Cập nhật Sidebar (People List) để hiển thị tin nhắn mới nhất
-            // Tìm người/phòng trong danh sách
-            const targetName = newMessage.to === 'room' ? newMessage.to : (newMessage.name === state.user?.username ? newMessage.to : newMessage.name);
-            // Tạm thời chỉ cập nhật nếu tìm thấy name trong people matching với Sender hoặc Receiver
-
+            // 2. Cập nhật Sidebar (People List)
             const index = state.people.findIndex(p => p.name === newMessage.name || p.name === newMessage.to);
             if (index !== -1) {
-                // Di chuyển lên đầu danh sách (optional) hoặc cập nhật actionTime
                 const item = state.people[index];
                 item.actionTime = newMessage.createAt || new Date().toISOString();
-                // Xoá vị trí cũ và đưa lên đầu
                 state.people.splice(index, 1);
                 state.people.unshift(item);
             }
         },
         setChatHistory(state, action) {
             const { messages, page } = action.payload;
+            const newMessages = Array.isArray(messages) ? messages : [];
+
+            // Đảo ngược để có thứ tự: Cũ nhất -> Mới nhất
+            const processedMessages = [...newMessages].reverse();
+
             if (page === 1) {
-                state.messages = messages;
-            } else {
-                state.messages = [...messages, ...state.messages];
+                state.messages = processedMessages;
+            } else if (newMessages.length > 0) {
+                state.messages = [...processedMessages, ...state.messages];
+            }
+
+            // Nếu server trả về mảng rỗng -> Hết dữ liệu
+            if (newMessages.length === 0) {
+                state.hasMore = false;
             }
         },
         clearMessages(state) {
@@ -80,5 +83,9 @@ const chatSlice = createSlice({
     },
 });
 
-export const { setPeople, setActiveChat, setMessages, addMessage, setChatHistory, clearChat, setOnlineStatus, clearMessages } = chatSlice.actions;
+export const {
+    setPeople, setActiveChat, setMessages, addMessage,
+    setChatHistory, clearChat, setOnlineStatus, clearMessages
+} = chatSlice.actions;
+
 export default chatSlice.reducer;
