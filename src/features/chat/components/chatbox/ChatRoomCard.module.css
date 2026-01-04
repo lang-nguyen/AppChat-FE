@@ -105,6 +105,9 @@
     flex-direction: column;
     gap: 8px;
     background-color: #F9FAFB;
+    position: relative;
+    /* Smooth scrolling */
+    scroll-behavior: smooth;
 }
 
 .loader {
@@ -216,4 +219,29 @@
 
 .actionButton:hover {
     background-color: #f0f0f0;
+}
+
+.sendButton {
+    background-color: #FF5596;
+    border: none;
+    cursor: pointer;
+    color: white;
+    padding: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, transform 0.1s;
+    box-shadow: 0 2px 5px rgba(255, 85, 150, 0.3);
+}
+
+.sendButton:hover {
+    background-color: #E0407E;
+    transform: scale(1.05);
+}
+
+.sendButton:active {
+    transform: scale(0.95);
 }
