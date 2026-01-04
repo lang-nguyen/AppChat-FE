@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useSocket } from "../../../app/providers/SocketProvider.jsx";
-import { setMessages } from "../../../state/chat/chatSlice.js";
+import { clearMessages } from "../../../state/chat/chatSlice.js";
 
 /**
  * Hook xử lý toàn bộ logic của phần ChatBox và ChatInfo.
@@ -30,6 +30,8 @@ export const useChatMessage = () => {
     const chatContainerRef = useRef(null);
     const prevScrollHeightRef = useRef(0);
     const lastFetchedKeyRef = useRef(''); // Để tránh fetch trùng lặp khi re-render
+    const currentPageRef = useRef(1); // Track page hiện tại để tránh mất sync với server response
+    const pendingPageRef = useRef(new Map()); // Map để lưu page number của các request đang pending
 
     // -- Derived Data --
     const myUsername = useMemo(() => {
@@ -77,15 +79,15 @@ export const useChatMessage = () => {
         } else {
             socketActions.roomHistory(activeChat.name, pageNum);
         }
-    }, [activeChat, socketActions, isReady, isLoading]);
+    }, [activeChat, socketActions, isReady]);
 
     const scrollToBottom = useCallback((behavior = 'auto') => {
-        // Dùng requestAnimationFrame hoặc timeout để đợi DOM render xong
-        setTimeout(() => {
+        // Dùng requestAnimationFrame để đợi DOM render xong
+        requestAnimationFrame(() => {
             if (messagesEndRef.current) {
-                messagesEndRef.current.scrollIntoView({ behavior });
+                messagesEndRef.current.scrollIntoView({ behavior, block: 'end' });
             }
-        }, 50);
+        });
     }, []);
 
     // -- Effects --
@@ -93,34 +95,81 @@ export const useChatMessage = () => {
     // Effect: Khi chọn phòng chat hoặc Socket Reconnect
     useEffect(() => {
         if (activeChat && isReady) {
-            // Chỉ xóa tin nhắn cũ nếu là chuyển sang phòng KHÁC
-            // Nếu chỉ là reconnect cùng 1 phòng, ta refetch để cập nhật tin nhắn mới
+            // Clear tin nhắn cũ ngay lập tức
+            dispatch(clearMessages());
+            
+            // Reset state khi đổi phòng
             setPage(1);
-            fetchMessages(1);
+            currentPageRef.current = 1; // Reset page ref
             setShowInfo(false);
-
+            lastFetchedKeyRef.current = '';
+            
+            // Set pending page to window for socketHandlers
+            window.__chatPendingPage = 1;
+            
+            // Fetch tin nhắn trang đầu tiên
+            const fetchKey = `${activeChat.type}:${activeChat.name}:1`;
+            setIsLoading(true);
+            lastFetchedKeyRef.current = fetchKey;
+            
             if (activeChat.type === 0 || activeChat.type === 'people') {
+                socketActions.chatHistory(activeChat.name, 1);
                 socketActions.checkOnline(activeChat.name);
+            } else {
+                socketActions.roomHistory(activeChat.name, 1);
             }
+            
+            // Fallback: Tắt loading sau 5s nếu không có response
+            const timeoutId = setTimeout(() => {
+                setIsLoading(false);
+            }, 5000);
+            
+            return () => clearTimeout(timeoutId);
         }
-    }, [activeChat, isReady, socketActions, fetchMessages]);
+    }, [activeChat, isReady, socketActions, dispatch]);
 
     // Effect: Xử lý mượt mà khi dữ liệu tin nhắn về
     useEffect(() => {
-        if (messages.length > 0 || !hasMore) {
-            if (page === 1) {
-                // Trang đầu tiên: luôn cuộn xuống cuối
+        // CHỈ xử lý khi đang loading (tránh vòng lặp)
+        if (!isLoading) return;
+        
+        if (page === 1) {
+            if (messages.length > 0) {
+                // Trang đầu tiên có tin nhắn: cuộn xuống cuối
                 scrollToBottom();
-            } else if (chatContainerRef.current) {
-                // Giữ vị trí scroll khi load thêm tin nhắn cũ
-                const newScrollHeight = chatContainerRef.current.scrollHeight;
-                chatContainerRef.current.scrollTop = newScrollHeight - prevScrollHeightRef.current;
+                setIsLoading(false);
+            } else if (!hasMore) {
+                // Trang đầu tiên không có tin nhắn và server báo hết data
+                setIsLoading(false);
             }
-            // Tắt loading sau khi đã xử lý layout xong
-            const timer = setTimeout(() => setIsLoading(false), 100);
-            return () => clearTimeout(timer);
+            // Nếu page === 1 và messages.length === 0 và hasMore === true
+            // → Đang chờ data, không tắt loading
+        } else {
+            // page > 1: Load more
+            // Chỉ tắt loading khi có data mới hoặc hết data
+            const shouldStopLoading = messages.length > 0 || !hasMore;
+            if (shouldStopLoading) {
+                if (chatContainerRef.current && messages.length > 0) {
+                    const newScrollHeight = chatContainerRef.current.scrollHeight;
+                    chatContainerRef.current.scrollTop = newScrollHeight - prevScrollHeightRef.current;
+                }
+                setIsLoading(false);
+            }
         }
-    }, [messages, page, hasMore, scrollToBottom]);
+    }, [messages.length, hasMore, page, scrollToBottom, isLoading]);
+
+    // Effect: Tự động scroll xuống khi có tin nhắn mới (chỉ khi đang ở gần cuối)
+    useEffect(() => {
+        if (messages.length > 0 && page === 1 && chatContainerRef.current) {
+            const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+            const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
+            
+            // Chỉ tự động scroll nếu user đang ở gần cuối (không làm phiền khi đang đọc tin cũ)
+            if (isNearBottom) {
+                scrollToBottom('smooth');
+            }
+        }
+    }, [messages.length, page, scrollToBottom]);
 
     const loadMore = useCallback(() => {
         if (!hasMore || isLoading || !isReady) return;
@@ -128,19 +177,46 @@ export const useChatMessage = () => {
         if (chatContainerRef.current) {
             prevScrollHeightRef.current = chatContainerRef.current.scrollHeight;
         }
+        
         const nextPage = page + 1;
         setPage(nextPage);
-        fetchMessages(nextPage);
-    }, [page, fetchMessages, hasMore, isLoading, isReady]);
-
-    const handleScroll = useCallback(() => {
-        if (chatContainerRef.current && !isLoading && hasMore) {
-            const { scrollTop } = chatContainerRef.current;
-            if (scrollTop <= 10) { // Tăng ngưỡng nhạy lên 10px
-                loadMore();
+        currentPageRef.current = nextPage; // Update ref để track page
+        
+        // Set pending page to window for socketHandlers
+        window.__chatPendingPage = nextPage;
+        
+        // Fetch tin nhắn trang tiếp theo
+        if (activeChat) {
+            setIsLoading(true);
+            const fetchKey = `${activeChat.type}:${activeChat.name}:${nextPage}`;
+            lastFetchedKeyRef.current = fetchKey;
+            
+            console.log(`[LoadMore] Fetching page ${nextPage} for ${activeChat.name}`);
+            
+            if (activeChat.type === 0 || activeChat.type === 'people') {
+                socketActions.chatHistory(activeChat.name, nextPage);
+            } else {
+                socketActions.roomHistory(activeChat.name, nextPage);
             }
         }
-    }, [loadMore, isLoading, hasMore]);
+    }, [page, hasMore, isLoading, isReady, activeChat, socketActions]);
+
+    const handleScroll = useCallback(() => {
+        if (!chatContainerRef.current || isLoading || !hasMore) return;
+        
+        const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+        
+        // CHỈ trigger load more khi:
+        // 1. Scroll ở gần đầu (scrollTop <= 50)
+        // 2. ĐÃ có content để scroll (scrollHeight > clientHeight)
+        // 3. Không phải trang đầu tiên vừa load xong
+        const hasContent = scrollHeight > clientHeight;
+        const isAtTop = scrollTop <= 50;
+        
+        if (isAtTop && hasContent && page >= 1) {
+            loadMore();
+        }
+    }, [loadMore, isLoading, hasMore, page]);
 
     const handleSend = useCallback((e) => {
         e.preventDefault();
@@ -152,8 +228,10 @@ export const useChatMessage = () => {
             socketActions.sendChat(activeChat.name, inputText, 'room');
         }
         setInputText('');
-        // Sau khi gửi tin nhắn, cuộn xuống cuối để thấy tin nhắn của mình
-        scrollToBottom('smooth');
+        
+        // Scroll xuống ngay lập tức để thấy tin nhắn của mình
+        // Dùng timeout ngắn để đợi tin nhắn được thêm vào state
+        setTimeout(() => scrollToBottom('smooth'), 100);
     }, [inputText, activeChat, socketActions, isReady, scrollToBottom]);
 
     const handleAddMember = useCallback(() => {
