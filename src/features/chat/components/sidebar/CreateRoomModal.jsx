@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { useSocket } from '../../../../app/providers/useSocket';
+import { setPendingRoomCreation } from '../../../../state/chat/chatSlice';
 import CreateRoomHeader from './CreateRoomHeader';
 import TextInput from '../../../../shared/components/TextInput';
 import SearchBar from '../../../../shared/components/SearchBar';
@@ -9,7 +10,9 @@ import Button from '../../../../shared/components/Button';
 
 const CreateRoomModal = ({ onClose }) => {
     const { actions } = useSocket();
+    const dispatch = useDispatch();
     const people = useSelector((s) => s.chat.people);
+    const currentUser = useSelector((s) => s.auth.user);
 
     const [roomName, setRoomName] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
@@ -39,12 +42,28 @@ const CreateRoomModal = ({ onClose }) => {
             return;
         }
 
-        actions.createRoom(roomName);
+        // Lấy tên người dùng hiện tại
+        const currentUserName = currentUser?.name || currentUser?.user || currentUser?.username || 
+                               localStorage.getItem('user_name') || 'bạn';
 
-        selectedUsers.forEach(() => {
-            actions.joinRoom(roomName);
-        });
+                               console.log("Bắt đầu tạo nhóm: {", {
+                                roomName: roomName.trim(),
+                                selectedUsers: selectedUsers,
+                                currentUserName: currentUserName
+                            });
+                        
 
+
+        // Lưu thông tin tạo nhóm vào Redux để xử lý sau khi nhận response thành công
+        dispatch(setPendingRoomCreation({
+            roomName: roomName.trim(),
+            selectedUsers: selectedUsers,
+            currentUserName: currentUserName
+        }));
+
+        // Gọi API tạo phòng - logic thêm user sẽ được xử lý trong socketHandlers khi nhận response thành công
+        actions.createRoom(roomName.trim());
+        console.log("Đã gửi CREATE_ROOM request");
         onClose();
     };
 

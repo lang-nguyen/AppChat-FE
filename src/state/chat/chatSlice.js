@@ -5,6 +5,7 @@ const initialState = {
     people: [], // list trả về từ GET_USER_LIST: [{ name, type, actionTime }, ...]
     activeChat: null, // { name, type } | null
     onlineStatus: {}, // { username: boolean }
+    pendingRoomCreation: null, // { roomName, selectedUsers, currentUserName } | null - Lưu thông tin tạo nhóm đang chờ
 };
 
 const chatSlice = createSlice({
@@ -48,18 +49,51 @@ const chatSlice = createSlice({
             }
 
             // 2. Cập nhật Sidebar (People List) để hiển thị tin nhắn mới nhất
-            // Tìm người/phòng trong danh sách
-            const targetName = newMessage.to === 'room' ? newMessage.to : (newMessage.name === state.user?.username ? newMessage.to : newMessage.name);
-            // Tạm thời chỉ cập nhật nếu tìm thấy name trong people matching với Sender hoặc Receiver
-
-            const index = state.people.findIndex(p => p.name === newMessage.name || p.name === newMessage.to);
-            if (index !== -1) {
-                // Di chuyển lên đầu danh sách (optional) hoặc cập nhật actionTime
-                const item = state.people[index];
-                item.actionTime = newMessage.createAt || new Date().toISOString();
-                // Xoá vị trí cũ và đưa lên đầu
-                state.people.splice(index, 1);
-                state.people.unshift(item);
+            // Xác định target (người/phòng cần cập nhật trong danh sách)
+            let targetName = null;
+            let targetType = null;
+            
+            // Lấy tên user hiện tại để so sánh
+            const currentUserName = state.user?.name || state.user?.user || state.user?.username || '';
+            
+            if (newMessage.type === 'room' || newMessage.to === 'room') {
+                // Chat nhóm: target là tên phòng
+                targetName = newMessage.to;
+                targetType = 1; // type 1 = group
+            } else {
+                // Chat 1-1: target là người đối diện (không phải mình)
+                if (newMessage.name === currentUserName) {
+                    // Mình gửi → target là người nhận
+                    targetName = newMessage.to;
+                    targetType = 0; // type 0 = people
+                } else {
+                    // Người khác gửi → target là người gửi
+                    targetName = newMessage.name;
+                    targetType = 0; // type 0 = people
+                }
+            }
+            
+            // Tìm trong danh sách
+            if (targetName) {
+                const index = state.people.findIndex(p => p.name === targetName);
+                
+                if (index !== -1) {
+                    // Đã có: Cập nhật actionTime, lastMessage và di chuyển lên đầu
+                    const item = state.people[index];
+                    item.actionTime = newMessage.createAt || new Date().toISOString();
+                    item.lastMessage = newMessage.mes || newMessage.text || '';
+                    state.people.splice(index, 1);
+                    state.people.unshift(item);
+                } else {
+                    // Chưa có: Thêm vào đầu danh sách
+                    const newItem = {
+                        name: targetName,
+                        type: targetType,
+                        actionTime: newMessage.createAt || new Date().toISOString(),
+                        lastMessage: newMessage.mes || newMessage.text || ''
+                    };
+                    state.people.unshift(newItem);
+                }
             }
         },
         setChatHistory(state, action) {
@@ -77,8 +111,14 @@ const chatSlice = createSlice({
             state.messages = [];
             state.activeChat = null;
         },
+        setPendingRoomCreation(state, action) {
+            state.pendingRoomCreation = action.payload;
+        },
+        clearPendingRoomCreation(state) {
+            state.pendingRoomCreation = null;
+        },
     },
 });
 
-export const { setPeople, setActiveChat, setMessages, addMessage, setChatHistory, clearChat, setOnlineStatus, clearMessages } = chatSlice.actions;
+export const { setPeople, setActiveChat, setMessages, addMessage, setChatHistory, clearChat, setOnlineStatus, clearMessages, setPendingRoomCreation, clearPendingRoomCreation } = chatSlice.actions;
 export default chatSlice.reducer;

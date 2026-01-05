@@ -2,6 +2,7 @@
 // Quản lý kết nối và giữ kho dữ liệu (State)
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { store } from '../store.js';
 import { socketActions } from "../../realtime/socketActions.js";
 import { handleSocketMessage } from "../../realtime/socketHandlers.js";
 import { SocketContext } from './SocketContext.js';
@@ -23,13 +24,37 @@ export const SocketProvider = ({ children }) => {
     const pingIntervalRef = useRef(null);
 
     const lastActivityRef = useRef(0);
+    const reconnectTimeoutRef = useRef(null); //+1 Quản lý reconnect timeout
+    const isConnectingRef = useRef(false); //+1 Tránh tạo nhiều kết nối cùng lúc
+
 
     useEffect(() => {
         // Khởi tạo lastActivityRef trong useEffect để tránh lỗi impure function
         lastActivityRef.current = Date.now();
-        let reconnectTimeout;
+        let reconnectAttempts = 0; //+1 Đếm số lần reconnect
+        const MAX_RECONNECT_ATTEMPTS = 10;
+        const BASE_DELAY = 3000;
 
         const connect = () => {
+            //+1 Tránh tạo nhiều kết nối cùng lúc
+            if (isConnectingRef.current || (socketRef.current && socketRef.current.readyState === WebSocket.CONNECTING)) {
+                console.log('Đang kết nối, bỏ qua...');
+                return;
+            }
+
+            //+1 Đóng kết nối cũ nếu có
+            if (socketRef.current) {
+                const oldSocket = socketRef.current;
+                oldSocket.onopen = null; //+1
+                oldSocket.onclose = null; //+1
+                oldSocket.onerror = null; //+1
+                oldSocket.onmessage = null; //+1
+                if (oldSocket.readyState === WebSocket.OPEN || oldSocket.readyState === WebSocket.CONNECTING) {
+                    oldSocket.close();
+                }
+            }
+
+            isConnectingRef.current = true; //+1
             // 1. Tao ket noi WebSocket
             const socket = new WebSocket(WS_URL);
             socketRef.current = socket;
@@ -37,9 +62,11 @@ export const SocketProvider = ({ children }) => {
             // khi ket noi thanh cong
             socket.onopen = () => {
                 console.log('WebSocket da ket noi');
+                isConnectingRef.current = false; //+1
                 setIsReady(true);
                 // Lưu thời gian hoạt động gần nhất
                 lastActivityRef.current = Date.now();
+                reconnectAttempts = 0; //+1 Reset số lần reconnect
 
                 // Tự động Re-login dùng hàm từ socketActions
                 // Lấy code và username từ localStorage
@@ -70,16 +97,17 @@ export const SocketProvider = ({ children }) => {
                         console.log("Tin nhan moi:", response);
                     }
 
-                    // Gọi hàm handler tách biệt, truyền dispatch
-                    handleSocketMessage(response, dispatch);
+                    // Gọi hàm handler tách biệt, truyền dispatch, socketActions, socketRef và getState
+                    handleSocketMessage(response, dispatch, socketActions, socketRef, () => store.getState());
                 } catch (err) {
                     console.error("Lỗi parse JSON:", err);
                 }
             };
 
             // Khi mat ket noi
-            socket.onclose = () => {
-                console.log('WebSocket da ngat ket noi. Thu ket noi lai sau 3s...');
+            socket.onclose = (event) => {
+                console.log('WebSocket da ngat ket noi. Code:', event.code, 'Reason:', event.reason); //+1
+                isConnectingRef.current = false; //+1
                 setIsReady(false);
 
                 // Clear ping interval
@@ -88,24 +116,43 @@ export const SocketProvider = ({ children }) => {
                     pingIntervalRef.current = null;
                 }
 
-                // Tự động kết nối lại sau 3 giây
-                reconnectTimeout = setTimeout(() => {
-                    console.log("Dang thu ket noi lai...");
-                    connect();
-                }, 3000);
+                //+1 Chỉ reconnect nếu không phải do unmount (code 1000 = normal closure)
+                if (event.code !== 1000 && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                    //+1 Exponential backoff: tăng delay mỗi lần reconnect
+                    const delay = Math.min(BASE_DELAY * Math.pow(2, reconnectAttempts), 30000); //+1 Max 30s
+                    reconnectAttempts++; //+1
+                    
+                    console.log(`Thu ket noi lai sau ${delay}ms (lan thu ${reconnectAttempts})...`); //+1
+                    reconnectTimeoutRef.current = setTimeout(() => { //+1
+                        connect();
+                    }, delay);
+                } else if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) { //+1
+                    console.error('Đã vượt quá số lần reconnect tối đa'); //+1
+                }
             };
 
             socket.onerror = (err) => {
                 console.error("WebSocket lỗi:", err);
+                isConnectingRef.current = false; //+1
                 setIsReady(false);
-                socket.close(); // Gọi close để kích hoạt onclose và retry
+                
+                //+1 Chỉ close nếu socket đã kết nối hoặc đang mở
+                //+1 Không close nếu đang CONNECTING vì sẽ tự trigger onclose
+                if (socket.readyState === WebSocket.OPEN) {
+                    socket.close();
+                }
             };
         };
         connect();
 
         // Chạy khi Component bị hủy (Unmount)
         return () => {
-            if (reconnectTimeout) clearTimeout(reconnectTimeout);
+            isConnectingRef.current = false; //+1
+            
+            if (reconnectTimeoutRef.current) { //+1
+                clearTimeout(reconnectTimeoutRef.current); //+1
+                reconnectTimeoutRef.current = null; //+1
+            }
 
             // Clear ping interval
             if (pingIntervalRef.current) {
@@ -114,9 +161,17 @@ export const SocketProvider = ({ children }) => {
             }
 
             if (socketRef.current) {
-                // Hủy onclose để không trigger reconnect khi unmount component
+                //+1 Hủy tất cả handlers để tránh trigger reconnect khi unmount
                 socketRef.current.onclose = null; // đóng luôn không reconnect
-                socketRef.current.close();
+                socketRef.current.onerror = null; //+1
+                socketRef.current.onmessage = null; //+1
+                socketRef.current.onopen = null; //+1
+                
+                //+1 Chỉ close nếu socket đang mở hoặc đang kết nối
+                if (socketRef.current.readyState === WebSocket.OPEN || socketRef.current.readyState === WebSocket.CONNECTING) {
+                    socketRef.current.close(1000, 'Component unmounting'); //+1 Normal closure
+                }
+                socketRef.current = null; //+1
             }
         };
     }, [dispatch]); // [] -> Đảm bảo chỉ chạy 1 lần
@@ -199,6 +254,10 @@ export const SocketProvider = ({ children }) => {
             getUserList: () => {
                 lastActivityRef.current = Date.now();
                 socketActions.getUserList(socketRef);
+            },
+            logout: () => {
+                lastActivityRef.current = Date.now();
+                socketActions.logout(socketRef);
             },
         }),
         []

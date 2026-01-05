@@ -1,9 +1,9 @@
 
 import { setUser, setError, clearError, setRegisterSuccess } from "../state/auth/authSlice";
-import { addMessage, setPeople, setMessages,setChatHistory, setOnlineStatus} from "../state/chat/chatSlice";
+import { addMessage, setPeople, setMessages,setChatHistory, setOnlineStatus, clearPendingRoomCreation} from "../state/chat/chatSlice";
 
 // Xử lý tin nhắn đến
-export const handleSocketMessage = (response, dispatch) => {
+export const handleSocketMessage = (response, dispatch, socketActions, socketRef, getState) => {
     switch (response.event) {
         case "AUTH":
             // Server bao loi authen, co the do goi API can login ma user chua login
@@ -106,8 +106,48 @@ export const handleSocketMessage = (response, dispatch) => {
             break;
 
         case "CREATE_ROOM":
+            console.log("Nhận response từ CREATE_ROOM:", response);
+            if (response.status === 'success') {
+                // Lấy thông tin tạo nhóm đang chờ từ Redux
+                const state = getState ? getState() : null;
+                const pendingRoom = state?.chat?.pendingRoomCreation;
+                
+                if (pendingRoom) {
+
+                    console.log("Thông tin pending room:", pendingRoom);
+
+                    const { roomName, selectedUsers, currentUserName } = pendingRoom;
+                    
+                    // 1. Join bản thân vào phòng
+                    socketActions.joinRoom(socketRef, roomName);
+                    console.log("Đã join bản thân vào phòng:", roomName);
+                    
+                    // 2. Join từng user đã chọn vào phòng
+                    console.log("Đã join từng user đã chọn vào phòng:", selectedUsers);
+                    selectedUsers.forEach((username) => {
+                        socketActions.joinRoom(socketRef, roomName);
+                    });
+                    
+                    // 3. Tạo và gửi tin nhắn thông báo
+                    const userListText = selectedUsers.length > 0 
+                        ? selectedUsers.join(', ') 
+                        : 'không có ai';
+                    const notificationMessage = `${currentUserName} đã tạo nhóm và thêm ${userListText} vào nhóm`;
+                    
+                    // Delay một chút để đảm bảo join xong
+                    setTimeout(() => {
+                        socketActions.sendChat(socketRef, roomName, notificationMessage, "room");
+                    }, 500);
+                    
+                    // 4. Clear pending room creation
+                    dispatch(clearPendingRoomCreation());
+                }
+            }
+            break;
+            
         case "JOIN_ROOM":
             if (response.status === 'success') {
+                // Có thể thêm logic xử lý join room thành công nếu cần
             }
             break;
 
@@ -123,8 +163,23 @@ export const handleSocketMessage = (response, dispatch) => {
         case "CHECK_USER_EXIST":
             if (response.status === 'success') {
                 console.log("Check User Exist: Tồn tại", response.data);
+                // Nếu có callback pending cho contact check, gọi onSuccess
+                if (window.__pendingContactCheck) {
+                    // Kiểm tra username match hoặc không cần match (vì chỉ check 1 user tại 1 thời điểm)
+                    const pendingCheck = window.__pendingContactCheck;
+                    window.__pendingContactCheck = null; // Clear ngay để tránh gọi lại
+                    pendingCheck.onSuccess();
+                }
             } else {
-                dispatch(setError("Người dùng không tồn tại hoặc lỗi kiểm tra."));
+                console.log("Check User Exist: Không tồn tại", response.mes);
+                // Nếu có callback pending cho contact check, gọi onError
+                if (window.__pendingContactCheck) {
+                    const pendingCheck = window.__pendingContactCheck;
+                    window.__pendingContactCheck = null; // Clear ngay để tránh gọi lại
+                    pendingCheck.onError();
+                } else {
+                    dispatch(setError("Người dùng không tồn tại hoặc lỗi kiểm tra."));
+                }
             }
             break;
 

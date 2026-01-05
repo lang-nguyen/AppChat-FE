@@ -38,23 +38,25 @@ export const socketActions = {
     },
 
     roomHistory: (socketRef, roomName, page = 1) => {
-        sendRawData(socketRef, "GET_ROOM_CHAT_MES", { room_name: roomName, page });
+        sendRawData(socketRef, "GET_ROOM_CHAT_MES", { name: roomName, page }); //+1 Đổi room_name thành name
     },
 
     createRoom: (socketRef, roomName) => {
-        sendRawData(socketRef, "CREATE_ROOM", { room_name: roomName });
+        console.log("Gửi request CREATE_ROOM:", { name: roomName }); //+1
+        sendRawData(socketRef, "CREATE_ROOM", { name: roomName }); //+1 Đổi room_name thành name
     },
 
     joinRoom: (socketRef, roomName) => {
-        sendRawData(socketRef, "JOIN_ROOM", { room_name: roomName });
+        console.log("Gửi request JOIN_ROOM:", { name: roomName }); //+1
+        sendRawData(socketRef, "JOIN_ROOM", { name: roomName }); //+1 Đổi room_name thành name
     },
 
     checkOnline: (socketRef, username) => {
-        sendRawData(socketRef, "CHECK_USER_ONLINE", { name: username });
+        sendRawData(socketRef, "CHECK_USER_ONLINE", { user: username }); //+1 Đổi name thành user
     },
 
     checkExist: (socketRef, username) => {
-        sendRawData(socketRef, "CHECK_USER_EXIST", { name: username });
+        sendRawData(socketRef, "CHECK_USER_EXIST", { user: username }); //+1 Đổi name thành user
     },
 
     getUserList: (socketRef) => {
