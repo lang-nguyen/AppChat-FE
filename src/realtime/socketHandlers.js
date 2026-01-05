@@ -161,7 +161,12 @@ export const handleSocketMessage = (response, dispatch, socketActions, socketRef
             break;
 
         case "CHECK_USER_EXIST":
-            if (response.status === 'success') {
+            // response.status: 'success' chỉ cho biết request thành công
+            // response.data.status: true/false mới cho biết user có tồn tại không
+            console.log("Check User Exist - Full response:", response);
+            const userExists = response.data?.status === true || response.data?.status === 'true';
+            
+            if (userExists) {
                 console.log("Check User Exist: Tồn tại", response.data);
                 // Nếu có callback pending cho contact check, gọi onSuccess
                 if (window.__pendingContactCheck) {
@@ -171,7 +176,7 @@ export const handleSocketMessage = (response, dispatch, socketActions, socketRef
                     pendingCheck.onSuccess();
                 }
             } else {
-                console.log("Check User Exist: Không tồn tại", response.mes);
+                console.log("Check User Exist: Không tồn tại", response.data?.status, response.mes);
                 // Nếu có callback pending cho contact check, gọi onError
                 if (window.__pendingContactCheck) {
                     const pendingCheck = window.__pendingContactCheck;
