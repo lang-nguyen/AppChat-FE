@@ -128,14 +128,10 @@ const ChatRoomCard = ({
                                     </div>
                                 )}
 
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start', maxWidth: '75%' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
                                     <div className={styles.bubble} style={{
                                         backgroundColor: isMe ? '#FF5596' : '#fff',
                                         color: isMe ? '#fff' : '#000',
-                                        borderRadius: 20,
-                                        borderBottomRightRadius: isMe ? 4 : 20,
-                                        borderBottomLeftRadius: isMe ? 20 : 4,
-                                        boxShadow: '0 2px 5px rgba(0,0,0,0.05)'
                                     }}>
                                         {msg.mes}
                                     </div>
