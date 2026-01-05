@@ -41,15 +41,15 @@ export const socketActions = {
     },
 
     roomHistory: (socketRef, roomName, page = 1) => {
-        sendRawData(socketRef, "GET_ROOM_CHAT_MES", { room_name: roomName, page });
+        sendRawData(socketRef, "GET_ROOM_CHAT_MES", { name: roomName, page });
     },
 
     createRoom: (socketRef, roomName) => {
-        sendRawData(socketRef, "CREATE_ROOM", { room_name: roomName });
+        sendRawData(socketRef, "CREATE_ROOM", { name: roomName });
     },
 
     joinRoom: (socketRef, roomName) => {
-        sendRawData(socketRef, "JOIN_ROOM", { room_name: roomName });
+        sendRawData(socketRef, "JOIN_ROOM", { name: roomName });
     },
 
     checkOnline: (socketRef, username) => {

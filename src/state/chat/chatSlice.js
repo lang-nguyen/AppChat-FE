@@ -43,9 +43,9 @@ const chatSlice = createSlice({
                     ) {
                         isRelevant = true;
                     }
-                } else {
-                    // Tin nhắn nhóm: Chỉ cần kiểm tra tên phòng
-                    if (activeChat.name === newMessage.to) {
+                } else if (activeChat.type === 1 || activeChat.type === 'room') {
+                    // Tin nhắn nhóm: Kiểm tra type và tên phòng
+                    if (newMessage.to === activeChat.name) {
                         isRelevant = true;
                     }
                 }
@@ -108,12 +108,40 @@ const chatSlice = createSlice({
         setPendingPage(state, action) {
             state.pendingPage = action.payload;
         },
+        updateRoomData(state, action) {
+            const { name, userList = [], own } = action.payload;
+
+            // Hợp nhất own vào userList nếu chưa có
+            let finalUserList = [...userList];
+            if (own) {
+                const ownerExists = finalUserList.some(u =>
+                    (typeof u === 'string' ? u : u.name) === own
+                );
+                if (!ownerExists) {
+                    finalUserList.unshift({ name: own, isOwner: true });
+                }
+            }
+
+            const index = state.people.findIndex(p => p.name === name && p.type === 1);
+            if (index !== -1) {
+                state.people[index].userList = finalUserList;
+                state.people[index].own = own;
+            } else {
+                state.people.unshift({
+                    name,
+                    type: 1,
+                    userList: finalUserList,
+                    own,
+                    actionTime: new Date().toISOString()
+                });
+            }
+        },
     },
 });
 
 export const {
     setPeople, setActiveChat, setMessages, addMessage,
-    setChatHistory, clearChat, setOnlineStatus, clearMessages, setPendingPage
+    setChatHistory, clearChat, setOnlineStatus, clearMessages, setPendingPage, updateRoomData
 } = chatSlice.actions;
 
 export default chatSlice.reducer;

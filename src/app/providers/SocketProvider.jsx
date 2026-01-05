@@ -128,7 +128,7 @@ export const SocketProvider = ({ children }) => {
 
     // Gia tri cung cap cho toan bo component con
     const value = useMemo(() => ({
-        socket: socketRef.current,
+        // socket: socketRef.current,
         isReady,
         actions
     }), [isReady, actions]);
