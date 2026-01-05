@@ -79,9 +79,13 @@ export const handleSocketMessage = (response, dispatch) => {
             break;
 
         case "GET_USER_LIST":
-            dispatch(setPeople(response.data));
+            if (response.status === 'success' && Array.isArray(response.data)) {
+                dispatch(setPeople(response.data));
+            } else {
+                // Nếu lỗi (chưa login), không set để tránh overwrite list cũ
+                console.warn("GET_USER_LIST thất bại:", response.mes || response.status);
+            }
             break;
-
 
         case "LOGOUT":
             // Xóa thông tin đăng nhập local
@@ -90,6 +94,7 @@ export const handleSocketMessage = (response, dispatch) => {
             // Reset state user về null để kích hoạt chuyển hướng
             dispatch(setUser(null));
             dispatch(setMessages([])); // Clear tin nhắn cũ
+            dispatch(setPeople([]));// Clear danh sách user
             break;
 
         case "GET_PEOPLE_CHAT_MES":

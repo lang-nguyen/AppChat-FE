@@ -1,15 +1,14 @@
+/* eslint-disable react-refresh/only-export-components */
 // Quản lý kết nối và giữ kho dữ liệu (State)
-import React, { createContext, useContext, useEffect, useRef, useState, useMemo } from 'react';
-import { useDispatch } from 'react-redux';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { socketActions } from "../../realtime/socketActions.js";
 import { handleSocketMessage } from "../../realtime/socketHandlers.js";
-
-// Tạo context
-const SocketContext = createContext(null);
+import { SocketContext } from './SocketContext.js';
 
 // Tạo provider
 export const SocketProvider = ({ children }) => {
-    // import.meta.env.VITE_WS_URL || 
+    // import.meta.env.VITE_WS_URL ||
     const WS_URL = 'wss://chat.longapp.site/chat/chat';
     const socketRef = useRef(null); // luu ket noi
     const [isReady, setIsReady] = useState(false); // trang thai ket noi
@@ -17,7 +16,17 @@ export const SocketProvider = ({ children }) => {
     // REDUX DISPATCH
     const dispatch = useDispatch();
 
+    //Lấy user từ Redux Store
+    const user = useSelector((state) => state.auth.user);
+
+    // Lưu ping interval ID
+    const pingIntervalRef = useRef(null);
+
+    const lastActivityRef = useRef(0);
+
     useEffect(() => {
+        // Khởi tạo lastActivityRef trong useEffect để tránh lỗi impure function
+        lastActivityRef.current = Date.now();
         let reconnectTimeout;
 
         const connect = () => {
@@ -29,6 +38,8 @@ export const SocketProvider = ({ children }) => {
             socket.onopen = () => {
                 console.log('WebSocket da ket noi');
                 setIsReady(true);
+                // Lưu thời gian hoạt động gần nhất
+                lastActivityRef.current = Date.now();
 
                 // Tự động Re-login dùng hàm từ socketActions
                 // Lấy code và username từ localStorage
@@ -46,20 +57,15 @@ export const SocketProvider = ({ children }) => {
                 } else {
                     console.log("Không tìm thấy phiên cũ hoặc đang ở trang Auth.");
                 }
-
-                // --- HEARTBEAT START ---
-                // Gửi ping mỗi 30s để giữ kết nối
-                const pingInterval = setInterval(() => {
-                    socketActions.ping(socketRef);
-                }, 30000);
-                // Lưu interval ID vào object socket để clear khi close (trick: gán thô vào object)
-                socket.pingInterval = pingInterval;
             };
 
             socket.onmessage = (event) => {
                 // Cần try-catch để tránh crash app nếu server gửi JSON lỗi
                 try {
                     const response = JSON.parse(event.data);
+                    // Reset thời gian hoạt động gần nhất khi có tin nhắn mới
+                    lastActivityRef.current = Date.now();
+
                     if (response.event !== "GET_USER_LIST") {
                         console.log("Tin nhan moi:", response);
                     }
@@ -75,7 +81,12 @@ export const SocketProvider = ({ children }) => {
             socket.onclose = () => {
                 console.log('WebSocket da ngat ket noi. Thu ket noi lai sau 3s...');
                 setIsReady(false);
-                if (socket.pingInterval) clearInterval(socket.pingInterval);
+
+                // Clear ping interval
+                if (pingIntervalRef.current) {
+                    clearInterval(pingIntervalRef.current);
+                    pingIntervalRef.current = null;
+                }
 
                 // Tự động kết nối lại sau 3 giây
                 reconnectTimeout = setTimeout(() => {
@@ -96,6 +107,12 @@ export const SocketProvider = ({ children }) => {
         return () => {
             if (reconnectTimeout) clearTimeout(reconnectTimeout);
 
+            // Clear ping interval
+            if (pingIntervalRef.current) {
+                clearInterval(pingIntervalRef.current);
+                pingIntervalRef.current = null;
+            }
+
             if (socketRef.current) {
                 // Hủy onclose để không trigger reconnect khi unmount component
                 socketRef.current.onclose = null; // đóng luôn không reconnect
@@ -104,28 +121,92 @@ export const SocketProvider = ({ children }) => {
         };
     }, [dispatch]); // [] -> Đảm bảo chỉ chạy 1 lần
 
+    // Setup ping riêng, chỉ khi đã login
+    useEffect(() => {
+        if (!isReady) return;
+
+        const hasUser = user && (user.user || user.name || user.username);
+        if (!hasUser) {
+            if (pingIntervalRef.current) {
+                clearInterval(pingIntervalRef.current);
+                pingIntervalRef.current = null;
+            }
+            return;
+        }
+
+        // --- HEARTBEAT START ---
+        // Gửi ping mỗi 30s để giữ kết nối (chỉ khi idle quá lâu)
+        pingIntervalRef.current = setInterval(() => {
+            if (socketRef.current?.readyState !== WebSocket.OPEN) return;
+
+            const timeSinceLastActivity = Date.now() - lastActivityRef.current;
+            const IDLE_TIME_BEFORE_PING = 25000; // 25s - chỉ ping nếu idle 25s
+
+            if (timeSinceLastActivity >= IDLE_TIME_BEFORE_PING) {
+                socketActions.ping(socketRef);
+            }
+        }, 30000);
+
+        return () => {
+            if (pingIntervalRef.current) {
+                clearInterval(pingIntervalRef.current);
+                pingIntervalRef.current = null;
+            }
+        };
+    }, [isReady, user]);
+
     // Gom các hàm gửi lại thành 1 object actions
     // Dùng useMemo để tránh tạo lại object này mỗi lần render không cần thiết
 
     const actions = useMemo(
         () => ({
-            login: (u, p) => socketActions.login(socketRef, u, p),
-            register: (u, p) => socketActions.register(socketRef, u, p),
-            sendChat: (to, mes, chatType = "people") => socketActions.sendChat(socketRef, to, mes, chatType),
-            chatHistory: (to, page) => socketActions.chatHistory(socketRef, to, page),
-            roomHistory: (room, page) => socketActions.roomHistory(socketRef, room, page),
-            createRoom: (name) => socketActions.createRoom(socketRef, name),
-            joinRoom: (name) => socketActions.joinRoom(socketRef, name),
-            checkOnline: (name) => socketActions.checkOnline(socketRef, name),
-            checkExist: (name) => socketActions.checkExist(socketRef, name),
-            getUserList: () => socketActions.getUserList(socketRef),
+            login: (u, p) => {
+                lastActivityRef.current = Date.now();
+                socketActions.login(socketRef, u, p);
+            },
+            register: (u, p) => {
+                lastActivityRef.current = Date.now();
+                socketActions.register(socketRef, u, p);
+            },
+            sendChat: (to, mes, chatType = "people") => {
+                lastActivityRef.current = Date.now();
+                socketActions.sendChat(socketRef, to, mes, chatType);
+            },
+            chatHistory: (to, page) => {
+                lastActivityRef.current = Date.now();
+                socketActions.chatHistory(socketRef, to, page);
+            },
+            roomHistory: (room, page) => {
+                lastActivityRef.current = Date.now();
+                socketActions.roomHistory(socketRef, room, page);
+            },
+            createRoom: (name) => {
+                lastActivityRef.current = Date.now();
+                socketActions.createRoom(socketRef, name);
+            },
+            joinRoom: (name) => {
+                lastActivityRef.current = Date.now();
+                socketActions.joinRoom(socketRef, name);
+            },
+            checkOnline: (name) => {
+                lastActivityRef.current = Date.now();
+                socketActions.checkOnline(socketRef, name);
+            },
+            checkExist: (name) => {
+                lastActivityRef.current = Date.now();
+                socketActions.checkExist(socketRef, name);
+            },
+            getUserList: () => {
+                lastActivityRef.current = Date.now();
+                socketActions.getUserList(socketRef);
+            },
         }),
         []
     ); // [] dependency vì socketRef là ref, nó không trigger render
 
     // Gia tri cung cap cho toan bo component con
     const value = useMemo(() => ({
-        socket: socketRef.current,
+        // socket: socketRef.current,
         isReady,
         actions
     }), [isReady, actions]);
@@ -135,7 +216,3 @@ export const SocketProvider = ({ children }) => {
         </SocketContext.Provider>
     );
 };
-
-// hook de ben ngoai su dung
-export const useSocket = () => useContext(SocketContext);
-

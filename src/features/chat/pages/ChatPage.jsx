@@ -7,7 +7,7 @@ import RoomList from "../components/sidebar/RoomList.jsx";
 import ChatRoomCard from "../components/chatbox/ChatRoomCard.jsx";
 import ChatPlaceholder from "../components/chatbox/ChatPlaceholder.jsx";
 import { useChatSidebar } from "../hooks/useChatSidebar.js";
-import { useSocket } from "../../../app/providers/SocketProvider.jsx";
+import { useSocket } from "../../../app/providers/useSocket.js";
 import ChatInfo from "../components/chatbox/ChatInfo.jsx";
 
 const ChatPage = () => {

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useSocket } from "../../../app/providers/SocketProvider.jsx";
+import { useSocket } from "../../../app/providers/useSocket.js";
 import { setActiveChat } from "../../../state/chat/chatSlice.js";
 
 export function useChatSidebar() {
@@ -14,13 +14,14 @@ export function useChatSidebar() {
 
   // Auto-fetch list sau khi socket ready + đã login/relogin
   useEffect(() => {
-    if (isReady && user) actions.getUserList();
+    const hasUser = user && (user.user || user.name || user.username);
+    if (isReady && hasUser) actions.getUserList();
   }, [isReady, user, actions]);
 
   const title = useMemo(() => {
     const fromRedux = user?.name || user?.user || user?.username;
     return fromRedux || localStorage.getItem("user_name") || "Tên người dùng";
-}, [user]);
+  }, [user]);
 
   const rooms = useMemo(() => {
     return (people ?? []).map((x) => ({

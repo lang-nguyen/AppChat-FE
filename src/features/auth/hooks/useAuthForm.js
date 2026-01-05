@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useSocket } from '../../../app/providers/SocketProvider';
+import { useSocket } from "../../../app/providers/useSocket.js";
 import { authService } from '../services/authService';
 import { setError, clearError } from "../../../state/auth/authSlice";
 
