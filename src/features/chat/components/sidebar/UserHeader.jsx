@@ -8,7 +8,8 @@ const UserHeader = ({ name, onAdd }) => (
 		alignItems: 'center',
 		padding: 16,
 		color: colors.primaryText,
-		fontWeight: 700
+		fontWeight: 700,
+		flexShrink: 0 
 	}}>
 		<span>{name}</span>
 		<button onClick={onAdd} style={{

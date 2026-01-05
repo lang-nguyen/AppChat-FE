@@ -7,13 +7,15 @@ import RoomList from "../components/sidebar/RoomList.jsx";
 import ChatRoomCard from "../components/chatbox/ChatRoomCard.jsx";
 import ChatPlaceholder from "../components/chatbox/ChatPlaceholder.jsx";
 import { useChatSidebar } from "../hooks/useChatSidebar.js";
-import { useSocket } from "../../../app/providers/useSocket.js";
+import { useSocket } from '../../../app/providers/useSocket';
 import ChatInfo from "../components/chatbox/ChatInfo.jsx";
+import CreateRoomModal from "../components/sidebar/CreateRoomModal.jsx";
 
 const ChatPage = () => {
     const { title, rooms, selectRoom, activeChat } = useChatSidebar();
     const { actions: socketActions } = useSocket();
     const [showInfo, setShowInfo] = useState(false);
+    const [showCreateRoom, setShowCreateRoom] = useState(false);
 
     const people = useSelector((s) => s.chat.people);
     const onlineStatus = useSelector((s) => s.chat.onlineStatus);
@@ -46,14 +48,14 @@ const ChatPage = () => {
     // Reset info panel when changing chat
     useEffect(() => {
         setShowInfo(false);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeChat]);
 
     const handleCreateRoom = () => {
-        const roomName = window.prompt("Nhập tên phòng chat mới:");
-        if (roomName) {
-            socketActions.createRoom(roomName);
-        }
+        setShowCreateRoom(true); // Mở modal
     };
+
+
 
     const handleAddMember = () => {
         // Prompt người dùng nhập tên thành viên muốn thêm
@@ -76,7 +78,7 @@ const ChatPage = () => {
                     <SearchBox />
                     <RoomList
                         rooms={rooms}
-                        onSelect={selectRoom} 
+                        onSelect={selectRoom}
                     />
                 </div>
                 <div className={styles["chat-main"]}>
@@ -99,6 +101,15 @@ const ChatPage = () => {
                     </div>
                 )}
             </div>
+            {/* Create Room Modal - overlay đè lên, nằm kế sidebar */}
+            {showCreateRoom && (
+                <>
+                    <div className={styles["create-room-modal-backdrop"]} onClick={() => setShowCreateRoom(false)} />
+                    <div className={styles["create-room-modal-container"]}>
+                        <CreateRoomModal onClose={() => setShowCreateRoom(false)} />
+                    </div>
+                </>
+            )}
         </div>
     );
 };
