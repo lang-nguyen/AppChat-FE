@@ -119,11 +119,26 @@ const ChatPage = () => {
         socketActions.checkExist(username);
     };
 
-    //+1 Handler khi gửi yêu cầu liên hệ - Gửi tin nhắn riêng
+    // Handler khi gửi yêu cầu liên hệ - Gửi tin nhắn riêng
     const handleSendContactRequest = (recipientName, message) => {
         // Gửi tin nhắn riêng tới người đó với type="people"
         socketActions.sendChat(recipientName, message, "people");
         console.log('Đã gửi yêu cầu liên hệ đến:', recipientName);
+        // Đóng modal ngay sau khi gửi (không đợi response)
+        setShowContactRequest(false);
+        // Clear search query để hiển thị danh sách đầy đủ
+        setSearchQuery('');
+
+        //thử nghiệm
+        // Gọi getUserList ngay sau khi gửi với delay để đảm bảo server đã xử lý
+        setTimeout(() => {
+            console.log('Tự động refresh danh sách user sau khi gửi contact request');
+            socketActions.getUserList();
+        }, 500);
+        // Gọi thêm lần nữa sau 1.5s để đảm bảo
+        setTimeout(() => {
+            socketActions.getUserList();
+        }, 1500);
     };
 
     const handleAddMember = () => {

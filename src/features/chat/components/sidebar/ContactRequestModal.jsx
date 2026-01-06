@@ -22,7 +22,7 @@ const ContactRequestModal = ({ recipientName, onClose, onSend }) => {
     const handleSend = () => {
         if (message.trim()) {
             onSend(recipientName, message.trim());
-            onClose();
+            // Không gọi onClose() ở đây, để ChatPage xử lý đóng modal
         }
     };
 

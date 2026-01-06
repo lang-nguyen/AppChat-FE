@@ -75,7 +75,21 @@ export const handleSocketMessage = (response, dispatch, socketActions, socketRef
         }
 
         case "SEND_CHAT":
+            console.log("SEND_CHAT response:", response);
             dispatch(addMessage(response.data));
+            // Nếu gửi tin nhắn thành công, tự động refresh danh sách user
+            // (để cập nhật danh sách ngay sau khi gửi contact request)
+            if (response.status === 'success' || response.status === true) {
+                console.log("SEND_CHAT thành công, tự động refresh danh sách user");
+                // Delay để đảm bảo server đã cập nhật
+                setTimeout(() => {
+                    socketActions.getUserList(socketRef);
+                }, 500);
+                // Gọi thêm lần nữa sau 1.5s để đảm bảo
+                setTimeout(() => {
+                    socketActions.getUserList(socketRef);
+                }, 1500);
+            }
             break;
 
         case "GET_USER_LIST":
