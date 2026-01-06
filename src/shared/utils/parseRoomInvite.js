@@ -2,7 +2,6 @@
 // Supports JSON payload and string prefix format.
 export const parseRoomInvite = (mes) => {
     if (!mes) return null;
-
     // JSON format: {"type":"ROOM_INVITE","roomName":"xxx","from":"yyy"}
     if (typeof mes === 'string') {
         try {
