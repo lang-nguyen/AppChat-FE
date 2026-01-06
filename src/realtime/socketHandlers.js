@@ -166,19 +166,28 @@ export const handleSocketMessage = (response, dispatch, socketActions, socketRef
                     socketActions.joinRoom(socketRef, roomName);
                     console.log("Đã join bản thân vào phòng:", roomName);
                     
-                    // 2. Join từng user đã chọn vào phòng
-                    console.log("Đã join từng user đã chọn vào phòng:", selectedUsers);
-                    selectedUsers.forEach((username) => {
-                        socketActions.joinRoom(socketRef, roomName);
+                    // 2. Gửi tin nhắn mời vào nhóm cho từng người được chọn (qua chat 1-1)
+                    // Vì JOIN_ROOM chỉ để tự join, không thể thêm người khác vào group
+                    console.log("Gửi tin nhắn mời vào nhóm cho:", selectedUsers);
+                    selectedUsers.forEach((username, index) => {
+                        setTimeout(() => {
+                            const invitationMessage = JSON.stringify({
+                                type: "ROOM_INVITE",
+                                roomName,
+                                from: currentUserName
+                            });
+                            socketActions.sendChat(socketRef, username, invitationMessage, "people");
+                            console.log(`Đã gửi tin nhắn mời vào nhóm "${roomName}" cho:`, username);
+                        }, index * 300); // Delay từng tin nhắn để tránh spam
                     });
                     
-                    // 3. Tạo và gửi tin nhắn thông báo
+                    // 3. Gửi tin nhắn thông báo vào phòng (cho các thành viên đã join)
                     const userListText = selectedUsers.length > 0 
                         ? selectedUsers.join(', ') 
                         : 'không có ai';
-                    const notificationMessage = `${currentUserName} đã tạo nhóm và thêm ${userListText} vào nhóm`;
+                    const notificationMessage = `${currentUserName} đã tạo nhóm và mời ${userListText} tham gia`;
                     
-                    // Delay một chút để đảm bảo join xong
+                    // Delay một chút để đảm bảo join xong trước khi gửi tin nhắn vào phòng
                     setTimeout(() => {
                         socketActions.sendChat(socketRef, roomName, notificationMessage, "room");
                     }, 500);
@@ -202,6 +211,7 @@ export const handleSocketMessage = (response, dispatch, socketActions, socketRef
                         userList: response.data.userList
                     }));
                 }
+
             } else {
                 console.error(`[Socket] Join phòng thất bại:`, response.mes);
             }
