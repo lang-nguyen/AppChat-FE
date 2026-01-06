@@ -6,9 +6,15 @@ const MessageSender = ({ text, timestamp }) => (
 		<div style={{
 			backgroundColor: colors.chatSenderBackground,
 			color: colors.normalText,
-			padding: '10px 14px',
-			borderRadius: 12,
-			maxWidth: '60%'
+			padding: '14px 22px',
+			borderRadius: 20,
+			minWidth: 0,
+			maxWidth: 500,
+			width: 'fit-content',
+			lineHeight: '1.6',
+			boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+			wordBreak: 'break-word',
+			whiteSpace: 'pre-wrap'
 		}}>
 			{text}
 		</div>

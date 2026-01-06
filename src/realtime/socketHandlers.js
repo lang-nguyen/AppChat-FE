@@ -1,6 +1,7 @@
 
 import { setUser, setError, clearError, setRegisterSuccess } from "../state/auth/authSlice";
-import { addMessage, setPeople, setMessages,setChatHistory, setOnlineStatus, clearPendingRoomCreation} from "../state/chat/chatSlice";
+
+import { addMessage, setPeople, setMessages, setChatHistory, setOnlineStatus, updateRoomData, clearPendingRoomCreation } from "../state/chat/chatSlice";
 
 // Xử lý tin nhắn đến
 export const handleSocketMessage = (response, dispatch, socketActions, socketRef, getState) => {
@@ -112,12 +113,41 @@ export const handleSocketMessage = (response, dispatch, socketActions, socketRef
             break;
 
         case "GET_PEOPLE_CHAT_MES":
-        case "GET_ROOM_CHAT_MES":
+        case "GET_ROOM_CHAT_MES": {
+            if (response.status !== 'success') {
+                console.error(`[Socket] Lấy lịch sử chat thất bại (${response.event}):`, response.mes);
+                return;
+            }
+
+            // Server không trả về page number cho event này, nên lấy từ Redux state hoặc biến global
+            const currentPage = window.__chatPendingPage || 1;
+
+            // Phân tách dữ liệu: 1-1 trả về mảng trực tiếp, Room trả về object chứa chatData
+            let messages = [];
+            if (response.event === "GET_ROOM_CHAT_MES") {
+                messages = Array.isArray(response.data?.chatData) ? response.data.chatData : [];
+
+                // Cập nhật thông tin phòng (thành viên, trưởng nhóm)
+                if (response.data?.name && (response.data?.userList || response.data?.own)) {
+                    dispatch(updateRoomData({
+                        name: response.data.name,
+                        own: response.data.own,
+                        userList: response.data.userList
+                    }));
+                }
+            } else {
+                // People Chat (1-1) thường trả về mảng messages trực tiếp
+                messages = Array.isArray(response.data) ? response.data : [];
+            }
+
+            console.log(`[Socket] Nhận lịch sử chat (${response.event}) - Page: ${currentPage}, Count: ${messages.length}`);
+
             dispatch(setChatHistory({
-                messages: Array.isArray(response.data) ? response.data : [],
-                page: response.page || 1
+                messages,
+                page: currentPage
             }));
             break;
+        }
 
         case "CREATE_ROOM":
             console.log("Nhận response từ CREATE_ROOM:", response);
@@ -156,12 +186,24 @@ export const handleSocketMessage = (response, dispatch, socketActions, socketRef
                     // 4. Clear pending room creation
                     dispatch(clearPendingRoomCreation());
                 }
+            } else {
+                console.error(`[Socket] Tạo phòng thất bại:`, response.mes);
             }
             break;
-            
+
         case "JOIN_ROOM":
             if (response.status === 'success') {
-                // Có thể thêm logic xử lý join room thành công nếu cần
+                console.log(`[Socket] Join phòng thành công:`, response.data);
+                // Cập nhật danh sách thành viên
+                if (response.data?.name && (response.data?.userList || response.data?.own)) {
+                    dispatch(updateRoomData({
+                        name: response.data.name,
+                        own: response.data.own,
+                        userList: response.data.userList
+                    }));
+                }
+            } else {
+                console.error(`[Socket] Join phòng thất bại:`, response.mes);
             }
             break;
 

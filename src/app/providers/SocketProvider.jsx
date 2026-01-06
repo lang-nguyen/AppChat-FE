@@ -93,8 +93,10 @@ export const SocketProvider = ({ children }) => {
                     // Reset thời gian hoạt động gần nhất khi có tin nhắn mới
                     lastActivityRef.current = Date.now();
 
-                    if (response.event !== "GET_USER_LIST") {
-                        console.log("Tin nhan moi:", response);
+                    // Chỉ log các event quan trọng, không log GET_USER_LIST và SEND_CHAT để tránh spam
+                    const silentEvents = ["GET_USER_LIST", "SEND_CHAT", "CHECK_USER_ONLINE"];
+                    if (!silentEvents.includes(response.event)) {
+                        console.log("[Socket] Nhận:", response.event, response);
                     }
 
                     // Gọi hàm handler tách biệt, truyền dispatch, socketActions, socketRef và getState
