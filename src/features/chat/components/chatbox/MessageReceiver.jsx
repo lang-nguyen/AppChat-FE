@@ -19,14 +19,21 @@ const MessageReceiver = ({ text, sender, timestamp, showAvatar = true }) => (
 			</div>
 		)}
 		{!showAvatar && <div style={{ width: 32, flexShrink: 0 }} />}
-		<div style={{ display: 'flex', flexDirection: 'column', maxWidth: '60%' }}>
+		<div style={{ display: 'flex', flexDirection: 'column' }}>
 			{showAvatar && <span style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>{sender}</span>}
 			<div style={{
 				backgroundColor: colors.chatReceiverBackground,
 				color: colors.normalText,
-				padding: '10px 14px',
-				borderRadius: 12,
-				border: '1px solid #E0E0E0'
+				padding: '14px 22px',
+				borderRadius: 20,
+				border: '1px solid #E0E0E0',
+				minWidth: 0,
+				maxWidth: 500,
+				width: 'fit-content',
+				lineHeight: '1.6',
+				boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+				wordBreak: 'break-word',
+				whiteSpace: 'pre-wrap'
 			}}>
 				{text}
 			</div>

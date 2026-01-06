@@ -60,8 +60,11 @@ export const SocketProvider = ({ children }) => {
                 // Cần try-catch để tránh crash app nếu server gửi JSON lỗi
                 try {
                     const response = JSON.parse(event.data);
-                    if (response.event !== "GET_USER_LIST") {
-                        console.log("Tin nhan moi:", response);
+                    
+                    // Chỉ log các event quan trọng, không log GET_USER_LIST và SEND_CHAT
+                    const silentEvents = ["GET_USER_LIST", "SEND_CHAT", "CHECK_USER_ONLINE"];
+                    if (!silentEvents.includes(response.event)) {
+                        console.log("[Socket] Nhận:", response.event, response);
                     }
 
                     // Gọi hàm handler tách biệt, truyền dispatch
@@ -125,7 +128,7 @@ export const SocketProvider = ({ children }) => {
 
     // Gia tri cung cap cho toan bo component con
     const value = useMemo(() => ({
-        socket: socketRef.current,
+        // socket: socketRef.current,
         isReady,
         actions
     }), [isReady, actions]);
