@@ -1,6 +1,7 @@
 
 import { setUser, setError, clearError, setRegisterSuccess } from "../state/auth/authSlice";
-import { addMessage, setPeople, setMessages,setChatHistory, setOnlineStatus, clearPendingRoomCreation} from "../state/chat/chatSlice";
+
+import { addMessage, setPeople, setMessages, setChatHistory, setOnlineStatus, updateRoomData, clearPendingRoomCreation } from "../state/chat/chatSlice";
 
 // Xử lý tin nhắn đến
 export const handleSocketMessage = (response, dispatch, socketActions, socketRef, getState) => {
@@ -112,12 +113,41 @@ export const handleSocketMessage = (response, dispatch, socketActions, socketRef
             break;
 
         case "GET_PEOPLE_CHAT_MES":
-        case "GET_ROOM_CHAT_MES":
+        case "GET_ROOM_CHAT_MES": {
+            if (response.status !== 'success') {
+                console.error(`[Socket] Lấy lịch sử chat thất bại (${response.event}):`, response.mes);
+                return;
+            }
+
+            // Server không trả về page number cho event này, nên lấy từ Redux state hoặc biến global
+            const currentPage = window.__chatPendingPage || 1;
+
+            // Phân tách dữ liệu: 1-1 trả về mảng trực tiếp, Room trả về object chứa chatData
+            let messages = [];
+            if (response.event === "GET_ROOM_CHAT_MES") {
+                messages = Array.isArray(response.data?.chatData) ? response.data.chatData : [];
+
+                // Cập nhật thông tin phòng (thành viên, trưởng nhóm)
+                if (response.data?.name && (response.data?.userList || response.data?.own)) {
+                    dispatch(updateRoomData({
+                        name: response.data.name,
+                        own: response.data.own,
+                        userList: response.data.userList
+                    }));
+                }
+            } else {
+                // People Chat (1-1) thường trả về mảng messages trực tiếp
+                messages = Array.isArray(response.data) ? response.data : [];
+            }
+
+            console.log(`[Socket] Nhận lịch sử chat (${response.event}) - Page: ${currentPage}, Count: ${messages.length}`);
+
             dispatch(setChatHistory({
-                messages: Array.isArray(response.data) ? response.data : [],
-                page: response.page || 1
+                messages,
+                page: currentPage
             }));
             break;
+        }
 
         case "CREATE_ROOM":
             console.log("Nhận response từ CREATE_ROOM:", response);
@@ -136,19 +166,28 @@ export const handleSocketMessage = (response, dispatch, socketActions, socketRef
                     socketActions.joinRoom(socketRef, roomName);
                     console.log("Đã join bản thân vào phòng:", roomName);
                     
-                    // 2. Join từng user đã chọn vào phòng
-                    console.log("Đã join từng user đã chọn vào phòng:", selectedUsers);
-                    selectedUsers.forEach((username) => {
-                        socketActions.joinRoom(socketRef, roomName);
+                    // 2. Gửi tin nhắn mời vào nhóm cho từng người được chọn (qua chat 1-1)
+                    // Vì JOIN_ROOM chỉ để tự join, không thể thêm người khác vào group
+                    console.log("Gửi tin nhắn mời vào nhóm cho:", selectedUsers);
+                    selectedUsers.forEach((username, index) => {
+                        setTimeout(() => {
+                            const invitationMessage = JSON.stringify({
+                                type: "ROOM_INVITE",
+                                roomName,
+                                from: currentUserName
+                            });
+                            socketActions.sendChat(socketRef, username, invitationMessage, "people");
+                            console.log(`Đã gửi tin nhắn mời vào nhóm "${roomName}" cho:`, username);
+                        }, index * 300); // Delay từng tin nhắn để tránh spam
                     });
                     
-                    // 3. Tạo và gửi tin nhắn thông báo
+                    // 3. Gửi tin nhắn thông báo vào phòng (cho các thành viên đã join)
                     const userListText = selectedUsers.length > 0 
                         ? selectedUsers.join(', ') 
                         : 'không có ai';
-                    const notificationMessage = `${currentUserName} đã tạo nhóm và thêm ${userListText} vào nhóm`;
+                    const notificationMessage = `${currentUserName} đã tạo nhóm và mời ${userListText} tham gia`;
                     
-                    // Delay một chút để đảm bảo join xong
+                    // Delay một chút để đảm bảo join xong trước khi gửi tin nhắn vào phòng
                     setTimeout(() => {
                         socketActions.sendChat(socketRef, roomName, notificationMessage, "room");
                     }, 500);
@@ -156,12 +195,25 @@ export const handleSocketMessage = (response, dispatch, socketActions, socketRef
                     // 4. Clear pending room creation
                     dispatch(clearPendingRoomCreation());
                 }
+            } else {
+                console.error(`[Socket] Tạo phòng thất bại:`, response.mes);
             }
             break;
-            
+
         case "JOIN_ROOM":
             if (response.status === 'success') {
-                // Có thể thêm logic xử lý join room thành công nếu cần
+                console.log(`[Socket] Join phòng thành công:`, response.data);
+                // Cập nhật danh sách thành viên
+                if (response.data?.name && (response.data?.userList || response.data?.own)) {
+                    dispatch(updateRoomData({
+                        name: response.data.name,
+                        own: response.data.own,
+                        userList: response.data.userList
+                    }));
+                }
+
+            } else {
+                console.error(`[Socket] Join phòng thất bại:`, response.mes);
             }
             break;
 

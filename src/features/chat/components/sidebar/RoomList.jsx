@@ -40,14 +40,14 @@ const RoomList = ({ rooms, onSelect, searchQuery, onContact, contactError }) => 
 			{rooms.map(r => {
 				const { key, ...roomProps } = r;
 				return (
-					<RoomCard
+			<RoomCard
 						key={key ?? `${r.type}:${r.name}`}
 						{...roomProps}
-						onClick={() => {
-							console.log('Room clicked:', r);
-							onSelect?.(r);
-						}}
-					/>
+				onClick={() => {
+					console.log('Room clicked:', r);
+					onSelect?.(r);
+				}}
+			/>
 				);
 			})}
 			{shouldShowContactButton && (
@@ -85,8 +85,8 @@ const RoomList = ({ rooms, onSelect, searchQuery, onContact, contactError }) => 
 					</Button>
 				</div>
 			)}
-		</div>
-	);
+	</div>
+);
 };
 
 export default RoomList;

@@ -28,7 +28,7 @@
     overflow: hidden;
     flex-shrink: 0;
     height: 100%;
-    border-radius: 30px;
+    border-radius: 16px;
     display: flex;
     flex-direction: column;
 }
@@ -39,7 +39,7 @@
     overflow-y: auto;
     min-width: 0;
     height: 100%;
-    border-radius: 30px;
+    border-radius: 16px;
 }
 
 .chat-info-sidebar {
@@ -48,8 +48,18 @@
     height: 100%;
     background: var(--card-bg);
     overflow-y: auto;
-    border-radius: 30px;
+    overflow-x: hidden;
+    border-radius: 16px;
     border-left: 1px solid #eee;
+}
+
+.chat-info-sidebar {
+    scrollbar-width: none; /* Firefox - ẩn thanh cuộn */
+    -ms-overflow-style: none; /* IE và Edge */
+}
+
+.chat-info-sidebar::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
 }
 /* Create Room Modal */
 .create-room-modal-backdrop {
@@ -72,7 +82,7 @@
     max-height: 50vh;
     background: var(--card-bg);
     overflow: hidden;
-    border-radius: 30px;
+    border-radius: 16px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
     z-index: 1000;
     display: flex;
@@ -104,7 +114,7 @@
     max-height: 50vh;
     background: var(--card-bg);
     overflow: hidden;
-    border-radius: 30px;
+    border-radius: 16px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
     z-index: 1000;
     display: flex;

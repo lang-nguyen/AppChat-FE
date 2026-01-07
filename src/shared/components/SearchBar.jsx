@@ -30,7 +30,7 @@ const SearchBar = ({ placeholder = "Tìm kiếm...", value, onChange, style = {}
                     backgroundColor: '#FFFFFF',
                     color: 'black',
                     padding: '10px 10px 10px 38px', // Padding trái lớn hơn cho icon
-                    borderRadius: 20,
+                    borderRadius: 12,
                     border: `1px solid ${colors.cardBorder}`,
                     outline: 'none',
                     boxSizing: 'border-box',

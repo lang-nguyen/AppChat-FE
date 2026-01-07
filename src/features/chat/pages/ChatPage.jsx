@@ -7,29 +7,48 @@ import SearchBox from "../components/sidebar/SearchBox.jsx";
 import RoomList from "../components/sidebar/RoomList.jsx";
 import ChatRoomCard from "../components/chatbox/ChatRoomCard.jsx";
 import ChatPlaceholder from "../components/chatbox/ChatPlaceholder.jsx";
-import { useChatSidebar } from "../hooks/useChatSidebar.js";
-import { useSocket } from '../../../app/providers/useSocket';
 import ChatInfo from "../components/chatbox/ChatInfo.jsx";
+import { useChatSidebar } from "../hooks/useChatSidebar.js";
+import { useChatMessage } from "../hooks/useChatMessage.js";
+import { useSocket } from '../../../app/providers/useSocket';
 import CreateRoomModal from "../components/sidebar/CreateRoomModal.jsx";
 import SearchResult from "../components/sidebar/SearchResult.jsx";
 import ContactRequestModal from "../components/sidebar/ContactRequestModal.jsx";
 import ContactRequestsModal from "../components/sidebar/ContactRequestsModal.jsx";
 
 const ChatPage = () => {
-    const navigate = useNavigate(); //+1
-    const { title, rooms, selectRoom, activeChat } = useChatSidebar();
+    const navigate = useNavigate();
+    const { title, rooms, selectRoom } = useChatSidebar();
     const { actions: socketActions } = useSocket();
-    const [showInfo, setShowInfo] = useState(false);
+    const user = useSelector((s) => s.auth.user);
+
+    // Hook ChatMessage (Quản lý chi tiết chat: message, member, actions)
+    const {
+        activeChat,
+        messages,
+        myUsername,
+        isOnline,
+        memberList,
+        showInfo,
+        setShowInfo,
+        inputText,
+        setInputText,
+        page,
+        isLoading,
+        messagesEndRef,
+        chatContainerRef,
+        handleScroll,
+        handleSend,
+        handleAddMember
+    } = useChatMessage();
+
+    // States cho phần liên hệ
     const [showCreateRoom, setShowCreateRoom] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [showContactRequest, setShowContactRequest] = useState(false);
     const [contactRecipient, setContactRecipient] = useState('');
     const [showContactRequests, setShowContactRequests] = useState(false);
     const [contactError, setContactError] = useState('');
-
-    const user = useSelector((s) => s.auth.user);
-    const people = useSelector((s) => s.chat.people);
-    const onlineStatus = useSelector((s) => s.chat.onlineStatus);
 
     // Redirect về login nếu user = null (đã logout)
     useEffect(() => {
@@ -38,44 +57,18 @@ const ChatPage = () => {
         }
     }, [user, navigate]);
 
-    // Tính toán danh sách thành viên thực tế
-    const memberList = useMemo(() => {
-        if (!activeChat) return [];
-
-        if (activeChat.type === 0 || activeChat.type === 'people') {
-            // Chat 1-1: Chỉ hiện mình và người đó
-            return [
-                { name: title, isOnline: true },
-                { name: activeChat.name, isOnline: !!onlineStatus[activeChat.name] }
-            ];
-        } else {
-            // Chat Nhóm: Lấy từ data phòng trong store
-            const roomData = people.find(p => p.name === activeChat.name && p.type === activeChat.type);
-            const userList = roomData?.userList || [];
-
-            return userList.map(m => {
-                const name = typeof m === 'string' ? m : m.name;
-                return {
-                    name: name,
-                    isOnline: !!onlineStatus[name]
-                };
-            });
-        }
-    }, [activeChat, people, onlineStatus, title]);
-
     // Reset info panel when changing chat
     useEffect(() => {
         setShowInfo(false);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeChat]);
 
+    // Override handleCreateRoom để dùng modal thay vì prompt
     const handleCreateRoom = () => {
-        setShowCreateRoom(true); // Mở modal
+        setShowCreateRoom(true);
     };
 
-
-
-    //+1 Filter rooms theo search query
+    // Filter rooms theo search query
     const filteredRooms = useMemo(() => {
         if (!searchQuery.trim()) return rooms;
         const query = searchQuery.toLowerCase();
@@ -84,8 +77,7 @@ const ChatPage = () => {
         );
     }, [rooms, searchQuery]);
 
-    //+1 Kiểm tra xem có nên hiển thị SearchResult không
-    // Hiển thị SearchResult khi: có search query nhưng không tìm thấy room nào
+    // Kiểm tra xem có nên hiển thị SearchResult không
     const shouldShowSearchResult = useMemo(() => {
         return searchQuery.trim().length > 0 && filteredRooms.length === 0;
     }, [searchQuery, filteredRooms]);
@@ -129,7 +121,6 @@ const ChatPage = () => {
         // Clear search query để hiển thị danh sách đầy đủ
         setSearchQuery('');
 
-        //thử nghiệm
         // Gọi getUserList ngay sau khi gửi với delay để đảm bảo server đã xử lý
         setTimeout(() => {
             console.log('Tự động refresh danh sách user sau khi gửi contact request');
@@ -141,19 +132,6 @@ const ChatPage = () => {
         }, 1500);
     };
 
-    const handleAddMember = () => {
-        // Prompt người dùng nhập tên thành viên muốn thêm
-        const username = window.prompt("Nhập tên người dùng muốn thêm vào nhóm:");
-        if (username) {
-            // Kiểm tra xem user có tồn tại không
-            socketActions.checkExist(username);
-
-            // Tạm thời log và thông báo giả lập cho kiểm thử
-            console.log(`Đang thực hiện thêm thành viên: ${username} vào phòng: ${activeChat?.name}`);
-            window.alert(`Đã gửi yêu cầu thêm thành viên ${username}`);
-        }
-    };
-
     // Handler mở modal yêu cầu liên hệ
     const handleOpenContactRequests = () => {
         setShowContactRequests(true);
@@ -161,7 +139,7 @@ const ChatPage = () => {
 
     // Handler khi click vào user trong danh sách yêu cầu liên hệ
     const handleSelectContactRequest = (username) => {
-        // Select room và load tin nhắn
+        // Select room và load tin nhắn (logic này đã có trong hook)
         selectRoom({ name: username, type: 0 });
         setShowContactRequests(false);
     };
@@ -170,7 +148,12 @@ const ChatPage = () => {
         <div className={styles.page}>
             <div className={styles["chat-container"]}>
                 <div className={styles["chat-sidebar"]}>
-                    <UserHeader name={title} onAdd={handleCreateRoom} onContactRequests={handleOpenContactRequests} />
+                    {/* Sidebar Header có nút tạo phòng và yêu cầu liên hệ */}
+                    <UserHeader 
+                        name={title} 
+                        onAdd={handleCreateRoom} 
+                        onContactRequests={handleOpenContactRequests} 
+                    />
                     <SearchBox 
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -193,10 +176,22 @@ const ChatPage = () => {
                     )}
                 </div>
                 <div className={styles["chat-main"]}>
-                    {/* Debug log */}
-                    {/* {console.log("Active Chat in Render:", activeChat)} */}
                     {activeChat ? (
-                        <ChatRoomCard onInfoClick={() => setShowInfo(!showInfo)} />
+                        <ChatRoomCard
+                            activeChat={activeChat}
+                            messages={messages}
+                            myUsername={myUsername}
+                            isOnline={isOnline}
+                            inputText={inputText}
+                            setInputText={setInputText}
+                            page={page}
+                            isLoading={isLoading}
+                            handleSend={handleSend}
+                            handleScroll={handleScroll}
+                            messagesEndRef={messagesEndRef}
+                            chatContainerRef={chatContainerRef}
+                            onInfoClick={() => setShowInfo(!showInfo)}
+                        />
                     ) : (
                         <ChatPlaceholder />
                     )}
@@ -212,7 +207,7 @@ const ChatPage = () => {
                     </div>
                 )}
             </div>
-            {/* Create Room Modal - overlay đè lên, nằm kế sidebar */}
+            {/* Create Room Modal */}
             {showCreateRoom && (
                 <>
                     <div className={styles["create-room-modal-backdrop"]} onClick={() => setShowCreateRoom(false)} />
@@ -221,7 +216,7 @@ const ChatPage = () => {
                     </div>
                 </>
             )}
-            {/* Contact Request Modal - cùng kích thước với Create Room Modal */}
+            {/* Contact Request Modal - Gửi tin nhắn liên hệ */}
             {showContactRequest && (
                 <>
                     <div className={styles["contact-request-modal-backdrop"]} onClick={() => setShowContactRequest(false)} />
