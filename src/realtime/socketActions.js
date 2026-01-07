@@ -41,6 +41,7 @@ export const socketActions = {
     },
 
     roomHistory: (socketRef, roomName, page = 1) => {
+
         sendRawData(socketRef, "GET_ROOM_CHAT_MES", { name: roomName, page });
     },
 
@@ -53,11 +54,11 @@ export const socketActions = {
     },
 
     checkOnline: (socketRef, username) => {
-        sendRawData(socketRef, "CHECK_USER_ONLINE", { name: username });
+        sendRawData(socketRef, "CHECK_USER_ONLINE", { user: username }); //+1 Đổi name thành user
     },
 
     checkExist: (socketRef, username) => {
-        sendRawData(socketRef, "CHECK_USER_EXIST", { name: username });
+        sendRawData(socketRef, "CHECK_USER_EXIST", { user: username }); //+1 Đổi name thành user
     },
 
     getUserList: (socketRef) => {

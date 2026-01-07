@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useSocket } from "../../../app/providers/SocketProvider.jsx";
+import { useSocket } from "../../../app/providers/useSocket.js";
 import { clearMessages } from "../../../state/chat/chatSlice.js";
 
 /**

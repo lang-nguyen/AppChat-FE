@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import styles from './ChatRoomCard.module.css';
 import Loading from '../../../../shared/components/Loading';
+import { useSocket } from '../../../../app/providers/useSocket.js';
+import { parseRoomInvite } from '../../../../shared/utils/parseRoomInvite.js';
 
 const ChatRoomCard = ({
     activeChat,
@@ -17,6 +19,18 @@ const ChatRoomCard = ({
     chatContainerRef,
     onInfoClick
 }) => {
+    const { actions: socketActions } = useSocket();
+
+    const handleJoinRoom = useCallback((roomName) => {
+        if (!roomName || !socketActions) return;
+        const senderName = myUsername || localStorage.getItem('user_name') || 'Ai đó';
+        socketActions.joinRoom(roomName);
+        // Gửi một tin nhắn vào phòng để giữ lịch sử phòng, kèm tên người tham gia
+        setTimeout(() => {
+            socketActions.sendChat(roomName, `${senderName} đã tham gia nhóm`, 'room');
+            socketActions.roomHistory(roomName, 1);
+        }, 400);
+    }, [socketActions, myUsername]);
 
     // Hàm helper để parse thời gian
     const parseTime = (timeStr) => {
@@ -104,6 +118,7 @@ const ChatRoomCard = ({
                     const isMe = msg.name === myUsername;
                     const prevMsg = index > 0 ? messages[index - 1] : null;
                     const showTime = shouldShowTimestamp(msg, prevMsg);
+                    const invite = parseRoomInvite(msg.mes);
 
                     return (
                         <div key={index} className={styles.messageRow}>
@@ -129,12 +144,41 @@ const ChatRoomCard = ({
                                 )}
 
                                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
-                                    <div className={styles.bubble} style={{
-                                        backgroundColor: isMe ? '#FF5596' : '#fff',
-                                        color: isMe ? '#fff' : '#000',
-                                    }}>
-                                        {msg.mes}
-                                    </div>
+                                    {invite ? (
+                                        <div className={styles.bubble} style={{
+                                            backgroundColor: '#fff8f0',
+                                            color: '#333',
+                                            border: '1px solid #ffd1a6',
+                                            maxWidth: 360
+                                        }}>
+                                            <div style={{ fontWeight: 700, marginBottom: 6 }}>Lời mời tham gia nhóm</div>
+                                            <div style={{ marginBottom: 8 }}>
+                                                {invite.from ? `${invite.from} mời bạn tham gia nhóm` : 'Bạn được mời tham gia nhóm'} <b>{invite.roomName}</b>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleJoinRoom(invite.roomName)}
+                                                style={{
+                                                    padding: '8px 12px',
+                                                    borderRadius: 10,
+                                                    border: 'none',
+                                                    backgroundColor: '#ff6ca2',
+                                                    color: '#fff',
+                                                    cursor: 'pointer',
+                                                    fontWeight: 600
+                                                }}
+                                            >
+                                                Tham gia nhóm
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className={styles.bubble} style={{
+                                            backgroundColor: isMe ? '#FF5596' : '#fff',
+                                            color: isMe ? '#fff' : '#000',
+                                        }}>
+                                            {msg.mes}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>

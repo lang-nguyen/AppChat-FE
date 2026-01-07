@@ -8,7 +8,7 @@ const TextInput = ({ label, type = 'text', value, onChange, placeholder, style =
 
     return (
         <div style={{ marginBottom: 15, textAlign: 'left' }}>
-            {label && <label style={{ display: 'block', marginBottom: 5, fontWeight: 500 }}>{label}</label>}
+            {label && <label style={{ display: 'block', marginBottom: 5, fontWeight: 500, color: '#000000' }}>{label}</label>}
             <div style={{ position: 'relative' }}>
                 <input
                     type={inputType}
