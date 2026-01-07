@@ -16,6 +16,7 @@ import SearchResult from "../components/sidebar/SearchResult.jsx";
 import ContactRequestModal from "../components/sidebar/ContactRequestModal.jsx";
 import ContactRequestsModal from "../components/sidebar/ContactRequestsModal.jsx";
 import PageHeader from "../components/PageHeader.jsx"; // Import PageHeader
+import LogoutModal from "../components/LogoutModal.jsx"; // Import LogoutModal
 
 const ChatPage = () => {
     const navigate = useNavigate();
@@ -50,6 +51,7 @@ const ChatPage = () => {
     const [contactRecipient, setContactRecipient] = useState('');
     const [showContactRequests, setShowContactRequests] = useState(false);
     const [contactError, setContactError] = useState('');
+    const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
     // Tự điều hướng sang login page nếu không có user và code
     useEffect(() => {
@@ -146,15 +148,18 @@ const ChatPage = () => {
         setShowContactRequests(false);
     };
 
-    const handleLogout = () => {
-        if (window.confirm("Bạn có chắc chắn muốn đăng xuất?")) {
-            socketActions.logout(socketRef);
-        }
+    const handleLogoutClick = () => {
+        setShowLogoutConfirm(true);
+    };
+
+    const handleConfirmLogout = () => {
+        socketActions.logout(socketRef);
+        setShowLogoutConfirm(false);
     };
 
     return (
         <div className={styles.page}>
-            <PageHeader onLogout={handleLogout} />
+            <PageHeader onLogout={handleLogoutClick} />
             <div className={styles["chat-container"]}>
                 <div className={styles["chat-sidebar"]}>
                     {/* Sidebar Header có nút tạo phòng và yêu cầu liên hệ */}
@@ -249,6 +254,14 @@ const ChatPage = () => {
                         />
                     </div>
                 </>
+            )}
+
+            {/* Logout Confirm Modal */}
+            {showLogoutConfirm && (
+                <LogoutModal
+                    onClose={() => setShowLogoutConfirm(false)}
+                    onConfirm={handleConfirmLogout}
+                />
             )}
         </div>
     );
