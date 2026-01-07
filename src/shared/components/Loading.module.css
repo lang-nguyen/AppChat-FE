@@ -1,0 +1,65 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: #ff80ab;
+    padding: 24px 32px;
+    border-radius: 20px;
+    width: fit-content;
+    box-shadow: 0 10px 25px rgba(255, 128, 171, 0.3);
+    gap: 16px;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    display: grid;
+    color: #fff;
+    background: radial-gradient(farthest-side, currentColor calc(100% - 6px), #0000 0);
+    -webkit-mask: radial-gradient(farthest-side, #0000 calc(100% - 13px), #000 0);
+    mask: radial-gradient(farthest-side, #0000 calc(100% - 13px), #000 0);
+    border-radius: 50%;
+    animation: s1 1s infinite linear;
+}
+
+.spinner::before,
+.spinner::after {
+    content: "";
+    grid-area: 1/1;
+    background: linear-gradient(currentColor 0 0) center,
+        linear-gradient(currentColor 0 0) center;
+    background-size: 100% 12px, 12px 100%;
+    background-repeat: no-repeat;
+}
+
+.spinner::after {
+    transform: rotate(45deg);
+}
+
+@keyframes s1 {
+    100% {
+        transform: rotate(1turn);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.text {
+    color: white;
+    font-family: "Inter", sans-serif;
+    font-weight: 600;
+    font-size: 18px;
+    letter-spacing: 0.5px;
+}

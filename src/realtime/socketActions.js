@@ -10,7 +10,10 @@ const sendRawData = (socketRef, eventName, dataPayload) => {
             }
         };
         socketRef.current.send(JSON.stringify(payload));
-        console.log(`Da gui [${eventName}]:`, payload);
+        // Chỉ log cho các event quan trọng, không log mọi thứ
+        if (eventName !== "GET_USER_LIST" && eventName !== "SEND_CHAT") {
+            console.log(`[Socket] ${eventName}:`, dataPayload);
+        }
     } else {
         console.error("Socket chua ket noi, khong the gui:", eventName);
     }
@@ -38,23 +41,24 @@ export const socketActions = {
     },
 
     roomHistory: (socketRef, roomName, page = 1) => {
-        sendRawData(socketRef, "GET_ROOM_CHAT_MES", { room_name: roomName, page });
+
+        sendRawData(socketRef, "GET_ROOM_CHAT_MES", { name: roomName, page });
     },
 
     createRoom: (socketRef, roomName) => {
-        sendRawData(socketRef, "CREATE_ROOM", { room_name: roomName });
+        sendRawData(socketRef, "CREATE_ROOM", { name: roomName });
     },
 
     joinRoom: (socketRef, roomName) => {
-        sendRawData(socketRef, "JOIN_ROOM", { room_name: roomName });
+        sendRawData(socketRef, "JOIN_ROOM", { name: roomName });
     },
 
     checkOnline: (socketRef, username) => {
-        sendRawData(socketRef, "CHECK_USER_ONLINE", { name: username });
+        sendRawData(socketRef, "CHECK_USER_ONLINE", { user: username }); //+1 Đổi name thành user
     },
 
     checkExist: (socketRef, username) => {
-        sendRawData(socketRef, "CHECK_USER_EXIST", { name: username });
+        sendRawData(socketRef, "CHECK_USER_EXIST", { user: username }); //+1 Đổi name thành user
     },
 
     getUserList: (socketRef) => {

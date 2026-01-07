@@ -51,7 +51,10 @@ const ListMember = ({ members = [], isGroup = false, onAddMember }) => (
                                 border: '2px solid #fff'
                             }} />
                         </div>
-                        <strong style={{ fontSize: 15, color: colors.normalText }}>{member.name}</strong>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <strong style={{ fontSize: 15, color: colors.normalText }}>{member.name}</strong>
+                            {member.isOwner}
+                        </div>
                     </div>
                     <button
                         style={{
