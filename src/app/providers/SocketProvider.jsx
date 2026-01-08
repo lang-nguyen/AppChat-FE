@@ -118,12 +118,13 @@ export const SocketProvider = ({ children }) => {
                     pingIntervalRef.current = null;
                 }
 
-                //+1 Chỉ reconnect nếu không phải do unmount (code 1000 = normal closure)
-                if (event.code !== 1000 && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                // Luôn reconnect (kể cả code 1000 - Normal Closure do Server gửi khi Logout)
+                // để đảm bảo Socket luôn sẵn sàng cho lần Login tiếp theo.
+                if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
                     //+1 Exponential backoff: tăng delay mỗi lần reconnect
                     const delay = Math.min(BASE_DELAY * Math.pow(2, reconnectAttempts), 30000); //+1 Max 30s
                     reconnectAttempts++; //+1
-                    
+
                     console.log(`Thu ket noi lai sau ${delay}ms (lan thu ${reconnectAttempts})...`); //+1
                     reconnectTimeoutRef.current = setTimeout(() => { //+1
                         connect();
@@ -137,7 +138,7 @@ export const SocketProvider = ({ children }) => {
                 console.error("WebSocket lỗi:", err);
                 isConnectingRef.current = false; //+1
                 setIsReady(false);
-                
+
                 //+1 Chỉ close nếu socket đã kết nối hoặc đang mở
                 //+1 Không close nếu đang CONNECTING vì sẽ tự trigger onclose
                 if (socket.readyState === WebSocket.OPEN) {
@@ -150,7 +151,7 @@ export const SocketProvider = ({ children }) => {
         // Chạy khi Component bị hủy (Unmount)
         return () => {
             isConnectingRef.current = false; //+1
-            
+
             if (reconnectTimeoutRef.current) { //+1
                 clearTimeout(reconnectTimeoutRef.current); //+1
                 reconnectTimeoutRef.current = null; //+1
@@ -168,7 +169,7 @@ export const SocketProvider = ({ children }) => {
                 socketRef.current.onerror = null; //+1
                 socketRef.current.onmessage = null; //+1
                 socketRef.current.onopen = null; //+1
-                
+
                 //+1 Chỉ close nếu socket đang mở hoặc đang kết nối
                 if (socketRef.current.readyState === WebSocket.OPEN || socketRef.current.readyState === WebSocket.CONNECTING) {
                     socketRef.current.close(1000, 'Component unmounting'); //+1 Normal closure

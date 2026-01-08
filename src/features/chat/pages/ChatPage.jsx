@@ -15,11 +15,13 @@ import CreateRoomModal from "../components/sidebar/CreateRoomModal.jsx";
 import SearchResult from "../components/sidebar/SearchResult.jsx";
 import ContactRequestModal from "../components/sidebar/ContactRequestModal.jsx";
 import ContactRequestsModal from "../components/sidebar/ContactRequestsModal.jsx";
+import PageHeader from "../components/PageHeader.jsx"; // Import PageHeader
+import LogoutModal from "../components/LogoutModal.jsx"; // Import LogoutModal
 
 const ChatPage = () => {
     const navigate = useNavigate();
     const { title, rooms, selectRoom } = useChatSidebar();
-    const { actions: socketActions } = useSocket();
+    const { actions: socketActions, socketRef } = useSocket(); // Added socketRef
     const user = useSelector((s) => s.auth.user);
 
     // Hook ChatMessage (Quản lý chi tiết chat: message, member, actions)
@@ -49,10 +51,12 @@ const ChatPage = () => {
     const [contactRecipient, setContactRecipient] = useState('');
     const [showContactRequests, setShowContactRequests] = useState(false);
     const [contactError, setContactError] = useState('');
+    const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-    // Redirect về login nếu user = null (đã logout)
+    // Tự điều hướng sang login page nếu không có user và code
     useEffect(() => {
-        if (!user) {
+        const hasCode = localStorage.getItem('re_login_code');
+        if (!user && !hasCode) {
             navigate("/login", { replace: true });
         }
     }, [user, navigate]);
@@ -72,7 +76,7 @@ const ChatPage = () => {
     const filteredRooms = useMemo(() => {
         if (!searchQuery.trim()) return rooms;
         const query = searchQuery.toLowerCase();
-        return rooms.filter(room => 
+        return rooms.filter(room =>
             room.name.toLowerCase().includes(query)
         );
     }, [rooms, searchQuery]);
@@ -89,10 +93,10 @@ const ChatPage = () => {
             window.__pendingContactCheck = null;
         }
         setContactError('');
-        
+
         // Lưu username để xử lý khi nhận response
         setContactRecipient(username);
-        
+
         // Lưu callback vào window để socketHandlers có thể gọi
         window.__pendingContactCheck = {
             username: username,
@@ -106,7 +110,7 @@ const ChatPage = () => {
                 window.__pendingContactCheck = null;
             }
         };
-        
+
         // Kiểm tra user có tồn tại không trước khi mở modal
         socketActions.checkExist(username);
     };
@@ -144,23 +148,33 @@ const ChatPage = () => {
         setShowContactRequests(false);
     };
 
+    const handleLogoutClick = () => {
+        setShowLogoutConfirm(true);
+    };
+
+    const handleConfirmLogout = () => {
+        socketActions.logout(socketRef);
+        setShowLogoutConfirm(false);
+    };
+
     return (
         <div className={styles.page}>
+            <PageHeader onLogout={handleLogoutClick} />
             <div className={styles["chat-container"]}>
                 <div className={styles["chat-sidebar"]}>
                     {/* Sidebar Header có nút tạo phòng và yêu cầu liên hệ */}
-                    <UserHeader 
-                        name={title} 
-                        onAdd={handleCreateRoom} 
-                        onContactRequests={handleOpenContactRequests} 
+                    <UserHeader
+                        name={title}
+                        onAdd={handleCreateRoom}
+                        onContactRequests={handleOpenContactRequests}
                     />
-                    <SearchBox 
+                    <SearchBox
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                     {/* Hiển thị SearchResult nếu không tìm thấy room nào, ngược lại hiển thị RoomList với nút Liên hệ ở cuối nếu có search query */}
                     {shouldShowSearchResult ? (
-                        <SearchResult 
+                        <SearchResult
                             searchQuery={searchQuery}
                             onContact={handleContact}
                             contactError={contactError}
@@ -221,7 +235,7 @@ const ChatPage = () => {
                 <>
                     <div className={styles["contact-request-modal-backdrop"]} onClick={() => setShowContactRequest(false)} />
                     <div className={styles["contact-request-modal-container"]}>
-                        <ContactRequestModal 
+                        <ContactRequestModal
                             recipientName={contactRecipient}
                             onClose={() => setShowContactRequest(false)}
                             onSend={handleSendContactRequest}
@@ -234,12 +248,20 @@ const ChatPage = () => {
                 <>
                     <div className={styles["create-room-modal-backdrop"]} onClick={() => setShowContactRequests(false)} />
                     <div className={styles["create-room-modal-container"]}>
-                        <ContactRequestsModal 
+                        <ContactRequestsModal
                             onClose={() => setShowContactRequests(false)}
                             onSelectUser={handleSelectContactRequest}
                         />
                     </div>
                 </>
+            )}
+
+            {/* Logout Confirm Modal */}
+            {showLogoutConfirm && (
+                <LogoutModal
+                    onClose={() => setShowLogoutConfirm(false)}
+                    onConfirm={handleConfirmLogout}
+                />
             )}
         </div>
     );
