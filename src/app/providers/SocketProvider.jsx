@@ -15,6 +15,10 @@ export const SocketProvider = ({ children }) => {
     const [isReady, setIsReady] = useState(false); // trang thai ket noi
 
     // REDUX DISPATCH
+    const [connectionError, setConnectionError] = useState(null); //+1 State lỗi kết nối
+    const [retryCount, setRetryCount] = useState(0); //+1 State để trigger retry
+
+    // REDUX DISPATCH
     const dispatch = useDispatch();
 
     //Lấy user từ Redux Store
@@ -32,10 +36,21 @@ export const SocketProvider = ({ children }) => {
         // Khởi tạo lastActivityRef trong useEffect để tránh lỗi impure function
         lastActivityRef.current = Date.now();
         let reconnectAttempts = 0; //+1 Đếm số lần reconnect
-        const MAX_RECONNECT_ATTEMPTS = 10;
+        const MAX_RECONNECT_ATTEMPTS = 5; // nếu reconnect 5 lần vẫn thất bại thì dừng retry và báo lỗi
         const BASE_DELAY = 3000;
 
         const connect = () => {
+            //+1 Check mạng trước khi connect
+            if (!navigator.onLine) {
+                console.log('Mất kết nối mạng, dừng connect.');
+                setIsReady(false);
+                setConnectionError("Mất kết nối Internet. Vui lòng kiểm tra đường truyền.");
+                return;
+            }
+
+            //+1 Reset lỗi khi bắt đầu kết nối
+            setConnectionError(null);
+
             //+1 Tránh tạo nhiều kết nối cùng lúc
             if (isConnectingRef.current || (socketRef.current && socketRef.current.readyState === WebSocket.CONNECTING)) {
                 console.log('Đang kết nối, bỏ qua...');
@@ -45,10 +60,10 @@ export const SocketProvider = ({ children }) => {
             //+1 Đóng kết nối cũ nếu có
             if (socketRef.current) {
                 const oldSocket = socketRef.current;
-                oldSocket.onopen = null; //+1
-                oldSocket.onclose = null; //+1
-                oldSocket.onerror = null; //+1
-                oldSocket.onmessage = null; //+1
+                oldSocket.onopen = null;
+                oldSocket.onclose = null;
+                oldSocket.onerror = null;
+                oldSocket.onmessage = null;
                 if (oldSocket.readyState === WebSocket.OPEN || oldSocket.readyState === WebSocket.CONNECTING) {
                     oldSocket.close();
                 }
@@ -64,20 +79,16 @@ export const SocketProvider = ({ children }) => {
                 console.log('WebSocket da ket noi');
                 isConnectingRef.current = false; //+1
                 setIsReady(true);
+                setConnectionError(null); //+1 Clear error
                 // Lưu thời gian hoạt động gần nhất
                 lastActivityRef.current = Date.now();
                 reconnectAttempts = 0; //+1 Reset số lần reconnect
 
-                // Tự động Re-login dùng hàm từ socketActions
-                // Lấy code và username từ localStorage
+                // ... (Phần Re-login logic giữ nguyên)
                 const code = localStorage.getItem('re_login_code');
                 const savedUser = localStorage.getItem('user_name');
-
-                // Check nếu đang ở trang Login/Register thì KHÔNG tự động re-login
-                // Để tránh xung đột với các Tab khác đang mở
                 const isAuthPage = window.location.pathname === '/login' || window.location.pathname === '/register';
 
-                // Nếu có thì gọi hàm reLogin
                 if (code && savedUser && !isAuthPage) {
                     console.log(`Phát hiện phiên cũ của [${savedUser}], đang Re-login...`);
                     socketActions.reLogin(socketRef, savedUser, code);
@@ -118,8 +129,13 @@ export const SocketProvider = ({ children }) => {
                     pingIntervalRef.current = null;
                 }
 
+                // Nếu mất mạng (detected bởi browser) thì không retry kiểu exponential ngay mà đợi online event
+                if (!navigator.onLine) {
+                    setConnectionError("Mất kết nối Internet. Vui lòng kiểm tra đường truyền.");
+                    return;
+                }
+
                 // Luôn reconnect (kể cả code 1000 - Normal Closure do Server gửi khi Logout)
-                // để đảm bảo Socket luôn sẵn sàng cho lần Login tiếp theo.
                 if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
                     //+1 Exponential backoff: tăng delay mỗi lần reconnect
                     const delay = Math.min(BASE_DELAY * Math.pow(2, reconnectAttempts), 30000); //+1 Max 30s
@@ -131,6 +147,7 @@ export const SocketProvider = ({ children }) => {
                     }, delay);
                 } else if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) { //+1
                     console.error('Đã vượt quá số lần reconnect tối đa'); //+1
+                    setConnectionError("Không thể kết nối đến máy chủ. Vui lòng kiểm tra đường truyền."); //+1 Set error msg
                 }
             };
 
@@ -138,23 +155,47 @@ export const SocketProvider = ({ children }) => {
                 console.error("WebSocket lỗi:", err);
                 isConnectingRef.current = false; //+1
                 setIsReady(false);
-
-                //+1 Chỉ close nếu socket đã kết nối hoặc đang mở
-                //+1 Không close nếu đang CONNECTING vì sẽ tự trigger onclose
                 if (socket.readyState === WebSocket.OPEN) {
                     socket.close();
                 }
             };
         };
+
+        // Listeners cho online/offline
+        const handleOnline = () => {
+            console.log("Mạng đã có trở lại, reconnecting...");
+            setConnectionError(null);
+            reconnectAttempts = 0;
+            connect();
+        };
+
+        const handleOffline = () => {
+            console.log("Đã mất kết nối mạng.");
+            setIsReady(false);
+            setConnectionError("Mất kết nối Internet. Vui lòng kiểm tra đường truyền.");
+            if (socketRef.current) {
+                socketRef.current.close();
+            }
+            if (reconnectTimeoutRef.current) {
+                clearTimeout(reconnectTimeoutRef.current);
+            }
+        };
+
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+
         connect();
 
         // Chạy khi Component bị hủy (Unmount)
         return () => {
-            isConnectingRef.current = false; //+1
+            window.removeEventListener('online', handleOnline);
+            window.removeEventListener('offline', handleOffline);
 
-            if (reconnectTimeoutRef.current) { //+1
-                clearTimeout(reconnectTimeoutRef.current); //+1
-                reconnectTimeoutRef.current = null; //+1
+            isConnectingRef.current = false;
+
+            if (reconnectTimeoutRef.current) {
+                clearTimeout(reconnectTimeoutRef.current);
+                reconnectTimeoutRef.current = null;
             }
 
             // Clear ping interval
@@ -166,23 +207,22 @@ export const SocketProvider = ({ children }) => {
             if (socketRef.current) {
                 //+1 Hủy tất cả handlers để tránh trigger reconnect khi unmount
                 socketRef.current.onclose = null; // đóng luôn không reconnect
-                socketRef.current.onerror = null; //+1
-                socketRef.current.onmessage = null; //+1
-                socketRef.current.onopen = null; //+1
+                socketRef.current.onerror = null; 
+                socketRef.current.onmessage = null; 
+                socketRef.current.onopen = null; 
 
                 //+1 Chỉ close nếu socket đang mở hoặc đang kết nối
                 if (socketRef.current.readyState === WebSocket.OPEN || socketRef.current.readyState === WebSocket.CONNECTING) {
-                    socketRef.current.close(1000, 'Component unmounting'); //+1 Normal closure
+                    socketRef.current.close(1000, 'Component unmounting');
                 }
-                socketRef.current = null; //+1
+                socketRef.current = null;
             }
         };
-    }, [dispatch]); // [] -> Đảm bảo chỉ chạy 1 lần
+    }, [dispatch, retryCount]); //+1 Thêm retryCount vào dependency để trigger reconnect
 
     // Setup ping riêng, chỉ khi đã login
     useEffect(() => {
         if (!isReady) return;
-
         const hasUser = user && (user.user || user.name || user.username);
         if (!hasUser) {
             if (pingIntervalRef.current) {
@@ -196,10 +236,8 @@ export const SocketProvider = ({ children }) => {
         // Gửi ping mỗi 30s để giữ kết nối (chỉ khi idle quá lâu)
         pingIntervalRef.current = setInterval(() => {
             if (socketRef.current?.readyState !== WebSocket.OPEN) return;
-
             const timeSinceLastActivity = Date.now() - lastActivityRef.current;
-            const IDLE_TIME_BEFORE_PING = 25000; // 25s - chỉ ping nếu idle 25s
-
+            const IDLE_TIME_BEFORE_PING = 25000;
             if (timeSinceLastActivity >= IDLE_TIME_BEFORE_PING) {
                 socketActions.ping(socketRef);
             }
@@ -215,7 +253,6 @@ export const SocketProvider = ({ children }) => {
 
     // Gom các hàm gửi lại thành 1 object actions
     // Dùng useMemo để tránh tạo lại object này mỗi lần render không cần thiết
-
     const actions = useMemo(
         () => ({
             login: (u, p) => {
@@ -264,14 +301,16 @@ export const SocketProvider = ({ children }) => {
             },
         }),
         []
-    ); // [] dependency vì socketRef là ref, nó không trigger render
+    );
 
     // Gia tri cung cap cho toan bo component con
     const value = useMemo(() => ({
         // socket: socketRef.current,
         isReady,
-        actions
-    }), [isReady, actions]);
+        actions,
+        connectionError, //+1 Expose error
+        reconnect: () => setRetryCount(prev => prev + 1) //+1 Expose reconnect function
+    }), [isReady, actions, connectionError]);
     return (
         <SocketContext.Provider value={value}>
             {children}
