@@ -58,9 +58,11 @@ export const handleSocketMessage = (response, dispatch, socketActions, socketRef
             } else {
                 console.log("Re-login thất bại, mã hết hạn hoặc lỗi.");
                 localStorage.removeItem('re_login_code');
+                localStorage.removeItem('user_name'); 
                 dispatch(setError("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại."));
-                // Đảm bảo user là null để PrivateRoute đá về Login
                 dispatch(setUser(null));
+                // Dùng window.location vì ở đây không có hook navigate
+                window.location.href = '/login';
             }
             break;
 
@@ -155,17 +157,17 @@ export const handleSocketMessage = (response, dispatch, socketActions, socketRef
                 // Lấy thông tin tạo nhóm đang chờ từ Redux
                 const state = getState ? getState() : null;
                 const pendingRoom = state?.chat?.pendingRoomCreation;
-                
+
                 if (pendingRoom) {
 
                     console.log("Thông tin pending room:", pendingRoom);
 
                     const { roomName, selectedUsers, currentUserName } = pendingRoom;
-                    
+
                     // 1. Join bản thân vào phòng
                     socketActions.joinRoom(socketRef, roomName);
                     console.log("Đã join bản thân vào phòng:", roomName);
-                    
+
                     // 2. Gửi tin nhắn mời vào nhóm cho từng người được chọn (qua chat 1-1)
                     // Vì JOIN_ROOM chỉ để tự join, không thể thêm người khác vào group
                     console.log("Gửi tin nhắn mời vào nhóm cho:", selectedUsers);
@@ -180,18 +182,18 @@ export const handleSocketMessage = (response, dispatch, socketActions, socketRef
                             console.log(`Đã gửi tin nhắn mời vào nhóm "${roomName}" cho:`, username);
                         }, index * 300); // Delay từng tin nhắn để tránh spam
                     });
-                    
+
                     // 3. Gửi tin nhắn thông báo vào phòng (cho các thành viên đã join)
-                    const userListText = selectedUsers.length > 0 
-                        ? selectedUsers.join(', ') 
+                    const userListText = selectedUsers.length > 0
+                        ? selectedUsers.join(', ')
                         : 'không có ai';
                     const notificationMessage = `${currentUserName} đã tạo nhóm và mời ${userListText} tham gia`;
-                    
+
                     // Delay một chút để đảm bảo join xong trước khi gửi tin nhắn vào phòng
                     setTimeout(() => {
                         socketActions.sendChat(socketRef, roomName, notificationMessage, "room");
                     }, 500);
-                    
+
                     // 4. Clear pending room creation
                     dispatch(clearPendingRoomCreation());
                 }
@@ -231,7 +233,7 @@ export const handleSocketMessage = (response, dispatch, socketActions, socketRef
             // response.data.status: true/false mới cho biết user có tồn tại không
             console.log("Check User Exist - Full response:", response);
             const userExists = response.data?.status === true || response.data?.status === 'true';
-            
+
             if (userExists) {
                 console.log("Check User Exist: Tồn tại", response.data);
                 // Nếu có callback pending cho contact check, gọi onSuccess

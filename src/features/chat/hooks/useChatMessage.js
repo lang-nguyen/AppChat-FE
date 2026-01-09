@@ -226,9 +226,9 @@ export const useChatMessage = () => {
     const handleSelectFile = useCallback((e) => {
         const file = e.target.files[0];
         if (file) {
-            // Kiểm tra dung lượng (vd: giới hạn 10MB)
-            if (file.size > 10 * 1024 * 1024) {
-                alert("File quá lớn! Vui lòng chọn file dưới 10MB.");
+            // Gioi hạn duoi 50mb (ca anh va video)
+            if (file.size > 50 * 1024 * 1024) {
+                alert("File quá lớn! Vui lòng chọn file dưới 50MB.");
                 return;
             }
             setSelectedFile(file);

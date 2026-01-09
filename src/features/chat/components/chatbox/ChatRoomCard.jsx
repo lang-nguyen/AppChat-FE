@@ -1,6 +1,7 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import styles from './ChatRoomCard.module.css';
 import Loading from '../../../../shared/components/Loading';
+import ImageModal from '../../../../shared/components/ImageModal';
 import { useSocket } from '../../../../app/providers/useSocket.js';
 import { parseRoomInvite } from '../../../../shared/utils/parseRoomInvite.js';
 
@@ -26,6 +27,7 @@ const ChatRoomCard = ({
 }) => {
     const { actions: socketActions } = useSocket();
     const fileInputRef = useRef(null);
+    const [previewImage, setPreviewImage] = useState(null);
 
     const handleJoinRoom = useCallback((roomName) => {
         if (!roomName || !socketActions) return;
@@ -73,8 +75,8 @@ const ChatRoomCard = ({
                 <img
                     src={url}
                     alt="Sent image"
-                    style={{ maxWidth: '100%', borderRadius: '8px', cursor: 'pointer' }}
-                    onClick={() => window.open(url, '_blank')}
+                    style={{ maxWidth: '250px', maxHeight: '300px', borderRadius: '8px', cursor: 'pointer', objectFit: 'cover' }}
+                    onClick={() => setPreviewImage(url)}
                 />
             );
         }
@@ -84,7 +86,7 @@ const ChatRoomCard = ({
                 <video
                     src={url}
                     controls
-                    style={{ maxWidth: '100%', borderRadius: '8px' }}
+                    style={{ maxWidth: '250px', maxHeight: '300px', borderRadius: '8px' }}
                 />
             );
         }
@@ -212,9 +214,10 @@ const ChatRoomCard = ({
                                         </div>
                                     ) : (
                                         <div className={styles.bubble} style={{
-                                            backgroundColor: isMe ? '#FF5596' : '#fff',
+                                            backgroundColor: (msg.mes.startsWith('[IMAGE]') || msg.mes.startsWith('[VIDEO]')) ? 'transparent' : (isMe ? '#FF5596' : '#fff'),
                                             color: isMe ? '#fff' : '#000',
-                                            padding: (msg.mes.startsWith('[IMAGE]') || msg.mes.startsWith('[VIDEO]')) ? '6px' : undefined
+                                            padding: (msg.mes.startsWith('[IMAGE]') || msg.mes.startsWith('[VIDEO]')) ? '0' : undefined,
+                                            boxShadow: (msg.mes.startsWith('[IMAGE]') || msg.mes.startsWith('[VIDEO]')) ? 'none' : undefined
                                         }}>
                                             {renderMessageContent(msg.mes)}
                                         </div>
@@ -301,6 +304,12 @@ const ChatRoomCard = ({
                     </svg>
                 </button>
             </form>
+
+            {/* Modal xem ảnh */}
+            <ImageModal
+                imageUrl={previewImage}
+                onClose={() => setPreviewImage(null)}
+            />
         </div>
     );
 };
