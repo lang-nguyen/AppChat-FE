@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useSocket } from "../../../app/providers/useSocket.js";
 import { clearMessages, addMessage } from "../../../state/chat/chatSlice.js";
+import { encodeEmoji } from "../../../shared/utils/emojiUtils.js";
 
 /**
  * Hook xử lý toàn bộ logic của phần ChatBox và ChatInfo.
@@ -217,13 +218,16 @@ export const useChatMessage = () => {
         e.preventDefault();
         if (!inputText.trim() || !activeChat || !socketActions || !isReady) return;
 
+        const encodedText = encodeEmoji(inputText);
+        console.log("SEND CHAT RAW:", encodedText);
+
         // 1. Tạo tin nhắn tạm thời (Optimistic UI)
         const tempId = Date.now().toString();
         const currentName = user?.name || user?.user || user?.username || localStorage.getItem('user_name') || 'Tôi';
 
         const optimisticMessage = {
             name: currentName,
-            mes: inputText,
+            mes: encodedText,
             createAt: new Date().toISOString(),
             to: activeChat.name,
             type: (activeChat.type === 0 || activeChat.type === 'people') ? 'people' : 'room',
@@ -235,9 +239,9 @@ export const useChatMessage = () => {
 
         // 3. Gửi qua Socket
         if (activeChat.type === 0 || activeChat.type === 'people') {
-            socketActions.sendChat(activeChat.name, inputText, 'people');
+            socketActions.sendChat(activeChat.name, encodedText, 'people');
         } else {
-            socketActions.sendChat(activeChat.name, inputText, 'room');
+            socketActions.sendChat(activeChat.name, encodedText, 'room');
         }
         setInputText('');
 

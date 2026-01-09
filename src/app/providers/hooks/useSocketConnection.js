@@ -102,6 +102,9 @@ export const useSocketConnection = (dispatch, lastActivityRef, isOnline) => {
                     const response = JSON.parse(event.data);
                     lastActivityRef.current = Date.now();
                     const silentEvents = ["GET_USER_LIST", "SEND_CHAT", "CHECK_USER_ONLINE"];
+                    if (response.event === "SEND_CHAT") {
+                        console.log("SERVER RETURN:", response.data ? response.data.mes : "No data");
+                    }
                     if (!silentEvents.includes(response.event)) {
                         console.log("[Socket] Nhận:", response.event, response);
                     }
