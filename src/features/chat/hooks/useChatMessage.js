@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useSocket } from "../../../app/providers/useSocket.js";
 import { clearMessages } from "../../../state/chat/chatSlice.js";
+import { uploadFile } from "../../../shared/services/cloudinaryService.js";
 
 /**
  * Hook xử lý toàn bộ logic của phần ChatBox và ChatInfo.
@@ -24,6 +25,10 @@ export const useChatMessage = () => {
     const [inputText, setInputText] = useState('');
     const [page, setPage] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
+
+    // -- File Upload State --
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [isUploading, setIsUploading] = useState(false);
 
     // -- Refs --
     const messagesEndRef = useRef(null);
@@ -88,14 +93,18 @@ export const useChatMessage = () => {
         if (activeChat && isReady) {
             // Clear tin nhắn cũ ngay lập tức
             dispatch(clearMessages());
-            
+
             // Reset state khi đổi phòng
             // Defer state update để tránh rule `react-hooks/set-state-in-effect`
             queueMicrotask(() => setPage(1));
             currentPageRef.current = 1; // Reset page ref
             queueMicrotask(() => setShowInfo(false));
             lastFetchedKeyRef.current = '';
-            
+
+            // Clear file đang chọn nếu có
+            queueMicrotask(() => setSelectedFile(null));
+            queueMicrotask(() => setIsUploading(false));
+
             // Set pending page to window for socketHandlers
             if (typeof window !== 'undefined') window.__chatPendingPage = 1;
 
@@ -103,7 +112,7 @@ export const useChatMessage = () => {
             const fetchKey = `${activeChat.type}:${activeChat.name}:1`;
             queueMicrotask(() => setIsLoading(true));
             lastFetchedKeyRef.current = fetchKey;
-            
+
             if (activeChat.type === 0 || activeChat.type === 'people') {
                 socketActions.chatHistory(activeChat.name, 1);
                 socketActions.checkOnline(activeChat.name);
@@ -112,12 +121,12 @@ export const useChatMessage = () => {
                 socketActions.joinRoom(activeChat.name);
                 socketActions.roomHistory(activeChat.name, 1);
             }
-            
+
             // Fallback: Tắt loading sau 5s nếu không có response
             const timeoutId = setTimeout(() => {
                 setIsLoading(false);
             }, 5000);
-            
+
             return () => clearTimeout(timeoutId);
         }
     }, [activeChat, isReady, socketActions, dispatch]);
@@ -126,7 +135,7 @@ export const useChatMessage = () => {
     useEffect(() => {
         // CHỈ xử lý khi đang loading (tránh vòng lặp)
         if (!isLoading) return;
-        
+
         if (page === 1) {
             if (messages.length > 0) {
                 // Trang đầu tiên có tin nhắn: cuộn xuống cuối
@@ -158,7 +167,7 @@ export const useChatMessage = () => {
         if (messages.length > 0 && page === 1 && chatContainerRef.current) {
             const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
             const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
-            
+
             // Chỉ tự động scroll nếu user đang ở gần cuối (không làm phiền khi đang đọc tin cũ)
             if (isNearBottom) {
                 scrollToBottom('smooth');
@@ -172,22 +181,22 @@ export const useChatMessage = () => {
         if (chatContainerRef.current) {
             prevScrollHeightRef.current = chatContainerRef.current.scrollHeight;
         }
-        
+
         const nextPage = page + 1;
         setPage(nextPage);
         currentPageRef.current = nextPage; // Update ref để track page
-        
+
         // Set pending page to window for socketHandlers
-    if (typeof window !== 'undefined') window.__chatPendingPage = nextPage;
+        if (typeof window !== 'undefined') window.__chatPendingPage = nextPage;
 
         // Fetch tin nhắn trang tiếp theo
         if (activeChat) {
             setIsLoading(true);
             const fetchKey = `${activeChat.type}:${activeChat.name}:${nextPage}`;
             lastFetchedKeyRef.current = fetchKey;
-            
+
             console.log(`[LoadMore] Fetching page ${nextPage} for ${activeChat.name}`);
-            
+
             if (activeChat.type === 0 || activeChat.type === 'people') {
                 socketActions.chatHistory(activeChat.name, nextPage);
             } else {
@@ -198,36 +207,96 @@ export const useChatMessage = () => {
 
     const handleScroll = useCallback(() => {
         if (!chatContainerRef.current || isLoading || !hasMore) return;
-        
+
         const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
-        
+
         // CHỈ trigger load more khi:
         // 1. Scroll ở gần đầu (scrollTop <= 50)
         // 2. ĐÃ có content để scroll (scrollHeight > clientHeight)
         // 3. Không phải trang đầu tiên vừa load xong
         const hasContent = scrollHeight > clientHeight;
         const isAtTop = scrollTop <= 50;
-        
+
         if (isAtTop && hasContent && page >= 1) {
             loadMore();
         }
     }, [loadMore, isLoading, hasMore, page]);
 
-    const handleSend = useCallback((e) => {
-        e.preventDefault();
-        if (!inputText.trim() || !activeChat || !socketActions || !isReady) return;
-
-        if (activeChat.type === 0 || activeChat.type === 'people') {
-            socketActions.sendChat(activeChat.name, inputText, 'people');
-        } else {
-            socketActions.sendChat(activeChat.name, inputText, 'room');
+    // -- File Handlers --
+    const handleSelectFile = useCallback((e) => {
+        const file = e.target.files[0];
+        if (file) {
+            // Kiểm tra dung lượng (vd: giới hạn 10MB)
+            if (file.size > 10 * 1024 * 1024) {
+                alert("File quá lớn! Vui lòng chọn file dưới 10MB.");
+                return;
+            }
+            setSelectedFile(file);
         }
-        setInputText('');
-        
-        // Scroll xuống ngay lập tức để thấy tin nhắn của mình
-        // Dùng timeout ngắn để đợi tin nhắn được thêm vào state
+    }, []);
+
+    const handleRemoveFile = useCallback(() => {
+        setSelectedFile(null);
+        // Reset value của input file (cần ref ở UI component)
+        const fileInput = document.getElementById('chat-file-input');
+        if (fileInput) fileInput.value = '';
+    }, []);
+
+    const handleSend = useCallback(async (e) => {
+        e.preventDefault(); // Ngăn chặn hành vi mặc định của form (để trang k bị reload)
+
+        const hasText = inputText.trim().length > 0;
+        const hasFile = !!selectedFile;
+
+        if ((!hasText && !hasFile) || !activeChat || !socketActions || !isReady || isUploading) return;
+
+        let messageContent = inputText;
+        let messageType = "text";
+
+        // Upload file nếu có
+        if (hasFile) {
+            setIsUploading(true);
+            try {
+                const result = await uploadFile(selectedFile);
+                // Định dạng tin nhắn: [IMAGE]url hoặc [VIDEO]url
+                const prefix = result.type === 'video' ? '[VIDEO]' : '[IMAGE]';
+
+                // Gửi file như một tin nhắn riêng, sau đó gửi text nếu có
+                const fileMessage = `${prefix}${result.url}`;
+
+                // Gửi tin nhắn file
+                if (activeChat.type === 0 || activeChat.type === 'people') {
+                    socketActions.sendChat(activeChat.name, fileMessage, 'people');
+                } else {
+                    socketActions.sendChat(activeChat.name, fileMessage, 'room');
+                }
+
+                // Clear file sau khi gửi thành công
+                handleRemoveFile();
+
+            } catch (error) {
+                console.error("Upload thất bại:", error);
+                alert("Gửi file thất bại. Vui lòng thử lại."); // Sẽ refactor sau
+                setIsUploading(false);
+                return;
+            } finally {
+                setIsUploading(false);
+            }
+        }
+
+        // Gửi text nếu có (hoặc nếu chỉ có text)
+        if (hasText) {
+            if (activeChat.type === 0 || activeChat.type === 'people') {
+                socketActions.sendChat(activeChat.name, messageContent, 'people');
+            } else {
+                socketActions.sendChat(activeChat.name, messageContent, 'room');
+            }
+            setInputText('');
+        }
+
+        // Scroll xuống
         setTimeout(() => scrollToBottom('smooth'), 100);
-    }, [inputText, activeChat, socketActions, isReady, scrollToBottom]);
+    }, [inputText, selectedFile, isUploading, activeChat, socketActions, isReady, scrollToBottom, handleRemoveFile]);
 
     const handleAddMember = useCallback(() => {
         const username = window.prompt("Nhập tên người dùng muốn thêm vào nhóm:");
@@ -248,6 +317,8 @@ export const useChatMessage = () => {
         activeChat, messages, myUsername, isOnline, memberList,
         showInfo, setShowInfo, inputText, setInputText, page,
         isLoading, hasMore, messagesEndRef, chatContainerRef,
-        handleScroll, handleSend, handleAddMember, handleCreateRoom
+        handleScroll, handleSend, handleAddMember, handleCreateRoom,
+        // File props
+        selectedFile, isUploading, handleSelectFile, handleRemoveFile
     };
 };

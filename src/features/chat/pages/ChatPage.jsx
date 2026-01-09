@@ -41,7 +41,12 @@ const ChatPage = () => {
         chatContainerRef,
         handleScroll,
         handleSend,
-        handleAddMember
+        handleAddMember,
+        // File props
+        selectedFile,
+        isUploading,
+        handleSelectFile,
+        handleRemoveFile
     } = useChatMessage();
 
     // States cho phần liên hệ
@@ -205,6 +210,11 @@ const ChatPage = () => {
                             messagesEndRef={messagesEndRef}
                             chatContainerRef={chatContainerRef}
                             onInfoClick={() => setShowInfo(!showInfo)}
+                            // File props
+                            selectedFile={selectedFile}
+                            isUploading={isUploading}
+                            handleSelectFile={handleSelectFile}
+                            handleRemoveFile={handleRemoveFile}
                         />
                     ) : (
                         <ChatPlaceholder />
