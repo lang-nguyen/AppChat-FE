@@ -4,11 +4,13 @@ import LoginPage from "../features/auth/pages/LoginPage.jsx";
 import RegisterPage from "../features/auth/pages/RegisterPage.jsx";
 import ChatPage from "../features/chat/pages/ChatPage.jsx";
 import colors from "../shared/constants/colors.js";
-
+import GlobalLoading from "../shared/components/GlobalLoading.jsx";
 
 export default function App() {
     return (
         <BrowserRouter>
+            <GlobalLoading />
+
             <div
                 id="app-root"
                 style={{
