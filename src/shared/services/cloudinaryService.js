@@ -1,5 +1,5 @@
-const CLOUD_NAME = 'dcnffehhr';
-const UPLOAD_PRESET = 'appchat_upload';
+const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
 // Service này gửi api upload hình ảnh/video đến Cloudinary
 export const uploadFile = async (file) => {
