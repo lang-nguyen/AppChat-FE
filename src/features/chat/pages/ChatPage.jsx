@@ -15,8 +15,8 @@ import CreateRoomModal from "../components/sidebar/CreateRoomModal.jsx";
 import SearchResult from "../components/sidebar/SearchResult.jsx";
 import ContactRequestModal from "../components/sidebar/ContactRequestModal.jsx";
 import ContactRequestsModal from "../components/sidebar/ContactRequestsModal.jsx";
-import PageHeader from "../components/PageHeader.jsx"; // Import PageHeader
-import LogoutModal from "../components/LogoutModal.jsx"; // Import LogoutModal
+import PageHeader from "../components/headerChat/PageHeader.jsx"; // Import PageHeader
+import LogoutModal from "../components/headerChat/LogoutModal.jsx"; // Import LogoutModal
 
 const ChatPage = () => {
     const navigate = useNavigate();
