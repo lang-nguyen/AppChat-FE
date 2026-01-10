@@ -30,16 +30,16 @@ const UserHeader = ({ name, onAdd, onContactRequests }) => (
 					Yêu cầu liên hệ
 				</Button>
 			)}
-			<button onClick={onAdd} style={{
-				borderRadius: '50%',
-				border: `1px solid ${colors.cardBorder}`,
-				width: 28,
-				height: 28,
+		<button onClick={onAdd} style={{
+			borderRadius: '50%',
+			border: `1px solid ${colors.cardBorder}`,
+			width: 28,
+			height: 28,
 				minWidth: 28,
 				minHeight: 28,
 				padding: 0,
 				margin: 0,
-				cursor: 'pointer',
+			cursor: 'pointer',
 				background: 'transparent',
 				display: 'flex',
 				alignItems: 'center',
@@ -48,7 +48,7 @@ const UserHeader = ({ name, onAdd, onContactRequests }) => (
 				fontSize: 18,
 				lineHeight: 1,
 				aspectRatio: '1 / 1'
-			}}>+</button>
+		}}>+</button>
 		</div>
 	</div>
 );

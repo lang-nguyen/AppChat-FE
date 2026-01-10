@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useSocket } from "../../../app/providers/useSocket.js";
-import { setActiveChat } from "../../../state/chat/chatSlice.js";
+import { useApi } from "../../../app/providers/useApi.js";
+import { setActiveChat, setPendingConversations } from "../../../state/chat/chatSlice.js";
 
 export function useChatSidebar() {
   const { actions, isReady } = useSocket();
+  const { actions: apiActions } = useApi();
   const dispatch = useDispatch();
 
   const user = useSelector((s) => s.auth.user);
@@ -15,8 +17,29 @@ export function useChatSidebar() {
   // Auto-fetch list sau khi socket ready + đã login/relogin
   useEffect(() => {
     const hasUser = user && (user.user || user.name || user.username);
-    if (isReady && hasUser) actions.getUserList();
-  }, [isReady, user, actions]);
+    if (isReady && hasUser) {
+      actions.getUserList();
+      
+      const username = user.user || user.username || user.name || localStorage.getItem('user_name');
+      if (username) {
+        apiActions.getIncomingPendingConversations(username)
+          .then(data => {
+            const pendingList = data
+              .filter(item => item.status === 'PENDING')
+              .map(item => ({
+                username: item.username,
+                name: item.username,
+                status: item.status,
+                createdAt: item.createdAt,
+              }));
+            dispatch(setPendingConversations(pendingList));
+          })
+          .catch(err => {
+            console.error('Failed to load pending conversations:', err);
+          });
+      }
+    }
+  }, [isReady, user, actions, apiActions, dispatch]);
 
   const title = useMemo(() => {
     const fromRedux = user?.name || user?.user || user?.username;
