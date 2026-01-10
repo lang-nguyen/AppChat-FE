@@ -11,6 +11,7 @@ import ChatInfo from "../components/chatbox/ChatInfo.jsx";
 import { useChatSidebar } from "../hooks/useChatSidebar.js";
 import { useChatMessage } from "../hooks/useChatMessage.js";
 import { useSocket } from '../../../app/providers/useSocket';
+import { useApi } from '../../../app/providers/useApi';
 import CreateRoomModal from "../components/sidebar/CreateRoomModal.jsx";
 import SearchResult from "../components/sidebar/SearchResult.jsx";
 import ContactRequestModal from "../components/sidebar/ContactRequestModal.jsx";
@@ -21,7 +22,8 @@ import LogoutModal from "../components/headerChat/LogoutModal.jsx"; // Import Lo
 const ChatPage = () => {
     const navigate = useNavigate();
     const { title, rooms, selectRoom } = useChatSidebar();
-    const { actions: socketActions, socketRef } = useSocket(); // Added socketRef
+    const { actions: socketActions } = useSocket();
+    const { actions: apiActions } = useApi();
     const user = useSelector((s) => s.auth.user);
 
     // Hook ChatMessage (Quản lý chi tiết chat: message, member, actions)
@@ -115,25 +117,31 @@ const ChatPage = () => {
         socketActions.checkExist(username);
     };
 
-    // Handler khi gửi yêu cầu liên hệ - Gửi tin nhắn riêng
-    const handleSendContactRequest = (recipientName, message) => {
-        // Gửi tin nhắn riêng tới người đó với type="people"
-        socketActions.sendChat(recipientName, message, "people");
-        console.log('Đã gửi yêu cầu liên hệ đến:', recipientName);
-        // Đóng modal ngay sau khi gửi (không đợi response)
-        setShowContactRequest(false);
-        // Clear search query để hiển thị danh sách đầy đủ
-        setSearchQuery('');
+    const handleSendContactRequest = async (recipientName, message) => {
+        try {
+            const response = await apiActions.createPendingConversation(recipientName);
+            console.log('Response từ createPendingConversation:', response);
+            
+            if (response && (response.status === 'PENDING' || response.id)) {
+                socketActions.sendChat(recipientName, message, "people");
+                console.log('Đã gửi yêu cầu liên hệ đến:', recipientName);
+                setShowContactRequest(false);
+                setSearchQuery('');
 
-        // Gọi getUserList ngay sau khi gửi với delay để đảm bảo server đã xử lý
-        setTimeout(() => {
-            console.log('Tự động refresh danh sách user sau khi gửi contact request');
-            socketActions.getUserList();
-        }, 500);
-        // Gọi thêm lần nữa sau 1.5s để đảm bảo
-        setTimeout(() => {
-            socketActions.getUserList();
-        }, 1500);
+                setTimeout(() => {
+                    socketActions.getUserList();
+                }, 500);
+                setTimeout(() => {
+                    socketActions.getUserList();
+                }, 1500);
+            } else {
+                console.warn('Response không hợp lệ:', response);
+                setContactError('Không thể gửi yêu cầu liên hệ. Vui lòng thử lại.');
+            }
+        } catch (err) {
+            console.error('Lỗi khi tạo pending conversation:', err);
+            setContactError('Không thể gửi yêu cầu liên hệ. Vui lòng thử lại.');
+        }
     };
 
     // Handler mở modal yêu cầu liên hệ
@@ -153,7 +161,7 @@ const ChatPage = () => {
     };
 
     const handleConfirmLogout = () => {
-        socketActions.logout(socketRef);
+        socketActions.logout();
         setShowLogoutConfirm(false);
     };
 

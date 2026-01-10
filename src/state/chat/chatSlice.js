@@ -8,6 +8,7 @@ const initialState = {
     pendingRoomCreation: null, // { roomName, selectedUsers, currentUserName } | null - Lưu thông tin tạo nhóm đang chờ
     hasMore: true, // Trạng thái còn dữ liệu để load hay không
     pendingPage: 1, // Page number đang được fetch
+    pendingConversations: [], // Danh sách pending contact requests: [{ username, status, createdAt }, ...]
 };
 
 const chatSlice = createSlice({
@@ -208,6 +209,15 @@ const chatSlice = createSlice({
                 });
             }
         },
+        setPendingConversations(state, action) {
+            state.pendingConversations = action.payload ?? [];
+        },
+        removePendingConversation(state, action) {
+            const { username } = action.payload;
+            state.pendingConversations = state.pendingConversations.filter(
+                p => p.username !== username && p.name !== username
+            );
+        },
     },
 });
 
@@ -215,7 +225,7 @@ export const {
     setPeople, setActiveChat, setMessages, addMessage,
     setChatHistory, clearChat, setOnlineStatus, clearMessages,
     setPendingRoomCreation, clearPendingRoomCreation,
-    setPendingPage, updateRoomData
+    setPendingPage, updateRoomData, setPendingConversations, removePendingConversation
 } = chatSlice.actions;
 
 export default chatSlice.reducer;
