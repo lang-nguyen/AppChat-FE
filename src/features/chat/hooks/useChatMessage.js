@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useSocket } from "../../../app/providers/useSocket.js";
-import { clearMessages } from "../../../state/chat/chatSlice.js";
+import { clearMessages, addMessage } from "../../../state/chat/chatSlice.js";
+import { encodeEmoji } from "../../../shared/utils/emojiUtils.js";
 import { uploadFile } from "../../../shared/services/cloudinaryService.js";
 
 /**
@@ -113,6 +114,7 @@ export const useChatMessage = () => {
             queueMicrotask(() => setIsLoading(true));
             lastFetchedKeyRef.current = fetchKey;
 
+
             if (activeChat.type === 0 || activeChat.type === 'people') {
                 socketActions.chatHistory(activeChat.name, 1);
                 socketActions.checkOnline(activeChat.name);
@@ -122,10 +124,12 @@ export const useChatMessage = () => {
                 socketActions.roomHistory(activeChat.name, 1);
             }
 
+
             // Fallback: Tắt loading sau 5s nếu không có response
             const timeoutId = setTimeout(() => {
                 setIsLoading(false);
             }, 5000);
+
 
             return () => clearTimeout(timeoutId);
         }
@@ -135,6 +139,7 @@ export const useChatMessage = () => {
     useEffect(() => {
         // CHỈ xử lý khi đang loading (tránh vòng lặp)
         if (!isLoading) return;
+
 
         if (page === 1) {
             if (messages.length > 0) {
@@ -168,6 +173,7 @@ export const useChatMessage = () => {
             const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
             const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
 
+
             // Chỉ tự động scroll nếu user đang ở gần cuối (không làm phiền khi đang đọc tin cũ)
             if (isNearBottom) {
                 scrollToBottom('smooth');
@@ -182,11 +188,14 @@ export const useChatMessage = () => {
             prevScrollHeightRef.current = chatContainerRef.current.scrollHeight;
         }
 
+
         const nextPage = page + 1;
         setPage(nextPage);
         currentPageRef.current = nextPage; // Update ref để track page
 
+
         // Set pending page to window for socketHandlers
+        if (typeof window !== 'undefined') window.__chatPendingPage = nextPage;
         if (typeof window !== 'undefined') window.__chatPendingPage = nextPage;
 
         // Fetch tin nhắn trang tiếp theo
@@ -195,7 +204,9 @@ export const useChatMessage = () => {
             const fetchKey = `${activeChat.type}:${activeChat.name}:${nextPage}`;
             lastFetchedKeyRef.current = fetchKey;
 
+
             console.log(`[LoadMore] Fetching page ${nextPage} for ${activeChat.name}`);
+
 
             if (activeChat.type === 0 || activeChat.type === 'people') {
                 socketActions.chatHistory(activeChat.name, nextPage);
@@ -208,7 +219,9 @@ export const useChatMessage = () => {
     const handleScroll = useCallback(() => {
         if (!chatContainerRef.current || isLoading || !hasMore) return;
 
+
         const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+
 
         // CHỈ trigger load more khi:
         // 1. Scroll ở gần đầu (scrollTop <= 50)
@@ -216,6 +229,7 @@ export const useChatMessage = () => {
         // 3. Không phải trang đầu tiên vừa load xong
         const hasContent = scrollHeight > clientHeight;
         const isAtTop = scrollTop <= 50;
+
 
         if (isAtTop && hasContent && page >= 1) {
             loadMore();
@@ -243,60 +257,68 @@ export const useChatMessage = () => {
     }, []);
 
     const handleSend = useCallback(async (e) => {
-        e.preventDefault(); // Ngăn chặn hành vi mặc định của form (để trang k bị reload)
-
+        e.preventDefault();
         const hasText = inputText.trim().length > 0;
         const hasFile = !!selectedFile;
-
         if ((!hasText && !hasFile) || !activeChat || !socketActions || !isReady || isUploading) return;
-
-        let messageContent = inputText;
-        let messageType = "text";
-
-        // Upload file nếu có
+        // --- XỬ LÝ FILE ---
         if (hasFile) {
             setIsUploading(true);
             try {
                 const result = await uploadFile(selectedFile);
-                // Định dạng tin nhắn: [IMAGE]url hoặc [VIDEO]url
                 const prefix = result.type === 'video' ? '[VIDEO]' : '[IMAGE]';
-
-                // Gửi file như một tin nhắn riêng, sau đó gửi text nếu có
                 const fileMessage = `${prefix}${result.url}`;
-
-                // Gửi tin nhắn file
+                // Gửi file (Optimistic UI cho file phức tạp hơn nên tạm thời gửi server trước)
                 if (activeChat.type === 0 || activeChat.type === 'people') {
                     socketActions.sendChat(activeChat.name, fileMessage, 'people');
                 } else {
                     socketActions.sendChat(activeChat.name, fileMessage, 'room');
                 }
 
-                // Clear file sau khi gửi thành công
+                // Clear file
                 handleRemoveFile();
-
             } catch (error) {
                 console.error("Upload thất bại:", error);
-                alert("Gửi file thất bại. Vui lòng thử lại."); // Sẽ refactor sau
+                alert("Gửi file thất bại. Vui lòng thử lại.");
                 setIsUploading(false);
                 return;
             } finally {
                 setIsUploading(false);
             }
         }
-
-        // Gửi text nếu có (hoặc nếu chỉ có text)
+        // --- XỬ LÝ TEXT (Giữ logic Optimistic UI & Emoji) ---
         if (hasText) {
+            // Encode Emoji (từ nhánh dev)
+            const encodedText = encodeEmoji ? encodeEmoji(inputText) : inputText;
+
+            // Optimistic UI: Hiển thị ngay lập tức (từ nhánh dev)
+            const tempId = Date.now().toString();
+            const currentName = user?.name || user?.user || user?.username || localStorage.getItem('user_name') || 'Tôi';
+
+            const optimisticMessage = {
+                name: currentName,
+                mes: encodedText,
+                createAt: new Date().toISOString(),
+                to: activeChat.name,
+                type: (activeChat.type === 0 || activeChat.type === 'people') ? 'people' : 'room',
+                tempId: tempId
+            };
+
+            dispatch(addMessage(optimisticMessage));
+            // Gửi socket
             if (activeChat.type === 0 || activeChat.type === 'people') {
-                socketActions.sendChat(activeChat.name, messageContent, 'people');
+                socketActions.sendChat(activeChat.name, encodedText, 'people');
             } else {
-                socketActions.sendChat(activeChat.name, messageContent, 'room');
+                socketActions.sendChat(activeChat.name, encodedText, 'room');
             }
+
             setInputText('');
         }
-
-        // Scroll xuống
-        setTimeout(() => scrollToBottom('smooth'), 100);
-    }, [inputText, selectedFile, isUploading, activeChat, socketActions, isReady, scrollToBottom, handleRemoveFile]);
+        // Scroll (từ nhánh dev - mượt hơn)
+        requestAnimationFrame(() => {
+            scrollToBottom('smooth');
+        });
+    }, [inputText, selectedFile, isUploading, activeChat, socketActions, isReady, scrollToBottom, handleRemoveFile, dispatch, user]);
 
     const handleAddMember = useCallback(() => {
         const username = window.prompt("Nhập tên người dùng muốn thêm vào nhóm:");

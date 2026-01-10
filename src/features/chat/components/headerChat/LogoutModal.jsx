@@ -1,6 +1,6 @@
 import React from 'react';
 import styles from './LogoutModal.module.css';
-import Button from '../../../shared/components/Button.jsx';
+import Button from '../../../../shared/components/Button.jsx';
 
 const LogoutModal = ({ onClose, onConfirm }) => {
     return (

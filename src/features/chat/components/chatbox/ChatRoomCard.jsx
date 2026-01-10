@@ -1,9 +1,11 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useState, useRef, useEffect } from 'react';
+import EmojiPicker from 'emoji-picker-react';
 import styles from './ChatRoomCard.module.css';
 import Loading from '../../../../shared/components/Loading';
 import ImageModal from '../../../../shared/components/ImageModal';
 import { useSocket } from '../../../../app/providers/useSocket.js';
 import { parseRoomInvite } from '../../../../shared/utils/parseRoomInvite.js';
+import { decodeEmoji, isEmojiOnly } from '../../../../shared/utils/emojiUtils.js';
 
 const ChatRoomCard = ({
     activeChat,
@@ -93,10 +95,48 @@ const ChatRoomCard = ({
         return mes;
     };
 
+    // State cho Emoji Picker
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const emojiPickerRef = useRef(null);
+    const emojiButtonRef = useRef(null);
+
+    const onEmojiClick = (emojiObject) => {
+        setInputText((prev) => prev + emojiObject.emoji);
+    };
+
+    useEffect(() => {
+        if (!showEmojiPicker) return;
+
+        const handleClickOutside = (event) => {
+            if (
+                emojiPickerRef.current &&
+                !emojiPickerRef.current.contains(event.target) &&
+                emojiButtonRef.current &&
+                !emojiButtonRef.current.contains(event.target)
+            ) {
+                setShowEmojiPicker(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showEmojiPicker]);
+
     if (!activeChat) return null;
 
     return (
         <div className={styles.container}>
+            {/* Loader Overlay (bao phủ toàn bộ card khi đang tải trang đầu tiên) */}
+            {isLoading && page === 1 && (
+                <div className={styles.loadingOverlay}>
+                    <div className={styles.loadingContent}>
+                        <Loading text="Đang tải tin nhắn..." />
+                    </div>
+                </div>
+            )}
+
             {/* Phần Header */}
             <div className={styles.header}>
                 <div className={styles.headerLeft}>
@@ -146,12 +186,6 @@ const ChatRoomCard = ({
                 {messages.length === 0 && !isLoading && (
                     <div className={styles.loader} style={{ padding: '40px 0' }}>
                         Chưa có tin nhắn trong cuộc hội thoại này.
-                    </div>
-                )}
-
-                {messages.length === 0 && isLoading && page === 1 && (
-                    <div style={{ padding: '40px 0', textAlign: 'center' }}>
-                        <Loading text="Đang tải tin nhắn..." />
                     </div>
                 )}
 
@@ -230,6 +264,33 @@ const ChatRoomCard = ({
                 <div ref={messagesEndRef} style={{ height: 1, width: '100%' }} />
             </div>
 
+            {/* Emoji Picker Box */}
+            {showEmojiPicker && (
+                <div
+                    ref={emojiPickerRef}
+                    className={styles.emojiPickerWrapper}
+                >
+                    <EmojiPicker
+                        onEmojiClick={onEmojiClick}
+                        width={300}
+                        height={400}
+                        searchPlaceHolder="Tìm kiếm biểu tượng cảm xúc"
+                        previewConfig={{ showPreview: false }}
+                        skinTonesDisabled={true}
+                        emojiStyle="native"
+                        style={{
+                            '--epr-category-label-text-color': '#E0407E',
+                            '--epr-picker-border-color': '#E0407E',
+                            '--epr-highlight-color': '#E0407E',
+                            '--epr-focus-bg-color': '#fce4ec',
+                            borderColor: '#E0407E',
+                            width: '100%'
+                        }}
+                    />
+                </div>
+            )}
+
+
             {/* Khu vực nhập tin nhắn */}
             <form className={styles.inputArea} onSubmit={handleSend}>
                 {/* Preview File Area */}
@@ -268,8 +329,19 @@ const ChatRoomCard = ({
                     />
 
                     {/* Emoji icon */}
-                    <button type="button" className={styles.actionButton} title="Emoji">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>
+                    <button
+                        ref={emojiButtonRef}
+                        type="button"
+                        className={styles.actionButton}
+                        title="Emoji"
+                        onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                    >
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={showEmojiPicker ? "#E0407E" : "#000"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                            <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                            <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                        </svg>
                     </button>
 
                     <input
@@ -284,15 +356,26 @@ const ChatRoomCard = ({
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                         {/* Mic icon */}
                         <button type="button" className={styles.actionButton} title="Ghi âm">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                <line x1="12" y1="19" x2="12" y2="23"></line>
+                                <line x1="8" y1="23" x2="16" y2="23"></line>
+                            </svg>
                         </button>
                         {/* Image icon - Click trigger select file */}
                         <button type="button" className={styles.actionButton} title="Đính kèm ảnh/video" onClick={triggerFileSelect}>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
                         </button>
-                        {/* Sticker icon - Updated to Smiley Sticker icon */}
+                        {/* Sticker icon */}
                         <button type="button" className={styles.actionButton} title="Stickers">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.21-8.58"></path><path d="M15 3.5V8a1 1 0 0 0 1 1h4.5"></path><path d="M21 12a9 9 0 0 1-9 9"></path><path d="M9 10h.01"></path><path d="M15 10h.01"></path><path d="M9 15c.66 1 1.66 2 3 2s2.34-1 3-2"></path></svg>
+                            <svg width="23" height="23" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142L16.4142 20.4142C16.0391 20.7893 15.5304 21 15 21H7C4.79086 21 3 19.2091 3 17V7C3 4.79086 4.79086 3 7 3H17C19.2091 3 21 4.79086 21 7V15Z" stroke="#000" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                                <path d="M21 15H18C16.3431 15 15 16.3431 15 18V21L21 15Z" fill="#000" stroke="#000" strokeWidth="0.6" strokeLinejoin="round" />
+                                <circle cx="8.5" cy="10.5" r="1.5" fill="#000" />
+                                <circle cx="15.5" cy="10.5" r="1.5" fill="#000" />
+                                <path d="M8 15.5C9.5 17.5 14 17.5 15.5 15.5" stroke="#000" strokeWidth="2.5" strokeLinecap="round" />
+                            </svg>
                         </button>
                     </div>
                 </div>

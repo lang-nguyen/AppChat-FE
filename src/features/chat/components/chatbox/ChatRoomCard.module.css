@@ -3,7 +3,10 @@
     flex-direction: column;
     height: 100%;
     background-color: #fff;
-    /* justify-content: space-between; */
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    font-family: 'Inter', sans-serif;
     position: relative;
 }
 
@@ -193,7 +196,15 @@
     padding: 8px 15px;
     display: flex;
     align-items: center;
-    gap: 10px;
+    background-color: #fff;
+    border: 1.5px solid #000000;
+    border-radius: 12px;
+    padding: 4px 12px;
+    transition: border-color 0.2s;
+}
+
+.inputContainer:focus-within {
+    border-color: #FF5596;
 }
 
 .input {
@@ -211,7 +222,7 @@
     border: none;
     cursor: pointer;
     padding: 5px;
-    color: #888;
+
     display: flex;
     align-items: center;
     justify-content: center;
@@ -235,6 +246,13 @@
     cursor: pointer;
     transition: background-color 0.2s, transform 0.1s;
     flex-shrink: 0;
+}
+
+.sendButton svg {
+    width: 24px !important;
+    height: 24px !important;
+    min-width: 24px;
+    min-height: 24px;
 }
 
 .sendButton:hover {
@@ -337,4 +355,86 @@
     align-items: center;
     justify-content: center;
     border-radius: 8px;
+}
+
+.loadingOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(74, 62, 68, 0.57);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+}
+
+.loadingContent {
+    z-index: 101;
+}
+
+.emojiPickerWrapper {
+    position: absolute;
+    bottom: 80px;
+    left: 20px;
+    z-index: 100;
+}
+
+.emojiPickerWrapper :global(.EmojiPickerReact) {
+    display: flex !important;
+    flex-direction: column !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+    border: 1px solid #E0407E !important;
+    font-family: 'Inter',
+        sans-serif !important;
+}
+
+.emojiPickerWrapper :global(.epr-header) {
+    order: 1 !important;
+
+}
+
+.emojiPickerWrapper :global(.epr-body) {
+    order: 2 !important;
+    scrollbar-width: none !important;
+}
+
+.emojiPickerWrapper :global(.epr-body)::-webkit-scrollbar {
+    display: none !important;
+}
+
+.emojiPickerWrapper :global(.epr-category-nav) {
+    order: 3 !important;
+    border-top: 1px solid #f0f0f0 !important;
+    border-bottom: none !important;
+    padding: 4px 0 !important;
+}
+
+.emojiPickerWrapper :global(.epr-emoji:active),
+.emojiPickerWrapper :global(.epr-emoji:focus),
+.emojiPickerWrapper :global(.epr-category-nav > button:active),
+.emojiPickerWrapper :global(.epr-category-nav > button:focus) {
+    background-color: transparent !important;
+    border: none !important;
+    outline: none !important;
+}
+
+.emojiPickerWrapper :global(.epr-emoji:hover) {
+    background-color: transparent !important;
+}
+
+.emojiPickerWrapper :global(.epr-search-container) {
+    margin-bottom: 0 !important;
+}
+
+.emojiOnly {
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    font-size: 40px !important;
+    line-height: normal;
 }
