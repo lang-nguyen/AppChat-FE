@@ -4,8 +4,22 @@ import React, { useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { ApiContext } from './ApiContext.js';
 
-// API Base URL - có thể dùng env variable
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+// API Base URL - trong dev mode dùng '/api' để đi qua proxy, production dùng env
+const envApiUrl = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL = import.meta.env.DEV 
+    ? '/api'  // Dev mode: dùng relative path để đi qua Vite proxy tránh CORS
+    : (envApiUrl || '/api');  // Production: dùng env variable
+
+// Utility function để kiểm tra environment
+export const getEnvironmentInfo = () => {
+    const envApiUrl = import.meta.env.VITE_API_BASE_URL;
+    
+    return {
+        mode: import.meta.env.MODE,
+        apiBaseUrl: API_BASE_URL,
+        envApiUrl: envApiUrl || null,
+    };
+};
 // Tạo provider
 export const ApiProvider = ({ children }) => {
     // Lấy user từ Redux Store để có thể dùng cho authentication
@@ -260,6 +274,7 @@ export const ApiProvider = ({ children }) => {
             actions: apiActions,
             apiBaseUrl: API_BASE_URL,
             username, // Có thể dùng trong components nếu cần
+            envInfo: getEnvironmentInfo(), // Thông tin environment
         }),
         [apiActions, username]
     );
