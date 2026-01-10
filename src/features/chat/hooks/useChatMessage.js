@@ -268,7 +268,24 @@ export const useChatMessage = () => {
                 const result = await uploadFile(selectedFile);
                 const prefix = result.type === 'video' ? '[VIDEO]' : '[IMAGE]';
                 const fileMessage = `${prefix}${result.url}`;
-                // Gửi file (Optimistic UI cho file phức tạp hơn nên tạm thời gửi server trước)
+
+                // --- OPTIMISTIC UI CHO FILE ---
+                // Hiển thị ngay sau khi upload xong (có URL thật), không cần đợi socket vòng về
+                const tempId = Date.now().toString();
+                const currentName = user?.name || user?.user || user?.username || localStorage.getItem('user_name') || 'Tôi';
+
+                const optimisticFileMessage = {
+                    name: currentName,
+                    mes: fileMessage, // "[IMAGE]url" hoặc "[VIDEO]url"
+                    createAt: new Date().toISOString(),
+                    to: activeChat.name,
+                    type: (activeChat.type === 0 || activeChat.type === 'people') ? 'people' : 'room',
+                    tempId: tempId
+                };
+                dispatch(addMessage(optimisticFileMessage));
+                // ------------------------------
+
+                // Gửi file 
                 if (activeChat.type === 0 || activeChat.type === 'people') {
                     socketActions.sendChat(activeChat.name, fileMessage, 'people');
                 } else {
@@ -286,12 +303,12 @@ export const useChatMessage = () => {
                 setIsUploading(false);
             }
         }
-        // --- XỬ LÝ TEXT (Giữ logic Optimistic UI & Emoji) ---
+        // --- XỬ LÝ TEXT 
         if (hasText) {
-            // Encode Emoji (từ nhánh dev)
+            // Encode Emoji 
             const encodedText = encodeEmoji ? encodeEmoji(inputText) : inputText;
 
-            // Optimistic UI: Hiển thị ngay lập tức (từ nhánh dev)
+            // Optimistic UI: Hiển thị ngay lập tức 
             const tempId = Date.now().toString();
             const currentName = user?.name || user?.user || user?.username || localStorage.getItem('user_name') || 'Tôi';
 
@@ -314,7 +331,7 @@ export const useChatMessage = () => {
 
             setInputText('');
         }
-        // Scroll (từ nhánh dev - mượt hơn)
+        // Scroll 
         requestAnimationFrame(() => {
             scrollToBottom('smooth');
         });

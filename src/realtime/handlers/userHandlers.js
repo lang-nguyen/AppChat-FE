@@ -1,4 +1,6 @@
-import { setPeople, setOnlineStatus, setError } from "../../state/chat/chatSlice";
+import { setPeople, setOnlineStatus } from "../../state/chat/chatSlice";
+import { setError } from "../../state/auth/authSlice";
+
 
 export const handleGetUserList = (response, dispatch) => {
     if (response.status === 'success' && Array.isArray(response.data)) {
