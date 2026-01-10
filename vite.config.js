@@ -1,38 +1,32 @@
-import js from '@eslint/js'
-import globals from 'globals'
-import reactHooks from 'eslint-plugin-react-hooks'
-import reactRefresh from 'eslint-plugin-react-refresh'
-import { defineConfig, globalIgnores } from 'eslint/config'
+import { defineConfig, loadEnv } from 'vite'
+import react from '@vitejs/plugin-react'
 
-export default defineConfig([
-    globalIgnores(['dist']),
-    {
-        files: ['**/*.{js,jsx}'],
-        extends: [
-            js.configs.recommended,
-            reactHooks.configs.flat.recommended,
-            reactRefresh.configs.vite,
-        ],
-        languageOptions: {
-            ecmaVersion: 2020,
-            globals: globals.browser,
-            parserOptions: {
-                ecmaVersion: 'latest',
-                ecmaFeatures: { jsx: true },
-                sourceType: 'module',
-            },
-        },
-        rules: {
-            'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
-        },
-    },
-    // Config riêng cho các file config (vite.config.js, etc.) - sử dụng Node.js globals
-    {
-        files: ['*.config.js', '*.config.ts', '*.config.mjs'],
-        languageOptions: {
-            globals: {
-                ...globals.node,
-            },
-        },
-    },
-])
+export default defineConfig(({ mode }) => {
+    // Load env file based on `mode` in the current working directory.
+    const env = loadEnv(mode, process.cwd(), '')
+
+    // Extract base URL from env, remove /api suffix for proxy target
+    const apiBaseUrl = env.VITE_API_BASE_URL
+    if (!apiBaseUrl) {
+        console.warn('VITE_API_BASE_URL is not set in environment variables')
+    }
+
+    // Remove trailing /api if present, ensure no trailing slash
+    const proxyTarget = apiBaseUrl ? apiBaseUrl.replace(/\/api\/?$/, '').replace(/\/$/, '') : null
+
+    return {
+        plugins: [react()],
+        server: {
+            ...(proxyTarget && {
+                proxy: {
+                    '/api': {
+                        target: proxyTarget,
+                        changeOrigin: true,
+                        secure: true,
+                        rewrite: (path) => path.replace(/^\/api/, '/api')
+                    }
+                }
+            })
+        }
+    }
+})
