@@ -1,9 +1,10 @@
 import React from 'react';
 import colors from '../../../../shared/constants/colors.js';
 import AddMember from './AddMember.jsx';
+import { getAvatarUrl } from '../../../../shared/utils/avatarUtils.js';
 
 const ListMember = ({ members = [], isGroup = false, onAddMember }) => (
-    <div style={{ padding: 16, borderBottom: '1px solid #FFB3D9' }}>
+    <div style={{ padding: 16, borderBottom: '1px solid var(--theme-border, #FFB3D9)' }}>
         <div style={{
             display: 'flex',
             justifyContent: 'space-between',
@@ -35,7 +36,7 @@ const ListMember = ({ members = [], isGroup = false, onAddMember }) => (
                                 overflow: 'hidden'
                             }}>
                                 <img
-                                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=random&size=128`}
+                                    src={getAvatarUrl(member.name, 128)}
                                     alt={member.name}
                                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                 />

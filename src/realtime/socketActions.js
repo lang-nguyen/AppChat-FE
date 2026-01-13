@@ -9,13 +9,23 @@ const sendRawData = (socketRef, eventName, dataPayload) => {
                 data: dataPayload
             }
         };
-        socketRef.current.send(JSON.stringify(payload));
+        const payloadString = JSON.stringify(payload);
+        console.log(`[Socket] Gửi request ${eventName}:`, {
+            payload: payloadString,
+            readyState: socketRef.current.readyState,
+            url: socketRef.current.url
+        });
+        socketRef.current.send(payloadString);
         // Chỉ log cho các event quan trọng, không log mọi thứ
         if (eventName !== "GET_USER_LIST" && eventName !== "SEND_CHAT") {
             console.log(`[Socket] ${eventName}:`, dataPayload);
         }
     } else {
-        console.error("Socket chua ket noi, khong the gui:", eventName);
+        console.error("Socket chua ket noi, khong the gui:", eventName, {
+            hasSocket: !!socketRef.current,
+            readyState: socketRef.current?.readyState,
+            expectedState: WebSocket.OPEN
+        });
     }
 };
 
@@ -54,7 +64,9 @@ export const socketActions = {
     },
 
     checkOnline: (socketRef, username) => {
-        sendRawData(socketRef, "CHECK_USER_ONLINE", { user: username }); //+1 Đổi name thành user
+        // Lưu user đang check để map với response (vì response không có user field)
+        window.__pendingCheckOnline = username;
+        sendRawData(socketRef, "CHECK_USER_ONLINE", { user: username });
     },
 
     checkExist: (socketRef, username) => {

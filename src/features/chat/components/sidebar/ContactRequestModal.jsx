@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import ContactRequestHeader from './ContactRequestHeader';
 import Button from '../../../../shared/components/Button';
 import colors from '../../../../shared/constants/colors';
+import { getAvatarUrl } from '../../../../shared/utils/avatarUtils.js';
 
 const ContactRequestModal = ({ recipientName, onClose, onSend }) => {
     const currentUser = useSelector((s) => s.auth.user);
@@ -65,7 +66,7 @@ const ContactRequestModal = ({ recipientName, onClose, onSend }) => {
                     justifyContent: 'center'
                 }}>
                     <img
-                        src={`https://ui-avatars.com/api/?name=${encodeURIComponent(recipientName)}&background=random&size=128`}
+                        src={getAvatarUrl(recipientName, 128)}
                         alt={recipientName}
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />

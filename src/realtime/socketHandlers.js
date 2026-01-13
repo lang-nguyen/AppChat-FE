@@ -5,6 +5,20 @@ import { addMessage, setPeople, setMessages, setChatHistory, setOnlineStatus, up
 
 // Xử lý tin nhắn đến
 export const handleSocketMessage = (response, dispatch, socketActions, socketRef, getState) => {
+    // Log đầu handler để biết handler có được gọi không
+    console.log('[Socket Handler]  Handler được gọi với event:', response?.event, '| Status:', response?.status);
+
+    // Kiểm tra response và event
+    if (!response) {
+        console.warn("[Socket Handler] Response is null or undefined");
+        return;
+    }
+
+    if (!response.event) {
+        console.warn("[Socket Handler] Response không có field 'event':", response);
+        return;
+    }
+
     switch (response.event) {
         case "AUTH":
             // Server bao loi authen, co the do goi API can login ma user chua login
@@ -95,7 +109,27 @@ export const handleSocketMessage = (response, dispatch, socketActions, socketRef
 
         case "GET_USER_LIST":
             if (response.status === 'success' && Array.isArray(response.data)) {
-                dispatch(setPeople(response.data));
+                // Lấy user hiện tại từ state hoặc localStorage
+                const state = getState ? getState() : null;
+                const currentUser = state?.auth?.user?.user ||
+                    state?.auth?.user?.username ||
+                    state?.auth?.user?.name ||
+                    localStorage.getItem('user_name') ||
+                    '';
+
+                // Xử lý danh sách: đổi tên user trùng với user hiện tại thành "Lưu trữ"
+                const processedList = response.data.map(item => {
+                    if (item.name === currentUser) {
+                        return {
+                            ...item,
+                            name: 'Lưu trữ',
+                            originalName: currentUser // Lưu tên gốc để dùng khi cần
+                        };
+                    }
+                    return item;
+                });
+
+                dispatch(setPeople(processedList));
             } else {
                 // Nếu lỗi (chưa login), không set để tránh overwrite list cũ
                 console.warn("GET_USER_LIST thất bại:", response.mes || response.status);
@@ -155,17 +189,17 @@ export const handleSocketMessage = (response, dispatch, socketActions, socketRef
                 // Lấy thông tin tạo nhóm đang chờ từ Redux
                 const state = getState ? getState() : null;
                 const pendingRoom = state?.chat?.pendingRoomCreation;
-                
+
                 if (pendingRoom) {
 
                     console.log("Thông tin pending room:", pendingRoom);
 
                     const { roomName, selectedUsers, currentUserName } = pendingRoom;
-                    
+
                     // 1. Join bản thân vào phòng
                     socketActions.joinRoom(socketRef, roomName);
                     console.log("Đã join bản thân vào phòng:", roomName);
-                    
+
                     // 2. Gửi tin nhắn mời vào nhóm cho từng người được chọn (qua chat 1-1)
                     // Vì JOIN_ROOM chỉ để tự join, không thể thêm người khác vào group
                     console.log("Gửi tin nhắn mời vào nhóm cho:", selectedUsers);
@@ -180,18 +214,18 @@ export const handleSocketMessage = (response, dispatch, socketActions, socketRef
                             console.log(`Đã gửi tin nhắn mời vào nhóm "${roomName}" cho:`, username);
                         }, index * 300); // Delay từng tin nhắn để tránh spam
                     });
-                    
+
                     // 3. Gửi tin nhắn thông báo vào phòng (cho các thành viên đã join)
-                    const userListText = selectedUsers.length > 0 
-                        ? selectedUsers.join(', ') 
+                    const userListText = selectedUsers.length > 0
+                        ? selectedUsers.join(', ')
                         : 'không có ai';
                     const notificationMessage = `${currentUserName} đã tạo nhóm và mời ${userListText} tham gia`;
-                    
+
                     // Delay một chút để đảm bảo join xong trước khi gửi tin nhắn vào phòng
                     setTimeout(() => {
                         socketActions.sendChat(socketRef, roomName, notificationMessage, "room");
                     }, 500);
-                    
+
                     // 4. Clear pending room creation
                     dispatch(clearPendingRoomCreation());
                 }
@@ -218,20 +252,45 @@ export const handleSocketMessage = (response, dispatch, socketActions, socketRef
             break;
 
         case "CHECK_USER_ONLINE":
+            // Response chỉ có status, không có user field
+            // Lấy user từ window.__pendingCheckOnline (đã lưu khi gửi request)
             if (response.status === 'success' && response.data) {
-                dispatch(setOnlineStatus({
-                    user: response.data.user,
-                    isOnline: response.data.status
-                }));
+                // Lấy user từ pending check (đã lưu khi gửi request)
+                const user = window.__pendingCheckOnline || null;
+                
+                // Lấy online status từ response
+                const isOnline = response.data.status !== undefined
+                    ? response.data.status
+                    : (response.data.isOnline !== undefined
+                        ? response.data.isOnline
+                        : (response.data.online !== undefined
+                            ? response.data.online
+                            : null));
+
+                if (user && isOnline !== null) {
+                    dispatch(setOnlineStatus({
+                        user: user,
+                        isOnline: !!isOnline
+                    }));
+                    // Clear pending sau khi xử lý thành công
+                    window.__pendingCheckOnline = null;
+                } else {
+                    // Clear pending nếu không parse được để tránh dùng lại giá trị cũ
+                    window.__pendingCheckOnline = null;
+                }
+            } else {
+                // Clear pending nếu failed
+                window.__pendingCheckOnline = null;
             }
             break;
+
 
         case "CHECK_USER_EXIST":
             // response.status: 'success' chỉ cho biết request thành công
             // response.data.status: true/false mới cho biết user có tồn tại không
             console.log("Check User Exist - Full response:", response);
             const userExists = response.data?.status === true || response.data?.status === 'true';
-            
+
             if (userExists) {
                 console.log("Check User Exist: Tồn tại", response.data);
                 // Nếu có callback pending cho contact check, gọi onSuccess

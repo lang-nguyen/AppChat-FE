@@ -5,6 +5,7 @@ import Loading from '../../../../shared/components/Loading';
 import { useSocket } from '../../../../app/providers/useSocket.js';
 import { parseRoomInvite } from '../../../../shared/utils/parseRoomInvite.js';
 import { decodeEmoji, isEmojiOnly } from '../../../../shared/utils/emojiUtils.js';
+import { getAvatarUrl } from '../../../../shared/utils/avatarUtils.js';
 
 const ChatRoomCard = ({
     activeChat,
@@ -54,36 +55,36 @@ const ChatRoomCard = ({
         return date.toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' });
     };
 
-	// State cho Emoji Picker
-	const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-	const emojiPickerRef = useRef(null);
-	const emojiButtonRef = useRef(null);
+    // State cho Emoji Picker
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const emojiPickerRef = useRef(null);
+    const emojiButtonRef = useRef(null);
 
-	const onEmojiClick = (emojiObject) => {
-		setInputText((prev) => prev + emojiObject.emoji);
-	};
+    const onEmojiClick = (emojiObject) => {
+        setInputText((prev) => prev + emojiObject.emoji);
+    };
 
-	useEffect(() => {
-		if (!showEmojiPicker) return;
+    useEffect(() => {
+        if (!showEmojiPicker) return;
 
-		const handleClickOutside = (event) => {
-			if (
-				emojiPickerRef.current &&
-				!emojiPickerRef.current.contains(event.target) &&
-				emojiButtonRef.current &&
-				!emojiButtonRef.current.contains(event.target)
-			) {
-				setShowEmojiPicker(false);
-			}
-		};
+        const handleClickOutside = (event) => {
+            if (
+                emojiPickerRef.current &&
+                !emojiPickerRef.current.contains(event.target) &&
+                emojiButtonRef.current &&
+                !emojiButtonRef.current.contains(event.target)
+            ) {
+                setShowEmojiPicker(false);
+            }
+        };
 
-		document.addEventListener('mousedown', handleClickOutside);
-		return () => {
-			document.removeEventListener('mousedown', handleClickOutside);
-		};
-	}, [showEmojiPicker]);
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showEmojiPicker]);
 
-	if (!activeChat) return null;
+    if (!activeChat) return null;
 
     return (
         <div className={styles.container}>
@@ -101,7 +102,7 @@ const ChatRoomCard = ({
                 <div className={styles.headerLeft}>
                     <div className={styles.avatarContainer}>
                         <img
-                            src={`https://ui-avatars.com/api/?name=${encodeURIComponent(activeChat.name)}&background=random&size=128`}
+                            src={getAvatarUrl(activeChat.name, 128)}
                             alt={activeChat.name}
                             className={styles.avatar}
                         />
@@ -168,7 +169,7 @@ const ChatRoomCard = ({
                                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 64 }}>
                                         <div style={{ position: 'relative' }}>
                                             <img
-                                                src={`https://ui-avatars.com/api/?name=${encodeURIComponent(msg.name)}&background=random&size=32`}
+                                                src={getAvatarUrl(msg.name, 32)}
                                                 alt={msg.name}
                                                 className={styles.smallAvatar}
                                             />
@@ -207,8 +208,8 @@ const ChatRoomCard = ({
                                         </div>
                                     ) : (
                                         <div className={styles.bubble} style={{
-                                            backgroundColor: isMe ? '#FF5596' : '#fff',
-                                            color: isMe ? '#fff' : '#000',
+                                            backgroundColor: isMe ? 'var(--theme-sender-bubble, #FF5596)' : '#fff',
+                                            color: isMe ? 'var(--theme-text-on-primary, #fff)' : '#000',
                                         }}>
                                             {msg.mes}
                                         </div>
@@ -221,51 +222,51 @@ const ChatRoomCard = ({
                 <div ref={messagesEndRef} style={{ height: 1, width: '100%' }} />
             </div>
 
-			{/* Emoji Picker Box */}
-			{showEmojiPicker && (
-				<div
-					ref={emojiPickerRef}
-					className={styles.emojiPickerWrapper}
-				>
-					<EmojiPicker
-						onEmojiClick={onEmojiClick}
-						width={300}
-						height={400}
-						searchPlaceHolder="Tìm kiếm biểu tượng cảm xúc"
-						previewConfig={{ showPreview: false }}
-						skinTonesDisabled={true}
-						emojiStyle="native"
-						style={{
-							'--epr-category-label-text-color': '#E0407E',
-							'--epr-picker-border-color': '#E0407E',
-							'--epr-highlight-color': '#E0407E',
-							'--epr-focus-bg-color': '#fce4ec',
-							borderColor: '#E0407E',
-							width: '100%'
-						}}
-					/>
-				</div>
-			)}
+            {/* Emoji Picker Box */}
+            {showEmojiPicker && (
+                <div
+                    ref={emojiPickerRef}
+                    className={styles.emojiPickerWrapper}
+                >
+                    <EmojiPicker
+                        onEmojiClick={onEmojiClick}
+                        width={300}
+                        height={400}
+                        searchPlaceHolder="Tìm kiếm biểu tượng cảm xúc"
+                        previewConfig={{ showPreview: false }}
+                        skinTonesDisabled={true}
+                        emojiStyle="native"
+                        style={{
+                            '--epr-category-label-text-color': '#E0407E',
+                            '--epr-picker-border-color': '#E0407E',
+                            '--epr-highlight-color': '#E0407E',
+                            '--epr-focus-bg-color': '#fce4ec',
+                            borderColor: '#E0407E',
+                            width: '100%'
+                        }}
+                    />
+                </div>
+            )}
 
 
-			{/* Khu vực nhập tin nhắn */}
-			<form className={styles.inputArea} onSubmit={handleSend}>
-				<div className={styles.inputContainer}>
-					{/* Emoji icon */}
-					<button
-						ref={emojiButtonRef}
-						type="button"
-						className={styles.actionButton}
-						title="Emoji"
-						onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-					>
-						<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={showEmojiPicker ? "#E0407E" : "#000"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-							<circle cx="12" cy="12" r="10"></circle>
-							<path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
-							<line x1="9" y1="9" x2="9.01" y2="9"></line>
-							<line x1="15" y1="9" x2="15.01" y2="9"></line>
-						</svg>
-					</button>
+            {/* Khu vực nhập tin nhắn */}
+            <form className={styles.inputArea} onSubmit={handleSend}>
+                <div className={styles.inputContainer}>
+                    {/* Emoji icon */}
+                    <button
+                        ref={emojiButtonRef}
+                        type="button"
+                        className={styles.actionButton}
+                        title="Emoji"
+                        onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                    >
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={showEmojiPicker ? "#E0407E" : "#000"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                            <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                            <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                        </svg>
+                    </button>
 
                     <input
                         type="text"

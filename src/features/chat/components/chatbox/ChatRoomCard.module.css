@@ -17,8 +17,8 @@
     border-bottom: 1px solid #f0f0f0;
     display: flex;
     align-items: center;
-    background-color: #FF5596;
-    color: white;
+    background-color: var(--theme-header-bg, #FF5596);
+    color: var(--theme-text-on-primary, white);
     z-index: 10;
     justify-content: space-between;
 }
@@ -72,7 +72,7 @@
     margin: 0;
     font-size: 18px;
     font-weight: 700;
-    color: white;
+    color: var(--theme-text-on-primary, white);
 }
 
 .headerRight {
@@ -85,7 +85,7 @@
     background: none;
     border: none;
     cursor: pointer;
-    color: white;
+    color: var(--theme-text-on-primary, white);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -202,7 +202,7 @@
 }
 
 .inputContainer:focus-within {
-    border-color: #FF5596;
+    border-color: var(--theme-primary, #FF5596);
 }
 
 .input {
@@ -232,10 +232,10 @@
 }
 
 .sendButton {
-    background-color: #FF5596;
+    background-color: var(--theme-primary, #FF5596);
     border: none;
     cursor: pointer;
-    color: white;
+    color: var(--theme-text-on-primary, white);
     padding: 0;
     width: 40px;
     height: 40px;
@@ -244,11 +244,12 @@
     align-items: center;
     justify-content: center;
     transition: background-color 0.2s, transform 0.1s;
-    box-shadow: 0 2px 5px rgba(255, 85, 150, 0.3);
+    box-shadow: 0 2px 5px var(--theme-shadow, rgba(255, 85, 150, 0.3));
 }
 
 .sendButton:hover {
-    background-color: #E0407E;
+    background-color: var(--theme-primary, #E0407E);
+    filter: brightness(0.9);
     transform: scale(1.05);
 }
 
@@ -275,65 +276,65 @@
 }
 
 .emojiPickerWrapper {
-	position: absolute;
-	bottom: 80px;
-	left: 20px;
-	z-index: 100;
+    position: absolute;
+    bottom: 80px;
+    left: 20px;
+    z-index: 100;
 }
 
 .emojiPickerWrapper :global(.EmojiPickerReact) {
-	display: flex !important;
-	flex-direction: column !important;
-	border-radius: 12px !important;
-	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
-	border: 1px solid #E0407E !important;
-	font-family: 'Inter',
-		sans-serif !important;
+    display: flex !important;
+    flex-direction: column !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+    border: 1px solid #E0407E !important;
+    font-family: 'Inter',
+        sans-serif !important;
 }
 
 .emojiPickerWrapper :global(.epr-header) {
-	order: 1 !important;
+    order: 1 !important;
 
 }
 
 .emojiPickerWrapper :global(.epr-body) {
-	order: 2 !important;
-	scrollbar-width: none !important;
+    order: 2 !important;
+    scrollbar-width: none !important;
 }
 
 .emojiPickerWrapper :global(.epr-body)::-webkit-scrollbar {
-	display: none !important;
+    display: none !important;
 }
 
 .emojiPickerWrapper :global(.epr-category-nav) {
-	order: 3 !important;
-	border-top: 1px solid #f0f0f0 !important;
-	border-bottom: none !important;
-	padding: 4px 0 !important;
+    order: 3 !important;
+    border-top: 1px solid #f0f0f0 !important;
+    border-bottom: none !important;
+    padding: 4px 0 !important;
 }
 
 .emojiPickerWrapper :global(.epr-emoji:active),
 .emojiPickerWrapper :global(.epr-emoji:focus),
 .emojiPickerWrapper :global(.epr-category-nav > button:active),
 .emojiPickerWrapper :global(.epr-category-nav > button:focus) {
-	background-color: transparent !important;
-	border: none !important;
-	outline: none !important;
+    background-color: transparent !important;
+    border: none !important;
+    outline: none !important;
 }
 
 .emojiPickerWrapper :global(.epr-emoji:hover) {
-	background-color: transparent !important;
+    background-color: transparent !important;
 }
 
 .emojiPickerWrapper :global(.epr-search-container) {
-	margin-bottom: 0 !important;
+    margin-bottom: 0 !important;
 }
 
 .emojiOnly {
-	background-color: transparent !important;
-	border: none !important;
-	box-shadow: none !important;
-	padding: 0 !important;
-	font-size: 40px !important;
-	line-height: normal;
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    font-size: 40px !important;
+    line-height: normal;
 }
