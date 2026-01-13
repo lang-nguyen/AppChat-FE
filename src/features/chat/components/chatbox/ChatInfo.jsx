@@ -4,6 +4,8 @@ import HeaderInfo from './HeaderInfo.jsx';
 import ListMember from './ListMember.jsx';
 import InfoFunction from './InfoFunction.jsx';
 
+import SharedMedia from './SharedMedia.jsx';
+
 const ChatInfo = ({ isGroup = false, members = [], onRename, onChangeTheme, onLeaveRoom, onAddMember }) => (
     <div style={{
         width: 320,
@@ -14,8 +16,13 @@ const ChatInfo = ({ isGroup = false, members = [], onRename, onChangeTheme, onLe
         flexDirection: 'column'
     }}>
         <HeaderInfo />
-        <ListMember members={members} isGroup={isGroup} onAddMember={onAddMember} />
-        <InfoFunction isGroup={isGroup} onRename={onRename} onChangeTheme={onChangeTheme} onLeaveRoom={onLeaveRoom} />
+
+        {/* Scroll */}
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+            <ListMember members={members} isGroup={isGroup} onAddMember={onAddMember} />
+            <SharedMedia />
+            <InfoFunction isGroup={isGroup} onRename={onRename} onChangeTheme={onChangeTheme} onLeaveRoom={onLeaveRoom} />
+        </div>
     </div>
 );
 
