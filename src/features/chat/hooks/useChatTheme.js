@@ -36,14 +36,18 @@ export const useChatTheme = () => {
      * Tải theme từ server khi đổi cuộc trò chuyện
      */
     useEffect(() => {
-        if (!activeChat || activeChat.type === 1 || activeChat.type === 'room' || activeChat.type === 'group') {
-            // Đối với group hiện tại có thể dùng mặc định hoặc mở rộng sau
-            applyTheme(THEME_COMBOS[THEMES.DEFAULT]);
-            return;
-        }
+        if (!activeChat) return;
 
         const loadTheme = async () => {
-            const combo = await repository.getChatTheme(myUsername, activeChat.name);
+            let combo;
+            // Type 0 hoặc 'people' là chat cá nhân
+            if (activeChat.type === 0 || activeChat.type === 'people') {
+                combo = await repository.getChatTheme(myUsername, activeChat.name);
+            }
+            // Type 1 hoặc 'room'/'group' là chat nhóm
+            else {
+                combo = await repository.getGroupTheme(activeChat.name);
+            }
             applyTheme(combo);
         };
 
@@ -56,11 +60,15 @@ export const useChatTheme = () => {
     const changeTheme = useCallback(async (themeId) => {
         if (!activeChat || !myUsername) return;
 
-        // Optimistic UI: Áp dụng ngay lập tức cho trải nghiệm mượt mà
+        // Optimistic UI
         applyTheme(THEME_COMBOS[themeId]);
 
-        // Lưu vào server
-        await repository.updateChatTheme(myUsername, activeChat.name, themeId);
+        // Lưu vào server dựa trên loại chat
+        if (activeChat.type === 0 || activeChat.type === 'people') {
+            await repository.updateChatTheme(myUsername, activeChat.name, themeId);
+        } else {
+            await repository.updateGroupTheme(activeChat.name, myUsername, themeId);
+        }
     }, [activeChat, myUsername, repository, applyTheme]);
 
     return {

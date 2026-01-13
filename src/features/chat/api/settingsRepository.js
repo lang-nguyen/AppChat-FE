@@ -15,7 +15,7 @@ export const createSettingsRepository = (apiActions) => {
                     `/chat/settings/theme?user1=${encodeURIComponent(user1)}&user2=${encodeURIComponent(user2)}`
                 );
 
-                // Backend thực tế trả về 'data' thay vì 'payload' như trong docs
+                // Dùng data.data theo README mới
                 const themeId = response?.data?.data || response?.data?.payload;
 
                 if (themeId && THEME_COMBOS[themeId]) {
@@ -25,6 +25,30 @@ export const createSettingsRepository = (apiActions) => {
                 return THEME_COMBOS[THEMES.DEFAULT];
             } catch (err) {
                 console.error('[SettingsRepo] Failed to get theme:', err);
+                return THEME_COMBOS[THEMES.DEFAULT];
+            }
+        },
+
+        /**
+         * Lấy Theme của Nhóm
+         */
+        getGroupTheme: async (groupName) => {
+            try {
+                const response = await apiActions.get(
+                    `/chat/settings/group?groupName=${encodeURIComponent(groupName)}`
+                );
+
+                // Group API trả về object chứa themeId
+                const themeData = response?.data?.data;
+                const themeId = typeof themeData === 'object' ? themeData?.themeId : themeData;
+
+                if (themeId && THEME_COMBOS[themeId]) {
+                    return THEME_COMBOS[themeId];
+                }
+
+                return THEME_COMBOS[THEMES.DEFAULT];
+            } catch (err) {
+                console.error('[SettingsRepo] Failed to get group theme:', err);
                 return THEME_COMBOS[THEMES.DEFAULT];
             }
         },
@@ -46,6 +70,28 @@ export const createSettingsRepository = (apiActions) => {
                 return respThemeId === themeId || respData.event === 'SET_THEME_SUCCESS';
             } catch (err) {
                 console.error('[SettingsRepo] Failed to update theme:', err);
+                return false;
+            }
+        },
+
+        /**
+         * Cập nhật Theme Nhóm
+         */
+        updateGroupTheme: async (groupName, username, themeId) => {
+            try {
+                const response = await apiActions.post('/chat/settings/group', {
+                    groupName,
+                    username,
+                    themeId
+                });
+
+                const respData = response?.data || {};
+                const themeData = respData.data;
+                const respThemeId = typeof themeData === 'object' ? themeData?.themeId : themeData;
+
+                return respThemeId === themeId || respData.event === 'SET_GROUP_THEME_SUCCESS';
+            } catch (err) {
+                console.error('[SettingsRepo] Failed to update group theme:', err);
                 return false;
             }
         }

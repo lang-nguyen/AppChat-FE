@@ -100,8 +100,9 @@ Quản lý luồng gửi lời mời, chấp nhận, và từ chối kết bạn
 
 ---
 
-## 2. Conversation Settings APIs (New Feature)
-Quản lý cấu hình riêng cho từng cuộc trò chuyện (ví dụ: Theme màu sắc).
+
+## 2. Conversation Settings APIs (Group/Conversation Theme)
+Quản lý cấu hình (Theme) cho Group/Cuộc trò chuyện. Hiện tại hỗ trợ thay đổi màu sắc cho nhóm (cặp đôi).
 
 ### Base URL
 `http://localhost:8081/api/chat/settings`
@@ -120,7 +121,7 @@ Quản lý cấu hình riêng cho từng cuộc trò chuyện (ví dụ: Theme m
   "action": "onchat",
   "data": {
     "event": "GET_THEME_SUCCESS",
-    "payload": "OCEAN_BLUE"  // hoặc "DEFAULT"
+    "data": "OCEAN_BLUE"  // hoặc "DEFAULT"
   }
 }
 ```
@@ -145,7 +146,60 @@ Quản lý cấu hình riêng cho từng cuộc trò chuyện (ví dụ: Theme m
   "action": "onchat",
   "data": {
     "event": "SET_THEME_SUCCESS",
-    "payload": "OCEAN_BLUE"
+    "data": "OCEAN_BLUE"
+  }
+}
+```
+
+### 2.3. Get Group Theme (Lấy Theme Nhóm)
+*   **Method:** `GET`
+*   **Endpoint:** `/group?groupName={name}`
+*   **Description:** Lấy thông tin cấu hình theme của nhóm chat. Trả về thông tin chi tiết bao gồm người thay đổi cuối cùng.
+
+```json
+// Response (Success)
+{
+  "action": "onchat",
+  "data": {
+    "event": "GET_GROUP_THEME_SUCCESS",
+    "data": {
+      "id": 1,
+      "groupName": "DevTeam",
+      "themeId": "DARK_MODE",
+      "owner": null,
+      "lastChangedBy": "userA"
+    }
+  }
+}
+```
+
+### 2.4. Set Group Theme (Cài đặt Theme Nhóm)
+*   **Method:** `POST`
+*   **Endpoint:** `/group`
+*   **Description:** Cập nhật theme cho nhóm. Bất kỳ thành viên nào cũng có thể thay đổi (Owner để null). Hệ thống sẽ lưu lại người thực hiện thay đổi cuối cùng.
+
+```json
+// Request Body
+{
+  "groupName": "DevTeam",
+  "username": "userA",
+  "themeId": "DARK_MODE"
+}
+```
+
+```json
+// Response
+{
+  "action": "onchat",
+  "data": {
+    "event": "SET_GROUP_THEME_SUCCESS",
+    "data": {
+      "id": 1,
+      "groupName": "DevTeam",
+      "themeId": "DARK_MODE",
+      "owner": null,
+      "lastChangedBy": "userA"
+    }
   }
 }
 ```
