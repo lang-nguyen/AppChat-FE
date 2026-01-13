@@ -29,7 +29,17 @@ const LoginPage = () => {
 
     return (
         <div className={styles.page}>
-            <Card className={styles.card}>
+            <Card
+                style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.55)',
+                    cursor: 'default',
+                    backdropFilter: 'blur(8px)',
+                    WebkitBackdropFilter: 'blur(8px)',
+                    border: '2px solid rgba(251, 101, 31, 0.85)',
+                    boxShadow: '0 8px 24px rgba(228, 27, 27, 0.37)',
+                    padding: 40
+                }}
+            >
                 <LoginForm />
             </Card>
         </div>

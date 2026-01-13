@@ -9,7 +9,11 @@ const LoginActions = ({ isReady, onLogin }) => {
             onClick={onLogin}
             style={{
                 backgroundColor: colors.primaryButton,
-                marginTop: 10
+                marginTop: 15,
+                width: '150px',
+                marginLeft: 'auto',
+                marginRight: 'auto',
+                display: 'block'
             }}
         >
             {isReady ? "Đăng Nhập" : "Đang kết nối..."}

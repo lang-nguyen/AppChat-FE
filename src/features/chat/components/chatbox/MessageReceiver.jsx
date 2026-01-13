@@ -1,5 +1,6 @@
 import React from 'react';
 import colors from "../../../../shared/constants/colors.js";
+import { getAvatarUrl } from '../../../../shared/utils/avatarUtils.js';
 
 const MessageReceiver = ({ text, sender, timestamp, showAvatar = true }) => (
 	<div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center' }}>
@@ -12,7 +13,7 @@ const MessageReceiver = ({ text, sender, timestamp, showAvatar = true }) => (
 				flexShrink: 0
 			}}>
 				<img
-					src={`https://ui-avatars.com/api/?name=${encodeURIComponent(sender)}&background=random&size=64`}
+					src={getAvatarUrl(sender, 64)}
 					alt={sender}
 					style={{ width: '100%', height: '100%', objectFit: 'cover' }}
 				/>

@@ -1,5 +1,6 @@
 import React from 'react';
 import colors from '../../../../shared/constants/colors.js';
+import { getAvatarUrl } from '../../../../shared/utils/avatarUtils.js';
 
 const ChatHeader = ({ name, isOnline = true, isGroup = false, onCallClick, onMenuClick }) => (
 	<div style={{
@@ -26,7 +27,7 @@ const ChatHeader = ({ name, isOnline = true, isGroup = false, onCallClick, onMen
 					border: '2px solid #fff'
 				}}>
 					<img
-						src={`https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&size=128`}
+						src={getAvatarUrl(name, 128)}
 						alt={name}
 						style={{ width: '100%', height: '100%', objectFit: 'cover' }}
 					/>

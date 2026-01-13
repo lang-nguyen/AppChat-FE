@@ -10,7 +10,7 @@ const LoginFooter = () => {
             marginTop: 15,
             color: colors.primaryText
         }}>
-            Chưa có tài khoản? <Link to="/register" style={{ fontWeight: 'bold', textDecoration: 'none', color: colors.primaryText }}>Đăng ký ngay</Link>
+            Bạn chưa có tài khoản? <Link to="/register" style={{ fontWeight: 'bold', textDecoration: 'none', color: colors.primaryText }}>Tạo tài khoản tại đây</Link>
         </div>
     );
 };

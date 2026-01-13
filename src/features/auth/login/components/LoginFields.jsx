@@ -6,8 +6,8 @@ const LoginFields = ({ username, password, onTyping }) => {
     return (
         <>
             <TextInput
-                label="Tài khoản"
-                placeholder="Nhập username..."
+                label="Tên người dùng"
+                placeholder="Nhập tên của bạn"
                 value={username}
                 onChange={(e) => onTyping('username', e.target.value)}
                 style={{ borderColor: colors.cardBorder, color: colors.primaryText, fontWeight: 500 }}
@@ -16,7 +16,7 @@ const LoginFields = ({ username, password, onTyping }) => {
             <TextInput
                 label="Mật khẩu"
                 type="password"
-                placeholder="Nhập mật khẩu..."
+                placeholder="Nhập mật khẩu"
                 value={password}
                 onChange={(e) => onTyping('password', e.target.value)}
                 style={{ borderColor: colors.cardBorder }}

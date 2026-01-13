@@ -1,85 +1,53 @@
 import React, { useState, useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
 import ContactRequestsHeader from './ContactRequestsHeader';
-import { useApi } from '../../../../app/providers/useApi';
-import { useSocket } from '../../../../app/providers/useSocket';
-import { setPendingConversations, removePendingConversation } from '../../../../state/chat/chatSlice';
+import { usePendingActions } from '../../hooks/usePendingActions';
 import colors from '../../../../shared/constants/colors';
+import { getAvatarUrl } from '../../../../shared/utils/avatarUtils.js';
 
 const ContactRequestsModal = ({ onClose, onSelectUser }) => {
-    const { actions: apiActions } = useApi();
-    const { actions: socketActions } = useSocket();
-    const dispatch = useDispatch();
-    const user = useSelector((s) => s.auth.user);
-    const pendingContacts = useSelector((s) => s.chat.pendingConversations);
+    const {
+        pendingContacts,
+        fetchIncomingRequests,
+        acceptContact,
+        rejectContact
+    } = usePendingActions();
+
     const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
-        const fetchPendingContacts = async () => {
-            const username = user?.user || user?.username || localStorage.getItem('user_name');
-            if (!username) return;
-
+        const loadRequests = async () => {
             setIsLoading(true);
             try {
-                const data = await apiActions.getIncomingPendingConversations(username);
-                const pendingList = data
-                    .filter(item => item.status === 'PENDING')
-                    .map(item => ({
-                        username: item.username,
-                        name: item.username,
-                        status: item.status,
-                        createdAt: item.createdAt,
-                    }));
-                dispatch(setPendingConversations(pendingList));
+                await fetchIncomingRequests();
             } catch (err) {
-                console.error('Failed to fetch pending contacts:', err);
-                dispatch(setPendingConversations([]));
+                // Error handling is centralized in UseCase, here we just manage UI state
             } finally {
                 setIsLoading(false);
             }
         };
 
-        fetchPendingContacts();
-    }, [apiActions, user, dispatch]);
+        loadRequests();
+    }, [fetchIncomingRequests]);
 
     const handleAccept = async (fromUsername, e) => {
         e.stopPropagation();
         try {
-            await apiActions.acceptPendingConversation(fromUsername);
-            console.log('Đã accept pending conversation:', fromUsername);
-            dispatch(removePendingConversation({ username: fromUsername }));
-            
-            // Gửi tin nhắn tới người đó để họ xuất hiện trong danh sách
-            socketActions.sendChat(fromUsername, "Đã chấp nhận yêu cầu liên hệ", "people");
-            console.log('Đã gửi tin nhắn accept tới:', fromUsername);
-            
-            // Refresh user list sau khi gửi tin nhắn
-            // Delay để đảm bảo server đã xử lý tin nhắn và cập nhật danh sách
-            setTimeout(() => {
-                console.log('Refresh user list lần 1');
-                socketActions.getUserList();
-            }, 500);
-            setTimeout(() => {
-                console.log('Refresh user list lần 2');
-                socketActions.getUserList();
-            }, 1500);
-            
+            await acceptContact(fromUsername);
             if (onSelectUser) {
                 onSelectUser(fromUsername);
                 onClose();
             }
         } catch (err) {
-            console.error('Failed to accept pending conversation:', err);
+            // UI can show toast here if needed
         }
     };
 
     const handleDelete = async (fromUsername, e) => {
         e.stopPropagation();
         try {
-            await apiActions.deletePendingConversation(fromUsername);
-            dispatch(removePendingConversation({ username: fromUsername }));
+            await rejectContact(fromUsername);
         } catch (err) {
-            console.error('Failed to delete pending conversation:', err);
+            // UI error handling
         }
     };
 
@@ -96,11 +64,11 @@ const ContactRequestsModal = ({ onClose, onSelectUser }) => {
             overflow: 'hidden'
         }}>
             <ContactRequestsHeader onClose={onClose} />
-            
+
             {/* Danh sách yêu cầu liên hệ */}
-            <div style={{ 
-                flex: 1, 
-                minHeight: 0, 
+            <div style={{
+                flex: 1,
+                minHeight: 0,
                 overflowY: 'auto',
                 padding: '8px 0'
             }}>
@@ -159,7 +127,7 @@ const ContactRequestsModal = ({ onClose, onSelectUser }) => {
                                     flexShrink: 0
                                 }}>
                                     <img
-                                        src={`https://ui-avatars.com/api/?name=${encodeURIComponent(contactName)}&background=random&size=128`}
+                                        src={getAvatarUrl(contactName, 128)}
                                         alt={contactName}
                                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                     />

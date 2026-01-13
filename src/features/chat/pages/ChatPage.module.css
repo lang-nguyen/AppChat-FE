@@ -125,6 +125,37 @@
     display: none; /* Chrome, Safari, Opera */
 }
 
+/* Add Member Modal - positioned on the right */
+.add-member-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.2);
+    z-index: 999;
+}
+
+.add-member-modal-container {
+    position: fixed;
+    top: 1rem;
+    right: calc(320px + 1.5rem); /* Right side next to chat-info-sidebar */
+    width: 320px;
+    height: 50vh;
+    max-height: 50vh;
+    background: var(--card-bg);
+    overflow: hidden;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+}
+
+.add-member-modal-container::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
+
 .room-list-scrollable {
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* IE and Edge */
