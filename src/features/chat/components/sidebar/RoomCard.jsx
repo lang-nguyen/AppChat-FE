@@ -1,6 +1,7 @@
 import React from 'react';
 import Card from '../../../../shared/components/Card.jsx';
 import { getAvatarUrl } from '../../../../shared/utils/avatarUtils.js';
+import { decodeEmoji } from '../../../../shared/utils/emojiUtils.js';
 
 const RoomCard = ({ name, lastMessage, active, badge, onClick, isOnline }) => (
 	<Card
@@ -64,7 +65,7 @@ const RoomCard = ({ name, lastMessage, active, badge, onClick, isOnline }) => (
 				)}
 			</div>
 			<div style={{ fontSize: 15, opacity: 0.7, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-				{lastMessage}
+				{decodeEmoji(lastMessage)}
 			</div>
 		</div>
 	</Card>
