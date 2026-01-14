@@ -4,42 +4,11 @@ import colors from '../../../../shared/constants/colors';
 import MediaGallery from './MediaGallery';
 import ImageModal from '../../../../shared/components/ImageModal';
 
-const SharedMedia = () => {
-    const messages = useSelector(state => state.chat.messages);
-    const [showGallery, setShowGallery] = useState(false);
-    const [galleryTab, setGalleryTab] = useState('image'); // Default tab 
+const SharedMedia = ({ items = [], onViewAll }) => { // Nhận items từ ChatInfo
     const [selectedImage, setSelectedImage] = useState(null);
 
-    // Tách ảnh/video kèm thời gian từ tin nhắn
-    const mediaList = useMemo(() => {
-        const list = [];
-        // Lay tin nhan moi nhat de hien o dau list
-        [...messages].reverse().forEach(msg => {
-            if (!msg.mes) return;
-            const content = msg.mes;
-            // list image
-            if (content.startsWith('[IMAGE]')) {
-                list.push({
-                    type: 'image',
-                    url: content.replace('[IMAGE]', ''),
-                    id: msg.id || msg.tempId,
-                    createdAt: msg.createAt || new Date().toISOString()
-                });
-                // list video
-            } else if (content.startsWith('[VIDEO]')) {
-                list.push({
-                    type: 'video',
-                    url: content.replace('[VIDEO]', ''),
-                    id: msg.id || msg.tempId,
-                    createdAt: msg.createAt || new Date().toISOString()
-                });
-            }
-        });
-        return list;
-    }, [messages]);
-
     // Preview: Lấy 8 item mới nhất (image va video)
-    const previewItems = useMemo(() => mediaList.slice(0, 8), [mediaList]);
+    const previewItems = useMemo(() => items.slice(0, 8), [items]);
 
     const handleItemClick = (item) => {
         if (item.type === 'image') {
@@ -106,9 +75,9 @@ const SharedMedia = () => {
             )}
 
             {/* Button Xem tất cả */}
-            {mediaList.length > 0 && (
+            {items.length > 0 && (
                 <button
-                    onClick={() => setShowGallery(true)}
+                    onClick={onViewAll}
                     style={{
                         width: '100%',
                         padding: '10px 0',
@@ -129,14 +98,7 @@ const SharedMedia = () => {
                 </button>
             )}
 
-            {/* Modal */}
-            {/* Khi bam xem tat ca thi mo MediaGallery */}
-            {showGallery && (
-                <MediaGallery
-                    items={mediaList}
-                    onClose={() => setShowGallery(false)}
-                />
-            )}
+
 
             {/* Image Modal */}
             {selectedImage && <ImageModal imageUrl={selectedImage} onClose={() => setSelectedImage(null)} />}

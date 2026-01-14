@@ -1,8 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import colors from '../../../../shared/constants/colors';
 import ImageModal from '../../../../shared/components/ImageModal';
 
-// Hàm định dạng lại ngày tháng năm để hiển thị cho đẹp
+// Formats date group header 
 const formatDateGroup = (isoString) => {
     if (!isoString) return 'Khác';
     const date = new Date(isoString);
@@ -11,23 +11,252 @@ const formatDateGroup = (isoString) => {
     const day = date.getDate().toString().padStart(2, '0');
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const year = date.getFullYear();
-    return `Ngày ${day}/${month}/${year}`;
+    return `Ngày ${day} Tháng ${month}`;
 };
 
-const MediaGallery = ({ items = [], initialTab = 'image', onClose }) => {
-    const [activeTab, setActiveTab] = useState(initialTab); // 'image', 'video', 'file'
+
+const SenderFilter = ({ members, onSelect, selectedSenderId }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const containerRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (containerRef.current && !containerRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const filteredMembers = useMemo(() => {
+        return members.filter(m =>
+            m.name?.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    }, [members, searchTerm]);
+
+    const selectedName = useMemo(() => {
+        if (!selectedSenderId) return 'Người gửi';
+        const found = members.find(m => m.id === selectedSenderId);
+        return found ? found.name : 'Người gửi';
+    }, [selectedSenderId, members]);
+
+    return (
+        <div ref={containerRef} style={{ position: 'relative', flex: 1 }}>
+            <div
+                onClick={() => setIsOpen(!isOpen)}
+                style={{
+                    backgroundColor: selectedSenderId ? '#FFE5F1' : '#EFEFEF',
+                    borderRadius: 16, padding: '6px 12px', fontSize: 13,
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    cursor: 'pointer', color: selectedSenderId ? colors.primaryText : '#555',
+                    border: selectedSenderId ? `1px solid ${colors.primaryButton}` : '1px solid transparent'
+                }}
+            >
+                <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{selectedName}</span>
+                <span style={{ fontSize: 10, marginLeft: 4 }}>▼</span>
+            </div>
+
+            {isOpen && (
+                <div style={{
+                    position: 'absolute', top: '120%', left: 0, width: 220, zIndex: 10,
+                    backgroundColor: '#fff', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                    padding: 8, border: '1px solid #eee'
+                }}>
+                    <input
+                        type="text"
+                        placeholder="Tìm kiếm"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        style={{
+                            width: '100%', padding: '8px 12px', borderRadius: 20, border: '1px solid #ddd',
+                            backgroundColor: '#f5f5f5', outline: 'none', fontSize: 13, marginBottom: 8
+                        }}
+                    />
+                    <div style={{ maxHeight: 200, overflowY: 'auto' }}>
+                        <div
+                            onClick={() => { onSelect(null); setIsOpen(false); }}
+                            style={{ padding: '8px', cursor: 'pointer', borderRadius: 4, fontSize: 13, color: '#333' }}
+                            onMouseEnter={(e) => e.target.style.backgroundColor = '#f0f0f0'}
+                            onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                        >
+                            Tất cả
+                        </div>
+                        {filteredMembers.map(member => (
+                            <div
+                                key={member.id}
+                                onClick={() => { onSelect(member.id); setIsOpen(false); }}
+                                style={{
+                                    padding: '8px', cursor: 'pointer', borderRadius: 4, fontSize: 13,
+                                    display: 'flex', alignItems: 'center', gap: 8
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0f0f0'}
+                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                            >
+                                <img
+                                    src={member.avatar || "https://via.placeholder.com/30"}
+                                    alt="avatar"
+                                    style={{ width: 24, height: 24, borderRadius: '50%', objectFit: 'cover' }}
+                                />
+                                <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{member.name}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+const DateFilter = ({ onSelectRange, activeRange }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const containerRef = useRef(null);
+    const [fromDate, setFromDate] = useState('');
+    const [toDate, setToDate] = useState('');
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (containerRef.current && !containerRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleApplyRange = () => {
+        if (fromDate && toDate) {
+            onSelectRange({ type: 'custom', from: new Date(fromDate), to: new Date(toDate), label: 'Tùy chọn' });
+            setIsOpen(false);
+        }
+    };
+
+    const handlePreset = (days) => {
+        const end = new Date();
+        const start = new Date();
+        start.setDate(start.getDate() - days);
+        onSelectRange({ type: 'preset', from: start, to: end, label: `${days} ngày trước` });
+        setIsOpen(false);
+    };
+
+    return (
+        <div ref={containerRef} style={{ position: 'relative', flex: 1 }}>
+            <div
+                onClick={() => setIsOpen(!isOpen)}
+                style={{
+                    backgroundColor: activeRange ? '#FFE5F1' : '#EFEFEF',
+                    borderRadius: 16, padding: '6px 12px', fontSize: 13,
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    cursor: 'pointer', color: activeRange ? colors.primaryText : '#555',
+                    border: activeRange ? `1px solid ${colors.primaryButton}` : '1px solid transparent'
+                }}
+            >
+                <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {activeRange ? activeRange.label : 'Ngày gửi'}
+                </span>
+                <span style={{ fontSize: 10, marginLeft: 4 }}>▼</span>
+            </div>
+
+            {isOpen && (
+                <div style={{
+                    position: 'absolute', top: '120%', right: 0, width: 280, zIndex: 10,
+                    backgroundColor: '#fff', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                    padding: 0, border: '1px solid #eee', overflow: 'hidden'
+                }}>
+                    <div style={{ padding: 8, borderBottom: '1px solid #eee' }}>
+                        <div style={presetStyle} onClick={() => handlePreset(7)}>7 ngày trước</div>
+                        <div style={presetStyle} onClick={() => handlePreset(30)}>30 ngày trước</div>
+                        <div style={presetStyle} onClick={() => handlePreset(90)}>3 tháng trước</div>
+                        <div style={presetStyle} onClick={() => { onSelectRange(null); setIsOpen(false); }}>Tất cả thời gian</div>
+                    </div>
+
+                    <div style={{ padding: 12, backgroundColor: '#f9f9f9' }}>
+                        <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: '#666' }}>Chọn khoảng thời gian</div>
+                        <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                            <input
+                                type="date"
+                                value={fromDate}
+                                onChange={(e) => setFromDate(e.target.value)}
+                                style={dateInputStyle}
+                            />
+                            <span style={{ alignSelf: 'center' }}>-</span>
+                            <input
+                                type="date"
+                                value={toDate}
+                                onChange={(e) => setToDate(e.target.value)}
+                                style={dateInputStyle}
+                            />
+                        </div>
+                        <button
+                            onClick={handleApplyRange}
+                            style={{
+                                width: '100%', padding: '6px', backgroundColor: colors.primaryButton,
+                                color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 13
+                            }}
+                        >
+                            Áp dụng
+                        </button>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+const presetStyle = {
+    padding: '8px', cursor: 'pointer', borderRadius: 4, fontSize: 13, color: '#333',
+    transition: 'background-color 0.1s'
+};
+const dateInputStyle = {
+    flex: 1, padding: '4px 8px', borderRadius: 4, border: '1px solid #ddd', fontSize: 12
+};
+
+
+// --- Main Component ---
+
+const MediaGallery = ({ items = [], members = [], initialTab = 'media', onClose }) => {
+    const [activeTab, setActiveTab] = useState(initialTab); // 'media' (anh+video), 'file', 'link'
     const [selectedImage, setSelectedImage] = useState(null);
 
-    // Lọc item dựa trên tab đang chọn
-    const filteredItems = useMemo(() => {
-        return items.filter(item => item.type === activeTab);
-    }, [items, activeTab]);
+    // Filter States
+    const [selectedSenderId, setSelectedSenderId] = useState(null);
+    const [dateRange, setDateRange] = useState(null);
 
-    // Gom nhóm item theo ngày
+    // Filter Items
+    const filteredItems = useMemo(() => {
+        let result = items;
+
+        // 1. Filter by Tab Type
+        if (activeTab === 'media') {
+            result = result.filter(item => item.type === 'image' || item.type === 'video');
+        } else {
+            result = result.filter(item => item.type === activeTab);
+        }
+
+        // 2. Filter by Sender
+        if (selectedSenderId) {
+            result = result.filter(item => item.senderId === selectedSenderId); // requires senderId logic
+        }
+
+        // 3. Filter by Date Range
+        if (dateRange) {
+            result = result.filter(item => {
+                const itemDate = new Date(item.createdAt);
+                const from = new Date(dateRange.from); from.setHours(0, 0, 0, 0);
+                const to = new Date(dateRange.to); to.setHours(23, 59, 59, 999);
+                return itemDate >= from && itemDate <= to;
+            });
+        }
+
+        return result;
+    }, [items, activeTab, selectedSenderId, dateRange]);
+
+    // Group items by Date
     const groupedItems = useMemo(() => {
         const groups = {};
         filteredItems.forEach(item => {
-            const dateKey = formatDateGroup(item.createdAt); // createdAt phải tồn tại trong item
+            const dateKey = formatDateGroup(item.createdAt);
             if (!groups[dateKey]) {
                 groups[dateKey] = [];
             }
@@ -40,36 +269,52 @@ const MediaGallery = ({ items = [], initialTab = 'image', onClose }) => {
         if (item.type === 'image') {
             setSelectedImage(item.url);
         } else if (item.type === 'video') {
-            window.open(item.url, '_blank'); // có thể cai tien de hien thi ngay trong tab dang mo
+            window.open(item.url, '_blank');
         }
     };
 
     const renderTabs = () => (
-        <div style={{ display: 'flex', borderBottom: '1px solid #ddd', backgroundColor: '#fff', padding: '0 16px' }}>
-            {['image', 'video', 'file'].map(tab => {
-                const isActive = activeTab === tab;
-                const labels = { image: 'Hình ảnh', video: 'Video', file: 'Files' };
-                return (
-                    <button
-                        key={tab}
-                        onClick={() => setActiveTab(tab)}
-                        style={{
-                            flex: 1,
-                            padding: '16px 0',
-                            background: 'none',
-                            border: 'none',
-                            borderBottom: isActive ? `3px solid ${colors.primaryButton}` : '3px solid transparent',
-                            color: isActive ? colors.primaryButton : colors.regularText,
-                            fontWeight: isActive ? 600 : 400,
-                            cursor: 'pointer',
-                            fontSize: 15,
-                            transition: 'all 0.2s',
-                        }}
-                    >
-                        {labels[tab]}
-                    </button>
-                );
-            })}
+        <div style={{ display: 'flex', borderBottom: '1px solid #ddd', backgroundColor: '#fff', flexDirection: 'column' }}>
+            {/* Main Tabs */}
+            <div style={{ display: 'flex' }}>
+                {['media', 'file', 'link'].map(tab => {
+                    const isActive = activeTab === tab;
+                    const labels = { media: 'Ảnh/Video', file: 'Files', link: 'Links' };
+                    return (
+                        <button
+                            key={tab}
+                            onClick={() => setActiveTab(tab)}
+                            style={{
+                                flex: 1,
+                                padding: '12px 0',
+                                background: 'none',
+                                border: 'none',
+                                borderBottom: isActive ? `3px solid ${colors.primaryButton}` : '3px solid transparent',
+                                color: isActive ? colors.primaryButton : colors.regularText,
+                                fontWeight: isActive ? 600 : 500,
+                                cursor: 'pointer',
+                                fontSize: 14,
+                                transition: 'all 0.2s',
+                            }}
+                        >
+                            {labels[tab]}
+                        </button>
+                    );
+                })}
+            </div>
+
+            {/* Filters Row */}
+            <div style={{ display: 'flex', padding: '8px 12px', gap: 8, alignItems: 'center' }}>
+                <SenderFilter
+                    members={members}
+                    selectedSenderId={selectedSenderId}
+                    onSelect={setSelectedSenderId}
+                />
+                <DateFilter
+                    activeRange={dateRange}
+                    onSelectRange={setDateRange}
+                />
+            </div>
         </div>
     );
 
@@ -77,20 +322,21 @@ const MediaGallery = ({ items = [], initialTab = 'image', onClose }) => {
         if (filteredItems.length === 0) {
             return (
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#999' }}>
-                    <div>Chưa có {activeTab === 'file' ? 'file' : 'dữ liệu'} nào</div>
+                    <div>Chưa có {activeTab === 'file' ? 'file' : activeTab === 'link' ? 'link' : 'ảnh/video'} nào</div>
+                    {(selectedSenderId || dateRange) && <div style={{ fontSize: 12, marginTop: 8 }}>Thử đổi bộ lọc xem sao</div>}
                 </div>
             );
         }
 
         return (
-            <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '12px 12px' }}>
                 {Object.entries(groupedItems).map(([date, groupItems]) => (
-                    <div key={date} style={{ marginBottom: 24 }}>
-                        <h4 style={{ margin: '0 0 12px 0', fontSize: 14, color: '#666', fontWeight: 600 }}>{date}</h4>
+                    <div key={date} style={{ marginBottom: 20 }}>
+                        <h4 style={{ margin: '0 0 10px 0', fontSize: 14, color: '#444', fontWeight: 600 }}>{date}</h4>
                         <div style={{
                             display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))',
-                            gap: 8
+                            gridTemplateColumns: 'repeat(3, 1fr)',
+                            gap: 6
                         }}>
                             {groupItems.map((item, idx) => (
                                 <div
@@ -99,7 +345,7 @@ const MediaGallery = ({ items = [], initialTab = 'image', onClose }) => {
                                     style={{
                                         position: 'relative',
                                         paddingTop: '100%',
-                                        borderRadius: 6,
+                                        borderRadius: 4,
                                         overflow: 'hidden',
                                         cursor: 'pointer',
                                         backgroundColor: '#f5f5f5',
@@ -111,7 +357,7 @@ const MediaGallery = ({ items = [], initialTab = 'image', onClose }) => {
                                     ) : (
                                         <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#000' }}>
                                             <video src={item.url} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.7 }} muted />
-                                            <span style={{ position: 'absolute', color: '#fff', fontSize: 20 }}>▶</span>
+                                            <span style={{ position: 'absolute', color: '#fff', fontSize: 16 }}>▶</span>
                                         </div>
                                     )}
                                 </div>
@@ -125,25 +371,28 @@ const MediaGallery = ({ items = [], initialTab = 'image', onClose }) => {
 
     return (
         <div style={{
-            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: '#F5F7FA', zIndex: 2000,
+            height: '100%',
+            backgroundColor: '#fff',
             display: 'flex', flexDirection: 'column'
         }}>
             {/* Header */}
             <div style={{
-                height: 60, backgroundColor: '#fff', display: 'flex', alignItems: 'center', padding: '0 16px',
-                borderBottom: '1px solid #eee', boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                height: 50, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 12px',
+                borderBottom: '1px solid #eee'
             }}>
                 <button
                     onClick={onClose}
-                    style={{ background: 'none', border: 'none', fontSize: 24, cursor: 'pointer', marginRight: 16, color: colors.normalText }}
+                    style={{ background: 'none', border: 'none', fontSize: 24, cursor: 'pointer', color: '#333' }}
                 >
                     &lt;
                 </button>
-                <span style={{ fontSize: 18, fontWeight: 700, color: colors.primaryText }}>Kho lưu trữ</span>
+                <span style={{ fontSize: 16, fontWeight: 700, color: '#333' }}>Kho lưu trữ</span>
+                <button style={{ background: 'none', border: 'none', fontSize: 14, fontWeight: 600, color: '#333', cursor: 'pointer' }}>
+                    Chọn
+                </button>
             </div>
 
-            {/* Tabs */}
+            {/* Tabs & Filters */}
             {renderTabs()}
 
             {/* Content */}

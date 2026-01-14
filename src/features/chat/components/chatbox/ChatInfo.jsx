@@ -1,14 +1,61 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
+import { useSelector } from 'react-redux';
 import HeaderInfo from './HeaderInfo.jsx';
 import ListMember from './ListMember.jsx';
 import InfoFunction from './InfoFunction.jsx';
 import { useChatTheme } from '../../hooks/useChatTheme';
 import ThemeSelectorModal from './ThemeSelectorModal.jsx';
-import SharedMedia from "./SharedMedia.jsx";
+import SharedMedia from './SharedMedia.jsx';
+import MediaGallery from './MediaGallery';
 
 const ChatInfo = ({ isGroup = false, members = [], onRename, onLeaveRoom, onAddMember }) => {
     const { changeTheme } = useChatTheme();
-    const [showThemeSelector, setShowThemeSelector] = React.useState(false);
+    const [showThemeSelector, setShowThemeSelector] = useState(false);
+    const [viewMode, setViewMode] = useState('MAIN'); // 'MAIN' | 'GALLERY'
+
+    // Lấy tin nhắn từ Redux để xử lý media
+    const messages = useSelector(state => state.chat.messages);
+
+    // Tách ảnh/video kèm thời gian từ tin nhắn (Logic từ SharedMedia chuyển sang)
+    const mediaList = useMemo(() => {
+        const list = [];
+        // Lấy tin nhắn mới nhất để hiện ở đầu list
+        [...messages].reverse().forEach(msg => {
+            if (!msg.mes) return;
+            const content = msg.mes;
+
+            // Xử lý Image
+            if (content.startsWith('[IMAGE]')) {
+                list.push({
+                    type: 'image',
+                    url: content.replace('[IMAGE]', ''),
+                    id: msg.id || msg.tempId,
+                    createdAt: msg.createAt || new Date().toISOString(),
+                    senderName: msg.name, // Thêm senderName cho filter
+                    senderId: msg.senderId // Thêm senderId nếu có (tạm thời dùng name)
+                });
+                // Xử lý Video
+            } else if (content.startsWith('[VIDEO]')) {
+                list.push({
+                    type: 'video',
+                    url: content.replace('[VIDEO]', ''),
+                    id: msg.id || msg.tempId,
+                    createdAt: msg.createAt || new Date().toISOString(),
+                    senderName: msg.name,
+                    senderId: msg.senderId
+                });
+            }
+        });
+        return list;
+    }, [messages]);
+
+    if (viewMode === 'GALLERY') {
+        return <MediaGallery
+            items={mediaList}
+            members={members} // Truyền danh sách thành viên để làm filter
+            onClose={() => setViewMode('MAIN')}
+        />;
+    }
 
     return (
         <div style={{
@@ -22,15 +69,16 @@ const ChatInfo = ({ isGroup = false, members = [], onRename, onLeaveRoom, onAddM
         }}>
             <HeaderInfo />
             <div style={{ flex: 1, overflowY: 'auto' }}>
-            <ListMember members={members} isGroup={isGroup} onAddMember={onAddMember} />
-            <SharedMedia />
-            <InfoFunction
-                isGroup={isGroup}
-                onRename={onRename}
-                onChangeTheme={() => setShowThemeSelector(true)}
-                onLeaveRoom={onLeaveRoom}
-            />
-        </div>
+                <ListMember members={members} isGroup={isGroup} onAddMember={onAddMember} />
+                {/* Truyền mediaList vào để hiển thị preview */}
+                <SharedMedia items={mediaList} onViewAll={() => setViewMode('GALLERY')} />
+                <InfoFunction
+                    isGroup={isGroup}
+                    onRename={onRename}
+                    onChangeTheme={() => setShowThemeSelector(true)}
+                    onLeaveRoom={onLeaveRoom}
+                />
+            </div>
 
             {showThemeSelector && (
                 <div style={{

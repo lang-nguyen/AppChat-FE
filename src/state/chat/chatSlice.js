@@ -16,7 +16,22 @@ const chatSlice = createSlice({
     initialState,
     reducers: {
         setPeople(state, action) {
-            state.people = action.payload ?? [];
+            const newPeople = action.payload ?? [];
+
+            state.people = newPeople.map(newItem => {
+                const existingItem = state.people.find(p => p.name === newItem.name && p.type === newItem.type);
+
+                if (existingItem) {
+                    return {
+                        ...newItem,
+                        // Giu lai userList neu server gui thieu
+                        userList: (newItem.userList && newItem.userList.length > 0) ? newItem.userList : existingItem.userList,
+                        own: newItem.own !== undefined ? newItem.own : existingItem.own,
+                        isOnline: existingItem.isOnline // Giữ trạng thái online 
+                    };
+                }
+                return newItem;
+            });
         },
         setOnlineStatus(state, action) {
             const { user, isOnline } = action.payload;
