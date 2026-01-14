@@ -6,14 +6,14 @@ import { ApiContext } from './ApiContext.js';
 
 // API Base URL - trong dev mode dùng '/api' để đi qua proxy, production dùng env
 const envApiUrl = import.meta.env.VITE_API_BASE_URL;
-const API_BASE_URL = import.meta.env.DEV 
+const API_BASE_URL = import.meta.env.DEV
     ? '/api'  // Dev mode: dùng relative path để đi qua Vite proxy tránh CORS
     : (envApiUrl || '/api');  // Production: dùng env variable
 
 // Utility function để kiểm tra environment
 export const getEnvironmentInfo = () => {
     const envApiUrl = import.meta.env.VITE_API_BASE_URL;
-    
+
     return {
         mode: import.meta.env.MODE,
         apiBaseUrl: API_BASE_URL,
@@ -41,7 +41,7 @@ export const ApiProvider = ({ children }) => {
                  */
                 get: async (endpoint, options = {}) => {
                     const url = getApiUrl(endpoint);
-                    
+
                     const response = await fetch(url, {
                         method: 'GET',
                         headers: {
@@ -72,7 +72,7 @@ export const ApiProvider = ({ children }) => {
                  */
                 post: async (endpoint, data, options = {}) => {
                     const url = getApiUrl(endpoint);
-                    
+
                     const response = await fetch(url, {
                         method: 'POST',
                         headers: {
@@ -104,7 +104,7 @@ export const ApiProvider = ({ children }) => {
                  */
                 put: async (endpoint, data, options = {}) => {
                     const url = getApiUrl(endpoint);
-                    
+
                     const response = await fetch(url, {
                         method: 'PUT',
                         headers: {
@@ -127,7 +127,7 @@ export const ApiProvider = ({ children }) => {
                  */
                 delete: async (endpoint, options = {}) => {
                     const url = getApiUrl(endpoint);
-                    
+
                     const response = await fetch(url, {
                         method: 'DELETE',
                         headers: {
@@ -165,12 +165,12 @@ export const ApiProvider = ({ children }) => {
                         fromUsername: from,
                         toUsername: toUsername,
                     });
-                    
+
                     // Parse response format: { action: "onchat", data: { event: "PENDING_CREATE", data: {...} } }
                     if (response && response.data && response.data.event === 'PENDING_CREATE' && response.data.data) {
                         return response.data.data;
                     }
-                    
+
                     return response;
                 },
 
@@ -192,7 +192,7 @@ export const ApiProvider = ({ children }) => {
                     if (response && response.data && response.data.event === 'PENDING_INCOMING' && Array.isArray(response.data.data)) {
                         return response.data.data;
                     }
-                    
+
                     // Fallback: nếu không đúng format trên, thử parse như cũ
                     if (Array.isArray(response)) {
                         return response;
@@ -223,13 +223,13 @@ export const ApiProvider = ({ children }) => {
                         fromUsername: fromUsername,
                         toUsername: to,
                     });
-                    
+
                     // Parse response format: { action: "onchat", data: { event: "PENDING_ACCEPT", data: null } }
                     if (response && response.data && response.data.event === 'PENDING_ACCEPT') {
                         // data có thể là null hoặc object, đều coi là thành công
                         return response.data.data || { success: true };
                     }
-                    
+
                     return response;
                 },
 
@@ -249,13 +249,13 @@ export const ApiProvider = ({ children }) => {
                         fromUsername: fromUsername,
                         toUsername: to,
                     });
-                    
+
                     // Parse response format: { action: "onchat", data: { event: "PENDING_DELETE", data: null } }
                     if (response && response.data && response.data.event === 'PENDING_DELETE') {
                         // data có thể là null hoặc object, đều coi là thành công
                         return response.data.data || { success: true };
                     }
-                    
+
                     return response;
                 },
 

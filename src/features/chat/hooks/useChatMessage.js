@@ -135,6 +135,48 @@ export const useChatMessage = () => {
         }
     }, [activeChat, isReady, socketActions, dispatch]);
 
+    // Effect: Khi mở phòng nhóm, tự động check trạng thái online của các thành viên
+    useEffect(() => {
+        if (!isReady || !activeChat) return;
+        const isRoom = activeChat.type === 1 || activeChat.type === 'room' || activeChat.type === 'group';
+        if (!isRoom) return;
+
+        // Lấy danh sách tên thành viên và loại bỏ bản thân
+        const names = (memberList || [])
+            .map(m => m?.name)
+            .filter(Boolean)
+            .filter(n => n !== myUsername);
+
+        if (names.length === 0) return;
+
+        // Chỉ check những người chưa có trạng thái trong store để tránh spam
+        const toCheck = [];
+        const seen = new Set();
+        for (const n of names) {
+            if (!seen.has(n)) {
+                seen.add(n);
+                if (onlineStatus[n] === undefined) {
+                    toCheck.push(n);
+                }
+            }
+        }
+
+        // Giới hạn số lượng mỗi lượt để nhẹ nhàng (ví dụ 10 người)
+        const MAX_BATCH = 10;
+        const batch = toCheck.slice(0, MAX_BATCH);
+
+        // Gửi lần lượt với delay nhỏ để tránh nghẽn
+        batch.forEach((username, index) => {
+            setTimeout(() => {
+                try {
+                    socketActions.checkOnline(username);
+                } catch (e) {
+                    console.warn('checkOnline failed for', username, e);
+                }
+            }, index * 200); // 200ms giữa mỗi request
+        });
+    }, [isReady, activeChat, memberList, myUsername, socketActions, onlineStatus]);
+
     // Effect: Xử lý mượt mà khi dữ liệu tin nhắn về
     useEffect(() => {
         // CHỈ xử lý khi đang loading (tránh vòng lặp)
@@ -337,13 +379,11 @@ export const useChatMessage = () => {
         });
     }, [inputText, selectedFile, isUploading, activeChat, socketActions, isReady, scrollToBottom, handleRemoveFile, dispatch, user]);
 
-    const handleAddMember = useCallback(() => {
-        const username = window.prompt("Nhập tên người dùng muốn thêm vào nhóm:");
-        if (username && socketActions) {
-            socketActions.checkExist(username);
-            window.alert(`Đã gửi yêu cầu thêm thành viên ${username}`);
-        }
-    }, [socketActions]);
+    const handleAddMember = useCallback(async () => {
+        // Logic được di chuyển sang AddMemberModal - chỉ giữ callback này để tương thích
+        // ChatPage sẽ xử lý hiển thị modal
+        return true;
+    }, []);
 
     const handleCreateRoom = useCallback(() => {
         const roomName = window.prompt("Nhập tên phòng chat mới:");

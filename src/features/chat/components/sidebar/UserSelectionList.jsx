@@ -1,5 +1,6 @@
 import React from 'react';
 import colors from '../../../../shared/constants/colors.js';
+import { getAvatarUrl } from '../../../../shared/utils/avatarUtils.js';
 
 const UserSelectionList = ({ users = [], selectedUsers = [], onToggleUser }) => (
     <div style={{
@@ -55,7 +56,7 @@ const UserSelectionList = ({ users = [], selectedUsers = [], onToggleUser }) => 
                                 flexShrink: 0
                             }}>
                                 <img
-                                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random&size=128`}
+                                    src={getAvatarUrl(user.name, 128)}
                                     alt={user.name}
                                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                 />

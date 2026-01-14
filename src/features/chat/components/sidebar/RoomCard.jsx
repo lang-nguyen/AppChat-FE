@@ -1,5 +1,7 @@
 import React from 'react';
 import Card from '../../../../shared/components/Card.jsx';
+import { getAvatarUrl } from '../../../../shared/utils/avatarUtils.js';
+import { decodeEmoji } from '../../../../shared/utils/emojiUtils.js';
 
 const RoomCard = ({ name, lastMessage, active, badge, onClick, isOnline }) => (
 	<Card
@@ -12,33 +14,34 @@ const RoomCard = ({ name, lastMessage, active, badge, onClick, isOnline }) => (
 			gap: 12
 		}}
 	>
-		<div style={{
-			width: 48,
-			height: 48,
-			borderRadius: '50%',
-			backgroundColor: '#eee',
-			display: 'flex',
-			alignItems: 'center',
-			justifyContent: 'center',
-			flexShrink: 0,
-			overflow: 'hidden',
-			position: 'relative'
-		}}>
-			<img
-				src={`https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`}
-				alt={name}
-				style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-			/>
+		<div style={{ position: 'relative', flexShrink: 0 }}>
+			<div style={{
+				width: 48,
+				height: 48,
+				borderRadius: '50%',
+				backgroundColor: '#eee',
+				display: 'flex',
+				alignItems: 'center',
+				justifyContent: 'center',
+				overflow: 'hidden'
+			}}>
+				<img
+					src={getAvatarUrl(name, 48)}
+					alt={name}
+					style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+				/>
+			</div>
 			{isOnline !== undefined && (
 				<div style={{
 					position: 'absolute',
-					bottom: 2,
-					right: 2,
-					width: 12,
-					height: 12,
+					bottom: 0,
+					right: 0,
+					width: 14,
+					height: 14,
 					borderRadius: '50%',
-					backgroundColor: isOnline ? '#4CAF50' : '#ccc',
-					border: '2px solid #fff'
+					backgroundColor: isOnline ? '#22c55e' : '#9ca3af',
+					border: '3px solid #fff',
+					transform: 'translate(20%, 20%)'
 				}} />
 			)}
 		</div>
@@ -62,7 +65,7 @@ const RoomCard = ({ name, lastMessage, active, badge, onClick, isOnline }) => (
 				)}
 			</div>
 			<div style={{ fontSize: 15, opacity: 0.7, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-				{lastMessage}
+				{decodeEmoji(lastMessage)}
 			</div>
 		</div>
 	</Card>

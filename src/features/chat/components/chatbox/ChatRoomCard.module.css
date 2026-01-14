@@ -15,9 +15,11 @@
     padding: 0 20px;
     display: flex;
     align-items: center;
+    background-color: var(--theme-header-bg, #FF5596);
+    color: var(--theme-text-on-primary, white);
+    z-index: 10;
     justify-content: space-between;
-    border-bottom: 1px solid #eee;
-    background-color: #fff;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
     flex-shrink: 0;
 }
 
@@ -67,15 +69,15 @@
 
 .title {
     margin: 0;
-    font-size: 16px;
-    font-weight: 600;
-    color: #333;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--theme-text-on-primary, white);
 }
 
 .subtitle {
     margin: 2px 0 0 0;
     font-size: 13px;
-    color: #888;
+    color: rgba(255, 255, 255, 0.8);
 }
 
 .headerRight {
@@ -87,9 +89,9 @@
     background: none;
     border: none;
     cursor: pointer;
+    color: var(--theme-text-on-primary, white);
     padding: 8px;
     border-radius: 50%;
-    color: #FF5596;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -112,6 +114,15 @@
     /* Scroll behavior */
     scroll-behavior: auto;
     /* Mặc định auto để tránh smooth scroll khi load more */
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
+}
+
+.messagesArea::-webkit-scrollbar {
+    display: none;
+    /* Chrome, Safari, Opera */
 }
 
 .messageRow {
@@ -165,8 +176,8 @@
 }
 
 .isMe .bubble {
-    background-color: #FF5596;
-    color: #fff;
+    background-color: var(--theme-sender-bubble, #FF5596);
+    color: var(--theme-text-on-primary, #fff);
     border-bottom-right-radius: 4px;
 }
 
@@ -193,18 +204,17 @@
     flex: 1;
     background-color: #f0f2f5;
     border-radius: 20px;
-    padding: 8px 15px;
+    padding: 6px 15px;
     display: flex;
     align-items: center;
-    background-color: #fff;
-    border: 1.5px solid #000000;
-    border-radius: 12px;
-    padding: 4px 12px;
-    transition: border-color 0.2s;
+    border: 1px solid #e5e7eb;
+    transition: all 0.2s;
 }
 
 .inputContainer:focus-within {
-    border-color: #FF5596;
+    border-color: var(--theme-primary, #FF5596);
+    background-color: #fff;
+    box-shadow: 0 0 0 2px var(--theme-shadow, rgba(255, 85, 150, 0.1));
 }
 
 .input {
@@ -218,25 +228,37 @@
 }
 
 .actionButton {
-    background: none;
-    border: none;
+    background: none !important;
+    border: none !important;
     cursor: pointer;
-    padding: 5px;
-
+    padding: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: color 0.2s;
+    color: #8e939d;
+    /* Màu mặc định nhẹ nhàng */
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 50%;
+    outline: none !important;
 }
 
-.actionButton:hover {
-    color: #FF5596;
+.actionButton:hover,
+.actionButton.active {
+    color: var(--theme-header-bg, #FF5596);
+    background-color: rgba(0, 0, 0, 0.04);
+    transform: scale(1.05);
+}
+
+.actionButton.active {
+    background-color: rgba(0, 0, 0, 0.08);
 }
 
 .sendButton {
-    background-color: #FF5596;
-    color: #fff;
+    background-color: var(--theme-header-bg, #FF5596);
     border: none;
+    cursor: pointer;
+    color: var(--theme-text-on-primary, white);
+    padding: 0;
     border-radius: 50%;
     width: 40px;
     height: 40px;
@@ -245,7 +267,13 @@
     justify-content: center;
     cursor: pointer;
     transition: background-color 0.2s, transform 0.1s;
-    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.sendButton:hover {
+    background-color: var(--theme-header-bg, #FF5596);
+    filter: brightness(1.05);
+    transform: scale(1.05);
 }
 
 .sendButton svg {
@@ -253,10 +281,6 @@
     height: 24px !important;
     min-width: 24px;
     min-height: 24px;
-}
-
-.sendButton:hover {
-    background-color: #ff3380;
 }
 
 .sendButton:active {
@@ -316,7 +340,7 @@
     justify-content: center;
     background-color: #f8f9fa;
     border-radius: 8px;
-    border: 1px solid #FF5596;
+    border: 1px solid var(--theme-header-bg, #FF5596);
     color: #666;
 }
 
@@ -387,7 +411,7 @@
     flex-direction: column !important;
     border-radius: 12px !important;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
-    border: 1px solid #E0407E !important;
+    border: 1px solid var(--theme-header-bg, #FF5596) !important;
     font-family: 'Inter',
         sans-serif !important;
 }

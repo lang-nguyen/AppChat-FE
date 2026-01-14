@@ -4,6 +4,20 @@ import { handleCreateRoom, handleJoinRoom } from "./handlers/roomHandlers";
 import { handleGetUserList, handleCheckUserOnline, handleCheckUserExist } from "./handlers/userHandlers";
 
 export const handleSocketMessage = (response, dispatch, socketActions, socketRef, getState) => {
+    // Log đầu handler để biết handler có được gọi không
+    console.log('[Socket Handler]  Handler được gọi với event:', response?.event, '| Status:', response?.status);
+
+    // Kiểm tra response và event
+    if (!response) {
+        console.warn("[Socket Handler] Response is null or undefined");
+        return;
+    }
+
+    if (!response.event) {
+        console.warn("[Socket Handler] Response không có field 'event':", response);
+        return;
+    }
+
     switch (response.event) {
         case "AUTH":
             handleAuth(response, dispatch);
@@ -49,6 +63,7 @@ export const handleSocketMessage = (response, dispatch, socketActions, socketRef
         case "CHECK_USER_ONLINE":
             handleCheckUserOnline(response, dispatch);
             break;
+
 
         case "CHECK_USER_EXIST":
             handleCheckUserExist(response, dispatch);

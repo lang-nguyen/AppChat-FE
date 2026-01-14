@@ -101,6 +101,7 @@ export const useSocketConnection = (dispatch, lastActivityRef, isOnline) => {
                 try {
                     const response = JSON.parse(event.data);
                     lastActivityRef.current = Date.now();
+                    
                     const silentEvents = ["GET_USER_LIST", "SEND_CHAT", "CHECK_USER_ONLINE"];
                     if (response.event === "SEND_CHAT") {
                         console.log("SERVER RETURN:", response.data ? response.data.mes : "No data");
@@ -110,7 +111,7 @@ export const useSocketConnection = (dispatch, lastActivityRef, isOnline) => {
                     }
                     handleSocketMessage(response, dispatch, socketActions, socketRef, () => store.getState());
                 } catch (err) {
-                    console.error("Lỗi parse JSON:", err);
+                    console.error("Lỗi parse JSON:", err, "Raw data:", event.data);
                 }
             };
 

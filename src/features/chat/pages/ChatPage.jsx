@@ -16,6 +16,9 @@ import CreateRoomModal from "../components/sidebar/CreateRoomModal.jsx";
 import SearchResult from "../components/sidebar/SearchResult.jsx";
 import ContactRequestModal from "../components/sidebar/ContactRequestModal.jsx";
 import ContactRequestsModal from "../components/sidebar/ContactRequestsModal.jsx";
+import { usePendingActions } from "../hooks/usePendingActions";
+import { useChatTheme } from "../hooks/useChatTheme";
+import AddMemberModal from "../components/chatbox/AddMemberModal.jsx";
 import PageHeader from "../components/headerChat/PageHeader.jsx"; // Import PageHeader
 import LogoutModal from "../components/headerChat/LogoutModal.jsx"; // Import LogoutModal
 
@@ -23,7 +26,8 @@ const ChatPage = () => {
     const navigate = useNavigate();
     const { title, rooms, selectRoom } = useChatSidebar();
     const { actions: socketActions } = useSocket();
-    const { actions: apiActions } = useApi();
+    const { sendContactRequest } = usePendingActions();
+    useChatTheme(); // Initialize theme management
     const user = useSelector((s) => s.auth.user);
 
     // Hook ChatMessage (Quản lý chi tiết chat: message, member, actions)
@@ -59,6 +63,7 @@ const ChatPage = () => {
     const [showContactRequests, setShowContactRequests] = useState(false);
     const [contactError, setContactError] = useState('');
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+    const [showAddMember, setShowAddMember] = useState(false);
 
     // Tự điều hướng sang login page nếu không có user và code
     useEffect(() => {
@@ -124,27 +129,10 @@ const ChatPage = () => {
 
     const handleSendContactRequest = async (recipientName, message) => {
         try {
-            const response = await apiActions.createPendingConversation(recipientName);
-            console.log('Response từ createPendingConversation:', response);
-            
-            if (response && (response.status === 'PENDING' || response.id)) {
-                socketActions.sendChat(recipientName, message, "people");
-                console.log('Đã gửi yêu cầu liên hệ đến:', recipientName);
-                setShowContactRequest(false);
-                setSearchQuery('');
-
-                setTimeout(() => {
-                    socketActions.getUserList();
-                }, 500);
-                setTimeout(() => {
-                    socketActions.getUserList();
-                }, 1500);
-            } else {
-                console.warn('Response không hợp lệ:', response);
-                setContactError('Không thể gửi yêu cầu liên hệ. Vui lòng thử lại.');
-            }
+            await sendContactRequest(recipientName, message);
+            setShowContactRequest(false);
+            setSearchQuery('');
         } catch (err) {
-            console.error('Lỗi khi tạo pending conversation:', err);
             setContactError('Không thể gửi yêu cầu liên hệ. Vui lòng thử lại.');
         }
     };
@@ -168,6 +156,10 @@ const ChatPage = () => {
     const handleConfirmLogout = () => {
         socketActions.logout();
         setShowLogoutConfirm(false);
+    };
+
+    const handleAddMemberClick = () => {
+        setShowAddMember(true);
     };
 
     return (
@@ -234,7 +226,7 @@ const ChatPage = () => {
                         <ChatInfo
                             isGroup={activeChat.type === 1 || activeChat.type === 'group' || activeChat.type === 'room'}
                             members={memberList}
-                            onAddMember={handleAddMember}
+                            onAddMember={handleAddMemberClick}
                         />
                     </div>
                 )}
@@ -280,6 +272,20 @@ const ChatPage = () => {
                     onClose={() => setShowLogoutConfirm(false)}
                     onConfirm={handleConfirmLogout}
                 />
+            )}
+
+            {/* Add Member Modal */}
+            {showAddMember && activeChat && (
+                <>
+                    <div className={styles["add-member-modal-backdrop"]} onClick={() => setShowAddMember(false)} />
+                    <div className={styles["add-member-modal-container"]}>
+                        <AddMemberModal
+                            onClose={() => setShowAddMember(false)}
+                            roomName={activeChat.name}
+                            existingMembers={memberList}
+                        />
+                    </div>
+                </>
             )}
         </div>
     );
