@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import colors from '../../../../shared/constants/colors';
 import ImageModal from '../../../../shared/components/ImageModal';
+import VideoModal from '../../../../shared/components/VideoModal';
 
 // Formats date group header 
 const formatDateGroup = (isoString) => {
@@ -71,10 +72,11 @@ const SenderFilter = ({ members, onSelect, selectedSenderId }) => {
                         onChange={(e) => setSearchTerm(e.target.value)}
                         style={{
                             width: '100%', padding: '8px 12px', borderRadius: 20, border: '1px solid #ddd',
-                            backgroundColor: '#f5f5f5', outline: 'none', fontSize: 13, marginBottom: 8
+                            backgroundColor: '#f5f5f5', outline: 'none', fontSize: 13, marginBottom: 8,
+                            boxSizing: 'border-box'
                         }}
                     />
-                    <div style={{ maxHeight: 200, overflowY: 'auto' }}>
+                    <div className="no-scrollbar" style={{ maxHeight: 200, overflowY: 'auto' }}>
                         <div
                             onClick={() => { onSelect(null); setIsOpen(false); }}
                             style={{ padding: '8px', cursor: 'pointer', borderRadius: 4, fontSize: 13, color: '#333' }}
@@ -222,6 +224,7 @@ const MediaGallery = ({ items = [], members = [], initialTab = 'media', onClose 
     // Filter States
     const [selectedSenderId, setSelectedSenderId] = useState(null);
     const [dateRange, setDateRange] = useState(null);
+    const [previewVideo, setPreviewVideo] = useState(null); // State cho video modal
 
     // Filter Items
     const filteredItems = useMemo(() => {
@@ -269,7 +272,8 @@ const MediaGallery = ({ items = [], members = [], initialTab = 'media', onClose 
         if (item.type === 'image') {
             setSelectedImage(item.url);
         } else if (item.type === 'video') {
-            window.open(item.url, '_blank');
+            // Mở video trong app thay vì tab mới
+            setPreviewVideo(item.url);
         }
     };
 
@@ -315,6 +319,14 @@ const MediaGallery = ({ items = [], members = [], initialTab = 'media', onClose 
                     onSelectRange={setDateRange}
                 />
             </div>
+
+            {/* Render Video Modal */}
+            {previewVideo && (
+                <VideoModal
+                    videoUrl={previewVideo}
+                    onClose={() => setPreviewVideo(null)}
+                />
+            )}
         </div>
     );
 
@@ -329,7 +341,7 @@ const MediaGallery = ({ items = [], members = [], initialTab = 'media', onClose 
         }
 
         return (
-            <div style={{ flex: 1, overflowY: 'auto', padding: '12px 12px' }}>
+            <div className="no-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '12px 12px' }}>
                 {Object.entries(groupedItems).map(([date, groupItems]) => (
                     <div key={date} style={{ marginBottom: 20 }}>
                         <h4 style={{ margin: '0 0 10px 0', fontSize: 14, color: '#444', fontWeight: 600 }}>{date}</h4>

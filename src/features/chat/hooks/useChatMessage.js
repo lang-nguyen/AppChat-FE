@@ -4,6 +4,7 @@ import { useSocket } from "../../../app/providers/useSocket.js";
 import { clearMessages, addMessage } from "../../../state/chat/chatSlice.js";
 import { encodeEmoji } from "../../../shared/utils/emojiUtils.js";
 import { uploadFile } from "../../../shared/services/cloudinaryService.js";
+import { getAvatarUrl } from "../../../shared/utils/avatarUtils.js";
 
 /**
  * Hook xử lý toàn bộ logic của phần ChatBox và ChatInfo.
@@ -55,8 +56,18 @@ export const useChatMessage = () => {
 
         if (activeChat.type === 0 || activeChat.type === 'people') {
             return [
-                { name: currentUserName, isOnline: true },
-                { name: activeChat.name, isOnline: !!onlineStatus[activeChat.name] }
+                {
+                    id: currentUserName, // Dùng tên làm ID
+                    name: currentUserName,
+                    avatar: getAvatarUrl(currentUserName),
+                    isOnline: true
+                },
+                {
+                    id: activeChat.name,
+                    name: activeChat.name,
+                    avatar: getAvatarUrl(activeChat.name),
+                    isOnline: !!onlineStatus[activeChat.name]
+                }
             ];
         } else {
             const roomData = people.find(p => p.name === activeChat.name && p.type === activeChat.type);
@@ -64,7 +75,13 @@ export const useChatMessage = () => {
             return userList.map(m => {
                 const name = typeof m === 'string' ? m : m.name;
                 const isOwner = typeof m === 'object' ? m.isOwner : false;
-                return { name, isOnline: !!onlineStatus[name], isOwner };
+                return {
+                    id: name, // Dùng tên làm ID
+                    name,
+                    avatar: getAvatarUrl(name),
+                    isOnline: !!onlineStatus[name],
+                    isOwner
+                };
             });
         }
     }, [activeChat, people, onlineStatus, user]);

@@ -3,9 +3,11 @@ import { useSelector } from 'react-redux';
 import colors from '../../../../shared/constants/colors';
 import MediaGallery from './MediaGallery';
 import ImageModal from '../../../../shared/components/ImageModal';
+import VideoModal from '../../../../shared/components/VideoModal';
 
 const SharedMedia = ({ items = [], onViewAll }) => { // Nhận items từ ChatInfo
     const [selectedImage, setSelectedImage] = useState(null);
+    const [previewVideo, setPreviewVideo] = useState(null);
 
     // Preview: Lấy 8 item mới nhất (image va video)
     const previewItems = useMemo(() => items.slice(0, 8), [items]);
@@ -14,7 +16,7 @@ const SharedMedia = ({ items = [], onViewAll }) => { // Nhận items từ ChatIn
         if (item.type === 'image') {
             setSelectedImage(item.url);
         } else if (item.type === 'video') {
-            window.open(item.url, '_blank');
+            setPreviewVideo(item.url);
         }
     };
 
@@ -97,11 +99,9 @@ const SharedMedia = ({ items = [], onViewAll }) => { // Nhận items từ ChatIn
                     Xem tất cả
                 </button>
             )}
-
-
-
-            {/* Image Modal */}
+            {/* Image & Video Modal */}
             {selectedImage && <ImageModal imageUrl={selectedImage} onClose={() => setSelectedImage(null)} />}
+            {previewVideo && <VideoModal videoUrl={previewVideo} onClose={() => setPreviewVideo(null)} />}
         </div>
     );
 };

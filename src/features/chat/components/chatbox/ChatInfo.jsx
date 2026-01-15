@@ -31,8 +31,8 @@ const ChatInfo = ({ isGroup = false, members = [], onRename, onLeaveRoom, onAddM
                     url: content.replace('[IMAGE]', ''),
                     id: msg.id || msg.tempId,
                     createdAt: msg.createAt || new Date().toISOString(),
-                    senderName: msg.name, // Thêm senderName cho filter
-                    senderId: msg.senderId // Thêm senderId nếu có (tạm thời dùng name)
+                    senderName: msg.name,
+                    senderId: msg.name // Dùng Name làm ID 
                 });
                 // Xử lý Video
             } else if (content.startsWith('[VIDEO]')) {
@@ -42,7 +42,7 @@ const ChatInfo = ({ isGroup = false, members = [], onRename, onLeaveRoom, onAddM
                     id: msg.id || msg.tempId,
                     createdAt: msg.createAt || new Date().toISOString(),
                     senderName: msg.name,
-                    senderId: msg.senderId
+                    senderId: msg.name // Dùng Name làm ID
                 });
             }
         });
