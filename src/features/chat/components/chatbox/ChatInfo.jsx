@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import HeaderInfo from './HeaderInfo.jsx';
 import ListMember from './ListMember.jsx';
+import MemberSummary from './MemberSummary.jsx';
 import InfoFunction from './InfoFunction.jsx';
 import { useChatTheme } from '../../hooks/useChatTheme';
 import ThemeSelectorModal from './ThemeSelectorModal.jsx';
@@ -57,6 +58,15 @@ const ChatInfo = ({ isGroup = false, members = [], onRename, onLeaveRoom, onAddM
         />;
     }
 
+    if (viewMode === 'MEMBERS') {
+        return <ListMember
+            members={members}
+            isGroup={isGroup}
+            onAddMember={onAddMember}
+            onClose={() => setViewMode('MAIN')}
+        />;
+    }
+
     return (
         <div style={{
             width: 320,
@@ -69,7 +79,7 @@ const ChatInfo = ({ isGroup = false, members = [], onRename, onLeaveRoom, onAddM
         }}>
             <HeaderInfo />
             <div style={{ flex: 1, overflowY: 'auto' }}>
-                <ListMember members={members} isGroup={isGroup} onAddMember={onAddMember} />
+                <MemberSummary membersOrCount={members} onClick={() => setViewMode('MEMBERS')} />
                 {/* Truyền mediaList vào để hiển thị preview */}
                 <SharedMedia items={mediaList} onViewAll={() => setViewMode('GALLERY')} />
                 <InfoFunction

@@ -389,17 +389,38 @@ const MediaGallery = ({ items = [], members = [], initialTab = 'media', onClose 
         }}>
             {/* Header */}
             <div style={{
-                height: 50, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 12px',
-                borderBottom: '1px solid #eee'
+                height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px',
+                backgroundColor: '#fff',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                zIndex: 10,
+                position: 'relative'
             }}>
-                <button
-                    onClick={onClose}
-                    style={{ background: 'none', border: 'none', fontSize: 24, cursor: 'pointer', color: '#333' }}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <button
+                        onClick={onClose}
+                        style={{
+                            background: 'none', border: 'none', cursor: 'pointer', color: '#333',
+                            display: 'flex', alignItems: 'center', padding: 4, borderRadius: '50%'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                    >
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="19" y1="12" x2="5" y2="12"></line>
+                            <polyline points="12 19 5 12 12 5"></polyline>
+                        </svg>
+                    </button>
+                    <span style={{ fontSize: 17, fontWeight: 700, color: colors.primaryText }}>Kho lưu trữ</span>
+                </div>
+
+                <button style={{
+                    background: 'none', border: 'none', fontSize: 14, fontWeight: 600,
+                    color: colors.primaryButton, cursor: 'pointer', padding: '8px 12px',
+                    borderRadius: 4
+                }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#FFF0F6'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
-                    &lt;
-                </button>
-                <span style={{ fontSize: 16, fontWeight: 700, color: '#333' }}>Kho lưu trữ</span>
-                <button style={{ background: 'none', border: 'none', fontSize: 14, fontWeight: 600, color: '#333', cursor: 'pointer' }}>
                     Chọn
                 </button>
             </div>
