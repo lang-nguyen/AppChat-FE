@@ -35,16 +35,16 @@ const ListMember = ({ members = [], isGroup = false, onAddMember, onClose }) => 
                     <span style={{ fontSize: 17, fontWeight: 700, color: colors.primaryText }}>Thành viên ({members.length})</span>
                 </div>
 
-                {isGroup && (
-                    <div style={{ transform: 'scale(0.9)' }}>
-                        <AddMember onClick={onAddMember} />
-                    </div>
-                )}
             </div>
 
             {/* Danh sách members */}
             <div className="no-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {isGroup && (
+                        <div style={{ marginBottom: 4 }}>
+                            <AddMember onClick={onAddMember} />
+                        </div>
+                    )}
                     {members.map((member, idx) => (
                         <div key={idx} style={{
                             display: 'flex',
@@ -111,7 +111,7 @@ const ListMember = ({ members = [], isGroup = false, onAddMember, onClose }) => 
                     ))}
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
 
