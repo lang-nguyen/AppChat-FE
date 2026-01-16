@@ -26,4 +26,11 @@ export default defineConfig([
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
     },
   },
+  // Config riêng cho các file config (vite.config.js, etc.) - sử dụng Node.js globals
+  {
+    files: ['*.config.js', '*.config.ts', '*.config.mjs', 'vite.config.js'],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
 ])
