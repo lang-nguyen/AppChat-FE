@@ -1,5 +1,6 @@
 
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import styles from './ImageModal.module.css';
 
 import { downloadMedia, copyToClipboard } from '../utils/mediaUtils';
@@ -42,19 +43,20 @@ const ImageModal = ({ imageUrl, onClose }) => {
         justifyContent: 'center',
         cursor: 'pointer',
         transition: 'all 0.2s',
-        backdropFilter: 'blur(4px)'
+        backdropFilter: 'blur(4px)',
+        zIndex: 100000
     };
 
-    return (
+    return createPortal(
         <div className={styles.overlay} onClick={onClose}>
             {/* Toolbar */}
             <div style={{
-                position: 'absolute',
+                position: 'fixed',
                 top: 20,
                 right: 20,
                 display: 'flex',
                 gap: 12,
-                zIndex: 10001
+                zIndex: 100000
             }} onClick={(e) => e.stopPropagation()}>
 
                 <button
@@ -101,7 +103,8 @@ const ImageModal = ({ imageUrl, onClose }) => {
             <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
                 <img src={imageUrl} alt="Zoomed" className={styles.image} />
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

@@ -9,16 +9,25 @@ const MemberSummary = ({ membersOrCount = 0, onClick }) => {
             onClick={onClick}
             style={{
                 padding: '12px 16px',
-                borderBottom: '1px solid var(--theme-border, #FFB3D9)',
+                margin: '16px 16px 0 16px',
+                borderRadius: 12,
+                border: '1px solid #E0E0E0',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 cursor: 'pointer',
-                backgroundColor: 'transparent',
-                transition: 'background-color 0.2s'
+                backgroundColor: '#FFFFFF',
+                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+                transition: 'all 0.2s',
             }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.02)'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#FFE5F0'; // Hover effect like Card
+                e.currentTarget.style.borderColor = '#FFDAEB';
+            }}
+            onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#FFFFFF';
+                e.currentTarget.style.borderColor = '#E0E0E0';
+            }}
         >
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 {/* Icon Users */}

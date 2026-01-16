@@ -7,12 +7,12 @@ const ListMember = ({ members = [], isGroup = false, onAddMember, onClose }) => 
     return (
         <div style={{
             height: '100%',
-            backgroundColor: '#fff',
+            backgroundColor: 'transparent',
             display: 'flex', flexDirection: 'column'
         }}>
             <div style={{
                 height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px',
-                backgroundColor: '#fff',
+                backgroundColor: 'transparent',
                 boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
                 zIndex: 10,
                 position: 'relative'
@@ -51,10 +51,20 @@ const ListMember = ({ members = [], isGroup = false, onAddMember, onClose }) => 
                             alignItems: 'center',
                             justifyContent: 'space-between',
                             padding: '8px 12px',
-                            borderRadius: 8,
-                            backgroundColor: '#f9f9f9',
-                            border: '1px solid #eee'
-                        }}>
+                            borderRadius: 12,
+                            backgroundColor: '#FFFFFF',
+                            border: '1px solid #E0E0E0',
+                            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+                            transition: 'all 0.2s',
+                        }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = '#FFE5F0';
+                                e.currentTarget.style.borderColor = '#FFDAEB';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = '#FFFFFF';
+                                e.currentTarget.style.borderColor = '#E0E0E0';
+                            }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
                                 <div style={{ position: 'relative' }}>
                                     <div style={{

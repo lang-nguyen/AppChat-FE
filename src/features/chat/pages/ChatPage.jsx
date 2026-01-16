@@ -21,6 +21,7 @@ import { useChatTheme } from "../hooks/useChatTheme";
 import AddMemberModal from "../components/chatbox/AddMemberModal.jsx";
 import PageHeader from "../components/headerChat/PageHeader.jsx"; // Import PageHeader
 import LogoutModal from "../components/headerChat/LogoutModal.jsx"; // Import LogoutModal
+import Iridescence from "../../../shared/components/Iridescence.jsx"; // Hiệu ứng nền
 
 const ChatPage = () => {
     const navigate = useNavigate();
@@ -164,73 +165,87 @@ const ChatPage = () => {
 
     return (
         <div className={styles.page}>
-            <PageHeader onLogout={handleLogoutClick} />
-            <div className={styles["chat-container"]}>
-                <div className={styles["chat-sidebar"]}>
-                    {/* Sidebar Header có nút tạo phòng và yêu cầu liên hệ */}
-                    <UserHeader
-                        name={title}
-                        onAdd={handleCreateRoom}
-                        onContactRequests={handleOpenContactRequests}
-                    />
-                    <SearchBox
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                    {/* Hiển thị SearchResult nếu không tìm thấy room nào, ngược lại hiển thị RoomList với nút Liên hệ ở cuối nếu có search query */}
-                    {shouldShowSearchResult ? (
-                        <SearchResult
-                            searchQuery={searchQuery}
-                            onContact={handleContact}
-                            contactError={contactError}
-                        />
-                    ) : (
-                        <RoomList
-                            rooms={filteredRooms}
-                            onSelect={selectRoom}
-                            searchQuery={searchQuery}
-                            onContact={handleContact}
-                            contactError={contactError}
-                        />
-                    )}
-                </div>
-                <div className={styles["chat-main"]}>
-                    {activeChat ? (
-                        <ChatRoomCard
-                            activeChat={activeChat}
-                            messages={messages}
-                            myUsername={myUsername}
-                            isOnline={isOnline}
-                            inputText={inputText}
-                            setInputText={setInputText}
-                            page={page}
-                            isLoading={isLoading}
-                            handleSend={handleSend}
-                            handleScroll={handleScroll}
-                            messagesEndRef={messagesEndRef}
-                            chatContainerRef={chatContainerRef}
-                            onInfoClick={() => setShowInfo(!showInfo)}
-                            // File props
-                            selectedFile={selectedFile}
-                            isUploading={isUploading}
-                            handleSelectFile={handleSelectFile}
-                            handleRemoveFile={handleRemoveFile}
-                        />
-                    ) : (
-                        <ChatPlaceholder />
-                    )}
-                </div>
-                {/* Sidebar thông tin chat (ChatInfo) */}
-                {activeChat && showInfo && (
-                    <div className={styles["chat-info-sidebar"]}>
-                        <ChatInfo
-                            isGroup={activeChat.type === 1 || activeChat.type === 'group' || activeChat.type === 'room'}
-                            members={memberList}
-                            onAddMember={handleAddMemberClick}
-                        />
-                    </div>
-                )}
+            {/* Lớp nền hiệu ứng Iridescence */}
+            <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
+                <Iridescence
+                    color={[1, 1, 1]}
+                    speed={0.5}
+                    amplitude={0.1}
+                    mouseReact={false}
+                />
             </div>
+
+            {/* Container chính chứa nội dung chat - Nổi lên trên nền */}
+            <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}>
+                <PageHeader onLogout={handleLogoutClick} />
+                <div className={styles["chat-container"]}>
+                    <div className={styles["chat-sidebar"]}>
+                        {/* Sidebar Header có nút tạo phòng và yêu cầu liên hệ */}
+                        <UserHeader
+                            name={title}
+                            onAdd={handleCreateRoom}
+                            onContactRequests={handleOpenContactRequests}
+                        />
+                        <SearchBox
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                        {/* Hiển thị SearchResult nếu không tìm thấy room nào, ngược lại hiển thị RoomList với nút Liên hệ ở cuối nếu có search query */}
+                        {shouldShowSearchResult ? (
+                            <SearchResult
+                                searchQuery={searchQuery}
+                                onContact={handleContact}
+                                contactError={contactError}
+                            />
+                        ) : (
+                            <RoomList
+                                rooms={filteredRooms}
+                                onSelect={selectRoom}
+                                searchQuery={searchQuery}
+                                onContact={handleContact}
+                                contactError={contactError}
+                            />
+                        )}
+                    </div>
+                    <div className={styles["chat-main"]}>
+                        {activeChat ? (
+                            <ChatRoomCard
+                                activeChat={activeChat}
+                                messages={messages}
+                                myUsername={myUsername}
+                                isOnline={isOnline}
+                                inputText={inputText}
+                                setInputText={setInputText}
+                                page={page}
+                                isLoading={isLoading}
+                                handleSend={handleSend}
+                                handleScroll={handleScroll}
+                                messagesEndRef={messagesEndRef}
+                                chatContainerRef={chatContainerRef}
+                                onInfoClick={() => setShowInfo(!showInfo)}
+                                // File props
+                                selectedFile={selectedFile}
+                                isUploading={isUploading}
+                                handleSelectFile={handleSelectFile}
+                                handleRemoveFile={handleRemoveFile}
+                            />
+                        ) : (
+                            <ChatPlaceholder />
+                        )}
+                    </div>
+                    {/* Sidebar thông tin chat (ChatInfo) */}
+                    {activeChat && showInfo && (
+                        <div className={styles["chat-info-sidebar"]}>
+                            <ChatInfo
+                                isGroup={activeChat.type === 1 || activeChat.type === 'group' || activeChat.type === 'room'}
+                                members={memberList}
+                                onAddMember={handleAddMemberClick}
+                            />
+                        </div>
+                    )}
+                </div>
+            </div>
+
             {/* Create Room Modal */}
             {showCreateRoom && (
                 <>

@@ -71,7 +71,7 @@ const ChatInfo = ({ isGroup = false, members = [], onRename, onLeaveRoom, onAddM
         <div style={{
             width: 320,
             height: '100%',
-            backgroundColor: 'var(--theme-card-bg, #FFDAEB)',
+            backgroundColor: 'transparent',
             borderLeft: '1px solid var(--theme-border, #FFB3D9)',
             display: 'flex',
             flexDirection: 'column',

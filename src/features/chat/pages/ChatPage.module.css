@@ -4,7 +4,9 @@
     height: 100vh;
     width: 100%;
     overflow: hidden;
-    background: linear-gradient(to bottom, var(--gradient-start), var(--gradient-end));
+    position: relative;
+    /* background: linear-gradient(to bottom, var(--gradient-start), var(--gradient-end)); */
+    background-color: #000;
     display: flex;
     flex-direction: column;
 }
@@ -24,7 +26,15 @@
     width: 30%;
     min-width: 280px;
     max-width: 400px;
-    background: var(--card-bg);
+    /* background: var(--card-bg); */
+    background: rgba(255, 255, 255, 0.2);
+    /* Trong suốt nhiều hơn */
+    backdrop-filter: blur(50px);
+    /* Tăng độ mờ để giữ ranh giới */
+    -webkit-backdrop-filter: blur(50px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+
     overflow: hidden;
     flex-shrink: 0;
     height: 100%;
@@ -35,7 +45,13 @@
 
 .chat-main {
     flex: 1;
-    background: var(--card-bg);
+    /* background: var(--card-bg); */
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(50px);
+    -webkit-backdrop-filter: blur(50px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+
     overflow-y: auto;
     min-width: 0;
     height: 100%;
@@ -46,21 +62,31 @@
     width: 320px;
     flex-shrink: 0;
     height: 100%;
-    background: var(--card-bg);
+    /* background: var(--card-bg); */
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(50px);
+    -webkit-backdrop-filter: blur(50px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+
     overflow-y: auto;
     overflow-x: hidden;
     border-radius: 16px;
-    border-left: 1px solid #eee;
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .chat-info-sidebar {
-    scrollbar-width: none; /* Firefox - ẩn thanh cuộn */
-    -ms-overflow-style: none; /* IE và Edge */
+    scrollbar-width: none;
+    /* Firefox - ẩn thanh cuộn */
+    -ms-overflow-style: none;
+    /* IE và Edge */
 }
 
 .chat-info-sidebar::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
+    display: none;
+    /* Chrome, Safari, Opera */
 }
+
 /* Create Room Modal */
 .create-room-modal-backdrop {
     position: fixed;
@@ -90,7 +116,8 @@
 }
 
 .create-room-modal-container::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
+    display: none;
+    /* Chrome, Safari, Opera */
 }
 
 /* Contact Request Modal - cùng kích thước với Create Room Modal */
@@ -122,7 +149,8 @@
 }
 
 .contact-request-modal-container::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
+    display: none;
+    /* Chrome, Safari, Opera */
 }
 
 /* Add Member Modal - positioned on the right */
@@ -139,7 +167,8 @@
 .add-member-modal-container {
     position: fixed;
     top: 1rem;
-    right: calc(320px + 1.5rem); /* Right side next to chat-info-sidebar */
+    right: calc(320px + 1.5rem);
+    /* Right side next to chat-info-sidebar */
     width: 320px;
     height: 50vh;
     max-height: 50vh;
@@ -153,21 +182,25 @@
 }
 
 .add-member-modal-container::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
+    display: none;
+    /* Chrome, Safari, Opera */
 }
 
 .room-list-scrollable {
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
 }
 
 .room-list-scrollable::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
+    display: none;
+    /* Chrome, Safari, Opera */
 }
 
 
 /* Override marginBottom của TextInput trong modal */
-.create-room-modal-container > div > div > div > div {
+.create-room-modal-container>div>div>div>div {
     margin-bottom: 0 !important;
 }
 

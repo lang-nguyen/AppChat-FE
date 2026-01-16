@@ -48,11 +48,12 @@ const SenderFilter = ({ members, onSelect, selectedSenderId }) => {
             <div
                 onClick={() => setIsOpen(!isOpen)}
                 style={{
-                    backgroundColor: selectedSenderId ? '#FFE5F1' : '#EFEFEF',
+                    backgroundColor: selectedSenderId ? '#FFE5F1' : 'rgba(255, 255, 255, 0.6)',
                     borderRadius: 16, padding: '6px 12px', fontSize: 13,
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    cursor: 'pointer', color: selectedSenderId ? colors.primaryText : '#555',
-                    border: selectedSenderId ? `1px solid ${colors.primaryButton}` : '1px solid transparent'
+                    cursor: 'pointer', color: selectedSenderId ? colors.primaryText : '#333',
+                    border: selectedSenderId ? `1px solid ${colors.primaryButton}` : '1px solid #fff',
+                    backdropFilter: 'blur(4px)'
                 }}
             >
                 <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{selectedName}</span>
@@ -147,11 +148,12 @@ const DateFilter = ({ onSelectRange, activeRange }) => {
             <div
                 onClick={() => setIsOpen(!isOpen)}
                 style={{
-                    backgroundColor: activeRange ? '#FFE5F1' : '#EFEFEF',
+                    backgroundColor: activeRange ? '#FFE5F1' : 'rgba(255, 255, 255, 0.6)',
                     borderRadius: 16, padding: '6px 12px', fontSize: 13,
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    cursor: 'pointer', color: activeRange ? colors.primaryText : '#555',
-                    border: activeRange ? `1px solid ${colors.primaryButton}` : '1px solid transparent'
+                    cursor: 'pointer', color: activeRange ? colors.primaryText : '#333',
+                    border: activeRange ? `1px solid ${colors.primaryButton}` : '1px solid #fff',
+                    backdropFilter: 'blur(4px)'
                 }}
             >
                 <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -278,7 +280,7 @@ const MediaGallery = ({ items = [], members = [], initialTab = 'media', onClose 
     };
 
     const renderTabs = () => (
-        <div style={{ display: 'flex', borderBottom: '1px solid #ddd', backgroundColor: '#fff', flexDirection: 'column' }}>
+        <div style={{ display: 'flex', borderBottom: '1px solid #ddd', backgroundColor: 'transparent', flexDirection: 'column' }}>
             {/* Main Tabs */}
             <div style={{ display: 'flex' }}>
                 {['media', 'file', 'link'].map(tab => {
@@ -335,7 +337,6 @@ const MediaGallery = ({ items = [], members = [], initialTab = 'media', onClose 
             return (
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#999' }}>
                     <div>Chưa có {activeTab === 'file' ? 'file' : activeTab === 'link' ? 'link' : 'ảnh/video'} nào</div>
-                    {(selectedSenderId || dateRange) && <div style={{ fontSize: 12, marginTop: 8 }}>Thử đổi bộ lọc xem sao</div>}
                 </div>
             );
         }
@@ -384,13 +385,13 @@ const MediaGallery = ({ items = [], members = [], initialTab = 'media', onClose 
     return (
         <div style={{
             height: '100%',
-            backgroundColor: '#fff',
+            backgroundColor: 'transparent',
             display: 'flex', flexDirection: 'column'
         }}>
             {/* Header */}
             <div style={{
                 height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px',
-                backgroundColor: '#fff',
+                backgroundColor: 'transparent',
                 boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
                 zIndex: 10,
                 position: 'relative'

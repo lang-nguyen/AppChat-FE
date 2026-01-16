@@ -8,7 +8,7 @@ const ChatPlaceholder = () => (
 		flexDirection: 'column',
 		justifyContent: 'center',
 		alignItems: 'center',
-		backgroundColor: '#FFE5F0',
+		backgroundColor: 'transparent',
 		color: colors.primaryText
 	}}>
 		<div style={{ marginBottom: 20 }}>
