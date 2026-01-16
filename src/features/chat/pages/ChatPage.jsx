@@ -25,7 +25,7 @@ import LogoutModal from "../components/headerChat/LogoutModal.jsx"; // Import Lo
 const ChatPage = () => {
     const navigate = useNavigate();
     const { title, rooms, selectRoom } = useChatSidebar();
-    const { actions: socketActions } = useSocket();
+    const { actions: socketActions, isReady: socketReady } = useSocket();
     const { sendContactRequest } = usePendingActions();
     useChatTheme(); // Initialize theme management
     const user = useSelector((s) => s.auth.user);
@@ -215,6 +215,7 @@ const ChatPage = () => {
                             isUploading={isUploading}
                             handleSelectFile={handleSelectFile}
                             handleRemoveFile={handleRemoveFile}
+                            isSocketReady={socketReady}
                         />
                     ) : (
                         <ChatPlaceholder />

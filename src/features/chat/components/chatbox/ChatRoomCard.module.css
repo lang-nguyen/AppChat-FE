@@ -462,3 +462,17 @@
     font-size: 40px !important;
     line-height: normal;
 }
+
+.stickerPickerWrapper {
+    position: absolute;
+    bottom: 80px;
+    right: 20px;
+    z-index: 100;
+}
+
+.stickerImage {
+    max-width: 100px;
+    border-radius: 8px;
+    cursor: pointer;
+    object-fit: contain;
+}
