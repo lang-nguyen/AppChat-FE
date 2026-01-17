@@ -23,8 +23,8 @@ const AddMemberModal = ({ onClose, roomName, existingMembers = [] }) => {
     const [isProcessing, setIsProcessing] = useState(false);
     const [result, setResult] = useState(null); // { success: [], failed: [] }
 
-    const myUsername = currentUser?.name || currentUser?.user || currentUser?.username || 
-                      localStorage.getItem('user_name') || 'Tôi';
+    const myUsername = currentUser?.name || currentUser?.user || currentUser?.username ||
+        localStorage.getItem('user_name') || 'Tôi';
 
     // Filter: chỉ hiển thị user chưa có trong nhóm, không phải bản thân
     const existingSet = new Set(existingMembers.map(m => m?.name || m));
@@ -108,188 +108,188 @@ const AddMemberModal = ({ onClose, roomName, existingMembers = [] }) => {
                 boxSizing: 'border-box',
                 overflow: 'hidden'
             }}>
-            {/* Header */}
-            <div style={{
-                padding: '16px',
-                borderBottom: '1px solid #FFB3D9',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                backgroundColor: '#FFB3D9',
-                flexShrink: 0
-            }}>
-                <h2 style={{ margin: 0, fontSize: 18, color: '#fff' }}>Thêm thành viên</h2>
-                <button
-                    onClick={onClose}
+                {/* Header */}
+                <div style={{
+                    padding: '16px',
+                    borderBottom: '1px solid #FFB3D9',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    backgroundColor: '#FFB3D9',
+                    flexShrink: 0
+                }}>
+                    <h2 style={{ margin: 0, fontSize: 18, color: '#fff' }}>Thêm thành viên</h2>
+                    <button
+                        onClick={onClose}
+                        style={{
+                            background: 'transparent',
+                            border: 'none',
+                            fontSize: 24,
+                            cursor: 'pointer',
+                            color: '#fff',
+                            padding: 0,
+                            width: 28,
+                            height: 28,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}
+                    >
+                        ×
+                    </button>
+                </div>
+
+                {/* Room name display */}
+                <div style={{ padding: '12px 16px', borderBottom: '1px solid #FFB3D9', flexShrink: 0 }}>
+                    <div style={{ fontSize: 13, color: colors.regularText }}>Phòng:</div>
+                    <div style={{ fontSize: 15, fontWeight: 600, color: colors.normalText }}>{roomName}</div>
+                </div>
+
+                {/* Search bar */}
+                <div style={{ padding: '12px 16px', width: '100%', boxSizing: 'border-box', flexShrink: 0 }}>
+                    <SearchBar
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Tìm kiếm người dùng"
+                    />
+                </div>
+
+                {/* User list */}
+                <div
+                    className="add-member-user-list"
                     style={{
-                        background: 'transparent',
-                        border: 'none',
-                        fontSize: 24,
-                        cursor: 'pointer',
-                        color: '#fff',
-                        padding: 0,
-                        width: 28,
-                        height: 28,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
+                        flex: 1,
+                        minHeight: 0,
+                        overflowY: 'auto',
+                        padding: '0 16px',
+                        scrollbarWidth: 'none',
+                        msOverflowStyle: 'none'
                     }}
                 >
-                    ×
-                </button>
-            </div>
-
-            {/* Room name display */}
-            <div style={{ padding: '12px 16px', borderBottom: '1px solid #FFB3D9', flexShrink: 0 }}>
-                <div style={{ fontSize: 13, color: colors.regularText }}>Phòng:</div>
-                <div style={{ fontSize: 15, fontWeight: 600, color: colors.normalText }}>{roomName}</div>
-            </div>
-
-            {/* Search bar */}
-            <div style={{ padding: '12px 16px', width: '100%', boxSizing: 'border-box', flexShrink: 0 }}>
-                <SearchBar
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Tìm kiếm người dùng"
-                />
-            </div>
-
-            {/* User list */}
-            <div 
-                className="add-member-user-list"
-                style={{ 
-                    flex: 1, 
-                    minHeight: 0, 
-                    overflowY: 'auto', 
-                    padding: '0 16px',
-                    scrollbarWidth: 'none',
-                    msOverflowStyle: 'none'
-                }}
-            >
-                {availableUsers.map((user) => {
-                    const isSelected = selectedUsers.includes(user.name);
-                    return (
-                        <div
-                            key={user.name}
-                            onClick={() => handleToggleUser(user.name)}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                padding: '10px 12px',
-                                borderRadius: 10,
-                                backgroundColor: '#fff',
-                                cursor: 'pointer',
-                                marginBottom: 8,
-                                border: '1px solid transparent',
-                                transition: 'background-color 0.2s'
-                            }}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = '#f5f5f5';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = '#fff';
-                            }}
-                        >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
+                    {availableUsers.map((user) => {
+                        const isSelected = selectedUsers.includes(user.name);
+                        return (
+                            <div
+                                key={user.name}
+                                onClick={() => handleToggleUser(user.name)}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    padding: '10px 12px',
+                                    borderRadius: 10,
+                                    backgroundColor: '#fff',
+                                    cursor: 'pointer',
+                                    marginBottom: 8,
+                                    border: '1px solid transparent',
+                                    transition: 'background-color 0.2s'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = '#f5f5f5';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = '#fff';
+                                }}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
+                                    <div style={{
+                                        width: 36,
+                                        height: 36,
+                                        borderRadius: '50%',
+                                        backgroundColor: '#ddd',
+                                        overflow: 'hidden',
+                                        flexShrink: 0
+                                    }}>
+                                        <img
+                                            src={getAvatarUrl(user.name, 128)}
+                                            alt={user.name}
+                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                        />
+                                    </div>
+                                    <div style={{
+                                        fontSize: 14,
+                                        fontWeight: 500,
+                                        color: colors.normalText,
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap',
+                                        flex: 1
+                                    }}>
+                                        {user.name}
+                                    </div>
+                                </div>
                                 <div style={{
-                                    width: 36,
-                                    height: 36,
+                                    width: 20,
+                                    height: 20,
                                     borderRadius: '50%',
-                                    backgroundColor: '#ddd',
-                                    overflow: 'hidden',
+                                    border: `2px solid ${isSelected ? colors.primaryButton : '#ccc'}`,
+                                    backgroundColor: isSelected ? colors.primaryButton : 'transparent',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
                                     flexShrink: 0
                                 }}>
-                                    <img
-                                        src={getAvatarUrl(user.name, 128)}
-                                        alt={user.name}
-                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                    />
-                                </div>
-                                <div style={{
-                                    fontSize: 14,
-                                    fontWeight: 500,
-                                    color: colors.normalText,
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                    flex: 1
-                                }}>
-                                    {user.name}
+                                    {isSelected && (
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                            <polyline points="20 6 9 17 4 12"></polyline>
+                                        </svg>
+                                    )}
                                 </div>
                             </div>
-                            <div style={{
-                                width: 20,
-                                height: 20,
-                                borderRadius: '50%',
-                                border: `2px solid ${isSelected ? colors.primaryButton : '#ccc'}`,
-                                backgroundColor: isSelected ? colors.primaryButton : 'transparent',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                flexShrink: 0
-                            }}>
-                                {isSelected && (
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                                        <polyline points="20 6 9 17 4 12"></polyline>
-                                    </svg>
-                                )}
-                            </div>
-                        </div>
-                    );
-                })}
-                {availableUsers.length === 0 && (
-                    <div style={{
-                        textAlign: 'center',
-                        padding: '40px 16px',
-                        color: colors.regularText,
-                        fontSize: 14
-                    }}>
-                        {searchQuery ? 'Không tìm thấy người dùng' : 'Tất cả người dùng đã có trong nhóm'}
-                    </div>
-                )}
-            </div>
-
-            {/* Result message */}
-            {result && (
-                <div style={{ padding: '12px 16px', backgroundColor: '#fff', borderTop: '1px solid #FFB3D9', flexShrink: 0 }}>
-                    {result.success.length > 0 && (
-                        <div style={{ fontSize: 13, color: '#22c55e', marginBottom: 4 }}>
-                            ✓ Đã mời: {result.success.join(', ')}
-                        </div>
-                    )}
-                    {result.failed.length > 0 && (
-                        <div style={{ fontSize: 13, color: '#ef4444' }}>
-                            ✗ Không tồn tại: {result.failed.join(', ')}
+                        );
+                    })}
+                    {availableUsers.length === 0 && (
+                        <div style={{
+                            textAlign: 'center',
+                            padding: '40px 16px',
+                            color: colors.regularText,
+                            fontSize: 14
+                        }}>
+                            {searchQuery ? 'Không tìm thấy người dùng' : 'Tất cả người dùng đã có trong nhóm'}
                         </div>
                     )}
                 </div>
-            )}
 
-            {/* Actions */}
-            <div style={{
-                padding: '12px 16px',
-                display: 'flex',
-                justifyContent: 'center',
-                gap: 12,
-                borderTop: '1px solid #FFB3D9',
-                backgroundColor: colors.cardBackground,
-                flexShrink: 0
-            }}>
-                <Button
-                    onClick={handleInvite}
-                    disabled={selectedUsers.length === 0 || isProcessing}
-                    style={{
-                        width: 'auto',
-                        minWidth: '140px',
-                        padding: '10px 24px',
-                        opacity: (selectedUsers.length === 0 || isProcessing) ? 0.5 : 1
-                    }}
-                >
-                    {isProcessing ? 'Đang gửi...' : `Gửi lời mời (${selectedUsers.length})`}
-                </Button>
+                {/* Result message */}
+                {result && (
+                    <div style={{ padding: '12px 16px', backgroundColor: '#fff', borderTop: '1px solid #FFB3D9', flexShrink: 0 }}>
+                        {result.success.length > 0 && (
+                            <div style={{ fontSize: 13, color: '#22c55e', marginBottom: 4 }}>
+                                ✓ Đã mời: {result.success.join(', ')}
+                            </div>
+                        )}
+                        {result.failed.length > 0 && (
+                            <div style={{ fontSize: 13, color: '#ef4444' }}>
+                                ✗ Không tồn tại: {result.failed.join(', ')}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Actions */}
+                <div style={{
+                    padding: '12px 16px',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    gap: 12,
+                    borderTop: '1px solid #FFB3D9',
+                    backgroundColor: colors.cardBackground,
+                    flexShrink: 0
+                }}>
+                    <Button
+                        onClick={handleInvite}
+                        disabled={selectedUsers.length === 0 || isProcessing}
+                        style={{
+                            width: 'auto',
+                            minWidth: '140px',
+                            padding: '10px 24px',
+                            opacity: (selectedUsers.length === 0 || isProcessing) ? 0.5 : 1
+                        }}
+                    >
+                        {isProcessing ? 'Đang gửi...' : `Gửi lời mời (${selectedUsers.length})`}
+                    </Button>
+                </div>
             </div>
-        </div>
         </>
     );
 };
