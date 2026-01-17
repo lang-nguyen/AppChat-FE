@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useSocket } from "../../../app/providers/useSocket.js";
 import { useApi } from "../../../app/providers/useApi.js";
 import { setActiveChat, setPendingConversations } from "../../../state/chat/chatSlice.js";
 
 export function useChatSidebar() {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState('all'); // 'all' or 'group'
   const { actions, isReady } = useSocket();
   const { actions: apiActions } = useApi();
   const dispatch = useDispatch();
@@ -103,10 +105,9 @@ export function useChatSidebar() {
   };
 
   const rooms = useMemo(() => {
-    return (people ?? []).map((x) => {
+    let list = (people ?? []).map((x) => {
       const messageText = x.lastMessage || '';
       const timeText = formatLastMessageTime(x.actionTime);
-      // Kết hợp nội dung tin nhắn và thời gian: "Nội dung tin nhắn • 12:00"
       const lastMessageDisplay = messageText && timeText
         ? `${messageText} • ${timeText}`
         : messageText || timeText || '';
@@ -123,7 +124,19 @@ export function useChatSidebar() {
         isOnline: x.type === 1 ? undefined : onlineStatus[x.name], // Chỉ check online cho user
       };
     });
-  }, [people, activeChat, onlineStatus]);
+
+    // 1. Lọc theo tab
+    if (activeTab === 'group') {
+      list = list.filter(room => room.type === 1 || room.type === 'group' || room.type === 'room');
+    }
+
+    // 2. Lọc theo search query
+    if (!searchQuery.trim()) return list;
+    const query = searchQuery.toLowerCase();
+    return list.filter(room =>
+      room.name.toLowerCase().includes(query)
+    );
+  }, [people, activeChat, onlineStatus, title, searchQuery, activeTab]);
 
   const selectRoom = useCallback(
     (r) => {
@@ -137,7 +150,18 @@ export function useChatSidebar() {
     if (isReady) actions.getUserList();
   }, [isReady, actions]);
 
-  return { isReady, title, rooms, activeChat, selectRoom, refreshList };
+  return {
+    isReady,
+    title,
+    rooms,
+    activeChat,
+    selectRoom,
+    refreshList,
+    searchQuery,
+    setSearchQuery,
+    activeTab,
+    setActiveTab
+  };
 }
 
 
