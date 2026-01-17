@@ -126,15 +126,16 @@ const ChatRoomCard = ({
                         gap: 12,
                         padding: '10px 14px',
                         borderRadius: 12,
-                        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                        border: '1px solid rgba(255, 255, 255, 0.3)',
-                        backdropFilter: 'blur(4px)',
+                        backgroundColor: '#fff',
+                        border: '1px solid #e0e0e0',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
                         minWidth: 200,
-                        maxWidth: 300
+                        maxWidth: 300,
+                        color: '#333'
                     }}>
                         <div style={{
                             width: 40, height: 40, borderRadius: 8,
-                            backgroundColor: 'rgba(255,255,255,0.5)',
+                            backgroundColor: '#FFF0F6',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             color: '#E0407E'
                         }}>
@@ -151,7 +152,30 @@ const ChatRoomCard = ({
                 </a>
             );
         }
-        return decodeEmoji(mes);
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        const parts = mes.split(urlRegex);
+
+        return (
+            <span>
+                {parts.map((part, index) => {
+                    if (part.match(urlRegex)) {
+                        return (
+                            <a
+                                key={index}
+                                href={part}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ color: 'inherit', textDecoration: 'underline', wordBreak: 'break-all' }}
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                {part}
+                            </a>
+                        );
+                    }
+                    return <span key={index}>{decodeEmoji(part)}</span>;
+                })}
+            </span>
+        );
     };
 
     // State cho Emoji Picker

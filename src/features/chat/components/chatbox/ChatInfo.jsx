@@ -58,6 +58,22 @@ const ChatInfo = ({ isGroup = false, members = [], onRename, onLeaveRoom, onAddM
                     senderName: msg.name,
                     senderId: msg.name
                 });
+            } else {
+                const urlRegex = /(https?:\/\/[^\s]+)/g;
+                const matches = content.match(urlRegex);
+                if (matches) {
+                    matches.forEach(url => {
+                        list.push({
+                            type: 'link',
+                            url: url,
+                            fileName: url, // show url thay cho name
+                            id: msg.id || msg.tempId,
+                            createdAt: msg.createAt || new Date().toISOString(),
+                            senderName: msg.name,
+                            senderId: msg.name
+                        });
+                    });
+                }
             }
         });
         return list;
