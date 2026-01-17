@@ -93,6 +93,64 @@ const ChatRoomCard = ({
                 />
             );
         }
+        if (mes.startsWith('[FILE]')) {
+            const content = mes.replace('[FILE]', '');
+            const [url, name, size] = content.split('|');
+
+            // Format size
+            const formatSize = (bytes) => {
+                if (!bytes) return 'Unknown size';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            };
+
+            const getDownloadUrl = (originalUrl) => {
+                if (!originalUrl) return '';
+                // PDF -> Open in new tab 
+                if (originalUrl.toLowerCase().endsWith('.pdf')) {
+                    return originalUrl;
+                }
+                if (originalUrl.includes('cloudinary.com') && originalUrl.includes('/upload/') && !originalUrl.includes('/raw/')) {
+                    return originalUrl.replace('/upload/', '/upload/fl_attachment/');
+                }
+                return originalUrl;
+            };
+
+            return (
+                <a href={getDownloadUrl(url)} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        padding: '10px 14px',
+                        borderRadius: 12,
+                        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                        border: '1px solid rgba(255, 255, 255, 0.3)',
+                        backdropFilter: 'blur(4px)',
+                        minWidth: 200,
+                        maxWidth: 300
+                    }}>
+                        <div style={{
+                            width: 40, height: 40, borderRadius: 8,
+                            backgroundColor: 'rgba(255,255,255,0.5)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            color: '#E0407E'
+                        }}>
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+                            <span style={{ fontWeight: 600, fontSize: 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={name}>{name || 'Unknown File'}</span>
+                            <span style={{ fontSize: 11, opacity: 0.7 }}>{formatSize(size)}</span>
+                        </div>
+                        <div style={{ color: '#666' }}>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        </div>
+                    </div>
+                </a>
+            );
+        }
         return decodeEmoji(mes);
     };
 
@@ -253,11 +311,12 @@ const ChatRoomCard = ({
                                         </div>
                                     ) : (
                                         <div className={styles.bubble} style={{
-                                            backgroundColor: (msg.mes.startsWith('[IMAGE]') || msg.mes.startsWith('[VIDEO]')) ? 'transparent' : (isMe ? 'var(--theme-sender-bubble, #FF5596)' : '#fff'),
+                                            backgroundColor: (msg.mes.startsWith('[IMAGE]') || msg.mes.startsWith('[VIDEO]') || msg.mes.startsWith('[FILE]')) ? 'transparent' : (isMe ? 'var(--theme-sender-bubble, #FF5596)' : '#fff'),
                                             color: isMe ? 'var(--theme-text-on-primary, #fff)' : '#000',
-                                            padding: (msg.mes.startsWith('[IMAGE]') || msg.mes.startsWith('[VIDEO]')) ? '0' : undefined,
-                                            boxShadow: (msg.mes.startsWith('[IMAGE]') || msg.mes.startsWith('[VIDEO]')) ? 'none' : undefined,
-                                            border: (msg.mes.startsWith('[IMAGE]') || msg.mes.startsWith('[VIDEO]')) ? 'none' : undefined
+                                            padding: (msg.mes.startsWith('[IMAGE]') || msg.mes.startsWith('[VIDEO]') || msg.mes.startsWith('[FILE]')) ? '0' : undefined,
+                                            boxShadow: (msg.mes.startsWith('[IMAGE]') || msg.mes.startsWith('[VIDEO]') || msg.mes.startsWith('[FILE]')) ? 'none' : undefined,
+                                            border: (msg.mes.startsWith('[IMAGE]') || msg.mes.startsWith('[VIDEO]') || msg.mes.startsWith('[FILE]')) ? 'none' : undefined,
+                                            maxWidth: (msg.mes.startsWith('[FILE]')) ? '100%' : undefined
 
                                         }}>
                                             {renderMessageContent(msg.mes)}
@@ -308,8 +367,8 @@ const ChatRoomCard = ({
                                 <img src={URL.createObjectURL(selectedFile)} alt="Preview" className={styles.previewImage} />
                             ) : (
                                 <div className={styles.previewFileIcon}>
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" /></svg>
-                                    <span style={{ fontSize: '12px', marginTop: '4px' }}>Video</span>
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                    <span style={{ fontSize: '10px', marginTop: '4px', maxWidth: '70px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }} title={selectedFile.name}>{selectedFile.name}</span>
                                 </div>
                             )}
                             <button type="button" className={styles.removeFileButton} onClick={handleRemoveFile}>
@@ -331,7 +390,7 @@ const ChatRoomCard = ({
                         ref={fileInputRef}
                         id="chat-file-input"
                         onChange={handleSelectFile}
-                        accept="image/*,video/*"
+                        accept="*"
                         style={{ display: 'none' }}
                     />
 
@@ -370,6 +429,13 @@ const ChatRoomCard = ({
                                     <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
                                     <line x1="12" y1="19" x2="12" y2="23"></line>
                                     <line x1="8" y1="23" x2="16" y2="23"></line>
+                                </svg>
+                            </button>
+                            {/* Generic File - Paperclip */}
+                            <button type="button" className={styles.actionButton} title="Đính kèm file" onClick={triggerFileSelect}>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M15 7h6a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h6" />
+                                    <path d="M13 3.6a2.1 2.1 0 1 1 4 4L7.5 17.1a3.3 3.3 0 1 1-6-6l9.5-9.5" />
                                 </svg>
                             </button>
                             {/* Image icon - Click trigger select file */}

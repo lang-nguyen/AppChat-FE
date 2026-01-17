@@ -15,6 +15,15 @@ const formatDateGroup = (isoString) => {
     return `Ngày ${day} Tháng ${month}`;
 };
 
+// Helper size
+const filterSize = (bytes) => {
+    if (!bytes) return '';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
 
 const SenderFilter = ({ members, onSelect, selectedSenderId }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -346,36 +355,85 @@ const MediaGallery = ({ items = [], members = [], initialTab = 'media', onClose 
                 {Object.entries(groupedItems).map(([date, groupItems]) => (
                     <div key={date} style={{ marginBottom: 20 }}>
                         <h4 style={{ margin: '0 0 10px 0', fontSize: 14, color: '#444', fontWeight: 600 }}>{date}</h4>
-                        <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(3, 1fr)',
-                            gap: 6
-                        }}>
-                            {groupItems.map((item, idx) => (
-                                <div
-                                    key={idx}
-                                    onClick={() => handleItemClick(item)}
-                                    style={{
-                                        position: 'relative',
-                                        paddingTop: '100%',
-                                        borderRadius: 4,
-                                        overflow: 'hidden',
-                                        cursor: 'pointer',
-                                        backgroundColor: '#f5f5f5',
-                                        border: '1px solid #eee'
-                                    }}
-                                >
-                                    {item.type === 'image' ? (
-                                        <img src={item.url} alt="media" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-                                    ) : (
-                                        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#000' }}>
-                                            <video src={item.url} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.7 }} muted />
-                                            <span style={{ position: 'absolute', color: '#fff', fontSize: 16 }}>▶</span>
+
+                        {activeTab === 'file' ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                {groupItems.map((item, idx) => (
+                                    <a
+                                        key={idx}
+                                        href={
+                                            (item.url.includes('/upload/') && !item.url.includes('/raw/') && !item.url.toLowerCase().endsWith('.pdf'))
+                                                ? item.url.replace('/upload/', '/upload/fl_attachment/')
+                                                : item.url
+                                        }
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style={{ textDecoration: 'none', color: 'inherit' }}
+                                    >
+                                        <div style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            padding: 10,
+                                            borderRadius: 8,
+                                            backgroundColor: '#fff',
+                                            border: '1px solid #eee',
+                                            gap: 12,
+                                            cursor: 'pointer',
+                                            transition: 'background-color 0.2s'
+                                        }}
+                                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9f9f9'}
+                                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#fff'}
+                                        >
+                                            <div style={{
+                                                width: 36, height: 36, borderRadius: 6,
+                                                backgroundColor: '#FFF0F6', color: colors.primaryButton,
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                            }}>
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                            </div>
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                <div style={{ fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.fileName || 'Unknown File'}</div>
+                                                <div style={{ fontSize: 11, color: '#888' }}>{filterSize(item.fileSize)}</div>
+                                            </div>
+                                            <div style={{ color: '#ccc' }}>
+                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                            </div>
                                         </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
+                                    </a>
+                                ))}
+                            </div>
+                        ) : (
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(3, 1fr)',
+                                gap: 6
+                            }}>
+                                {groupItems.map((item, idx) => (
+                                    <div
+                                        key={idx}
+                                        onClick={() => handleItemClick(item)}
+                                        style={{
+                                            position: 'relative',
+                                            paddingTop: '100%',
+                                            borderRadius: 4,
+                                            overflow: 'hidden',
+                                            cursor: 'pointer',
+                                            backgroundColor: '#f5f5f5',
+                                            border: '1px solid #eee'
+                                        }}
+                                    >
+                                        {item.type === 'image' ? (
+                                            <img src={item.url} alt="media" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        ) : (
+                                            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#000' }}>
+                                                <video src={item.url} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.7 }} muted />
+                                                <span style={{ position: 'absolute', color: '#fff', fontSize: 16 }}>▶</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 ))}
             </div>

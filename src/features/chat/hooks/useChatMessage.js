@@ -325,8 +325,16 @@ export const useChatMessage = () => {
             setIsUploading(true);
             try {
                 const result = await uploadFile(selectedFile);
-                const prefix = result.type === 'video' ? '[VIDEO]' : '[IMAGE]';
-                const fileMessage = `${prefix}${result.url}`;
+
+                let fileMessage = '';
+                if (result.type === 'video') {
+                    fileMessage = `[VIDEO]${result.url}`;
+                } else if (result.type === 'image' && result.format !== 'pdf') {
+                    fileMessage = `[IMAGE]${result.url}`;
+                } else {
+                    // [FILE]URL|FileName|Size
+                    fileMessage = `[FILE]${result.url}|${selectedFile.name}|${selectedFile.size}`;
+                }
 
                 // --- OPTIMISTIC UI CHO FILE ---
                 // Hiển thị ngay sau khi upload xong (có URL thật), không cần đợi socket vòng về
@@ -335,7 +343,7 @@ export const useChatMessage = () => {
 
                 const optimisticFileMessage = {
                     name: currentName,
-                    mes: fileMessage, // "[IMAGE]url" hoặc "[VIDEO]url"
+                    mes: fileMessage,
                     createAt: new Date().toISOString(),
                     to: activeChat.name,
                     type: (activeChat.type === 0 || activeChat.type === 'people') ? 'people' : 'room',

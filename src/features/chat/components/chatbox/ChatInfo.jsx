@@ -45,6 +45,19 @@ const ChatInfo = ({ isGroup = false, members = [], onRename, onLeaveRoom, onAddM
                     senderName: msg.name,
                     senderId: msg.name // Dùng Name làm ID
                 });
+            } else if (content.startsWith('[FILE]')) {
+                const fileContent = content.replace('[FILE]', '');
+                const [url, name, size] = fileContent.split('|');
+                list.push({
+                    type: 'file',
+                    url: url,
+                    fileName: name,
+                    fileSize: size,
+                    id: msg.id || msg.tempId,
+                    createdAt: msg.createAt || new Date().toISOString(),
+                    senderName: msg.name,
+                    senderId: msg.name
+                });
             }
         });
         return list;
