@@ -64,6 +64,7 @@ const ChatPage = () => {
     const [contactError, setContactError] = useState('');
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const [showAddMember, setShowAddMember] = useState(false);
+    const [activeSidebarTab, setActiveSidebarTab] = useState('all'); // 'all' or 'group'
 
     // Tự điều hướng sang login page nếu không có user và code
     useEffect(() => {
@@ -86,12 +87,20 @@ const ChatPage = () => {
 
     // Filter rooms theo search query
     const filteredRooms = useMemo(() => {
-        if (!searchQuery.trim()) return rooms;
+        let list = rooms;
+
+        // 1. Lọc theo tab
+        if (activeSidebarTab === 'group') {
+            list = rooms.filter(room => room.type === 1 || room.type === 'group' || room.type === 'room');
+        }
+
+        // 2. Lọc theo search query
+        if (!searchQuery.trim()) return list;
         const query = searchQuery.toLowerCase();
-        return rooms.filter(room =>
+        return list.filter(room =>
             room.name.toLowerCase().includes(query)
         );
-    }, [rooms, searchQuery]);
+    }, [rooms, searchQuery, activeSidebarTab]);
 
     // Kiểm tra xem có nên hiển thị SearchResult không
     const shouldShowSearchResult = useMemo(() => {
@@ -177,6 +186,29 @@ const ChatPage = () => {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
+
+                    {/* Sidebar Tabs */}
+                    <div className={styles.tabsContainer}>
+                        <button
+                            className={`${styles.tab} ${activeSidebarTab === 'all' ? styles.activeTab : ''}`}
+                            onClick={() => setActiveSidebarTab('all')}
+                        >
+                            Tất cả
+                        </button>
+                        <button
+                            className={`${styles.tab} ${activeSidebarTab === 'group' ? styles.activeTab : ''}`}
+                            onClick={() => setActiveSidebarTab('group')}
+                        >
+                            Nhóm
+                        </button>
+                        <div
+                            className={styles.tabIndicator}
+                            style={{
+                                width: 'calc(50% - 1rem)',
+                                left: activeSidebarTab === 'all' ? '1rem' : '50%'
+                            }}
+                        />
+                    </div>
                     {/* Hiển thị SearchResult nếu không tìm thấy room nào, ngược lại hiển thị RoomList với nút Liên hệ ở cuối nếu có search query */}
                     {shouldShowSearchResult ? (
                         <SearchResult

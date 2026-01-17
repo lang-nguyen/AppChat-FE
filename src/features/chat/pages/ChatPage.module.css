@@ -54,13 +54,17 @@
 }
 
 .chat-info-sidebar {
-    scrollbar-width: none; /* Firefox - ẩn thanh cuộn */
-    -ms-overflow-style: none; /* IE và Edge */
+    scrollbar-width: none;
+    /* Firefox - ẩn thanh cuộn */
+    -ms-overflow-style: none;
+    /* IE và Edge */
 }
 
 .chat-info-sidebar::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
+    display: none;
+    /* Chrome, Safari, Opera */
 }
+
 /* Create Room Modal */
 .create-room-modal-backdrop {
     position: fixed;
@@ -90,7 +94,8 @@
 }
 
 .create-room-modal-container::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
+    display: none;
+    /* Chrome, Safari, Opera */
 }
 
 /* Contact Request Modal - cùng kích thước với Create Room Modal */
@@ -122,7 +127,8 @@
 }
 
 .contact-request-modal-container::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
+    display: none;
+    /* Chrome, Safari, Opera */
 }
 
 /* Add Member Modal - positioned on the right */
@@ -139,7 +145,8 @@
 .add-member-modal-container {
     position: fixed;
     top: 1rem;
-    right: calc(320px + 1.5rem); /* Right side next to chat-info-sidebar */
+    right: calc(320px + 1.5rem);
+    /* Right side next to chat-info-sidebar */
     width: 320px;
     height: 50vh;
     max-height: 50vh;
@@ -153,21 +160,25 @@
 }
 
 .add-member-modal-container::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
+    display: none;
+    /* Chrome, Safari, Opera */
 }
 
 .room-list-scrollable {
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
 }
 
 .room-list-scrollable::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
+    display: none;
+    /* Chrome, Safari, Opera */
 }
 
 
 /* Override marginBottom của TextInput trong modal */
-.create-room-modal-container > div > div > div > div {
+.create-room-modal-container>div>div>div>div {
     margin-bottom: 0 !important;
 }
 
@@ -209,4 +220,45 @@
     .chat-sidebar {
         width: 100%;
     }
+}
+
+.tabsContainer {
+    display: flex;
+    position: relative;
+    padding: 0 1rem;
+    border-bottom: 2px solid #f0f0f0;
+    margin-top: 0.5rem;
+}
+
+.tab {
+    flex: 1;
+    padding: 10px 0;
+    text-align: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 600;
+    color: #8e939d;
+    transition: color 0.3s ease;
+    outline: none !important;
+    box-shadow: none !important;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.tab:focus {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.activeTab {
+    color: #E0407E;
+}
+
+.tabIndicator {
+    position: absolute;
+    bottom: -2px;
+    height: 2px;
+    background-color: #E0407E;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
