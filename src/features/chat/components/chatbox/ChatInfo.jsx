@@ -1,14 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import HeaderInfo from './HeaderInfo.jsx';
 import ListMember from './ListMember.jsx';
 import InfoFunction from './InfoFunction.jsx';
-import { useChatTheme } from '../../hooks/useChatTheme';
-import ThemeSelectorModal from './ThemeSelectorModal.jsx';
 import SharedMedia from "./SharedMedia.jsx";
+import colors from '../../../../shared/constants/colors';
+import ThemeSelectorModal from './ThemeSelectorModal.jsx';
 
-const ChatInfo = ({ isGroup = false, members = [], onRename, onLeaveRoom, onAddMember }) => {
-    const { changeTheme } = useChatTheme();
-    const [showThemeSelector, setShowThemeSelector] = React.useState(false);
+const ChatInfo = ({ isGroup = false, members = [], onRename, onChangeTheme, onLeaveRoom, onAddMember }) => {
+    const [showThemeSelector, setShowThemeSelector] = useState(false);
 
     return (
         <div style={{
@@ -21,16 +20,18 @@ const ChatInfo = ({ isGroup = false, members = [], onRename, onLeaveRoom, onAddM
             position: 'relative'
         }}>
             <HeaderInfo />
+
+            {/* Scroll */}
             <div style={{ flex: 1, overflowY: 'auto' }}>
-            <ListMember members={members} isGroup={isGroup} onAddMember={onAddMember} />
-            <SharedMedia />
-            <InfoFunction
-                isGroup={isGroup}
-                onRename={onRename}
-                onChangeTheme={() => setShowThemeSelector(true)}
-                onLeaveRoom={onLeaveRoom}
-            />
-        </div>
+                <ListMember members={members} isGroup={isGroup} onAddMember={onAddMember} />
+                <SharedMedia />
+                <InfoFunction
+                    isGroup={isGroup}
+                    onRename={onRename}
+                    onChangeTheme={() => setShowThemeSelector(true)}
+                    onLeaveRoom={onLeaveRoom}
+                />
+            </div>
 
             {showThemeSelector && (
                 <div style={{
@@ -47,7 +48,10 @@ const ChatInfo = ({ isGroup = false, members = [], onRename, onLeaveRoom, onAddM
                 }}>
                     <ThemeSelectorModal
                         onClose={() => setShowThemeSelector(false)}
-                        onSelect={changeTheme}
+                        onSelect={(themeId) => {
+                            onChangeTheme(themeId);
+                            setShowThemeSelector(false);
+                        }}
                     />
                 </div>
             )}
