@@ -28,7 +28,7 @@ const ChatPage = () => {
         activeTab: activeSidebarTab,
         setActiveTab: setActiveSidebarTab
     } = useChatSidebar();
-    const { actions: socketActions } = useSocket();
+    const { actions: socketActions, isReady } = useSocket();
     const {
         sendContactRequest,
         handleCheckUserExist,
@@ -210,6 +210,7 @@ const ChatPage = () => {
                             isUploading={isUploading}
                             handleSelectFile={handleSelectFile}
                             handleRemoveFile={handleRemoveFile}
+                            isSocketReady={isReady}
                         />
                     ) : (
                         <ChatPlaceholder />
