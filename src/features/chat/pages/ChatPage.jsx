@@ -53,7 +53,8 @@ const ChatPage = () => {
         selectedFile,
         isUploading,
         handleSelectFile,
-        handleRemoveFile
+        handleRemoveFile,
+        handleRetry
     } = useChatMessage();
 
     // States cho phần liên hệ
@@ -169,7 +170,7 @@ const ChatPage = () => {
             <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
                 <Iridescence
                     color={[1, 1, 1]}
-                    speed={0.5}
+                    speed={0.1}
                     amplitude={0.1}
                     mouseReact={false}
                 />
@@ -228,6 +229,7 @@ const ChatPage = () => {
                                 isUploading={isUploading}
                                 handleSelectFile={handleSelectFile}
                                 handleRemoveFile={handleRemoveFile}
+                                onRetry={handleRetry}
                             />
                         ) : (
                             <ChatPlaceholder />

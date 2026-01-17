@@ -304,13 +304,18 @@ const MediaGallery = ({ items = [], members = [], initialTab = 'media', onClose 
                                 padding: '12px 0',
                                 background: 'none',
                                 border: 'none',
+                                outline: 'none',
+                                boxShadow: 'none',
                                 borderBottom: isActive ? `3px solid ${colors.primaryButton}` : '3px solid transparent',
                                 color: isActive ? colors.primaryButton : colors.regularText,
                                 fontWeight: isActive ? 600 : 500,
                                 cursor: 'pointer',
                                 fontSize: 14,
                                 transition: 'all 0.2s',
+                                borderRadius: '4px 4px 0 0'
                             }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.04)'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                         >
                             {labels[tab]}
                         </button>

@@ -190,7 +190,7 @@ export const useChatMessage = () => {
                 } catch (e) {
                     console.warn('checkOnline failed for', username, e);
                 }
-            }, index * 200); // 200ms giữa mỗi request
+            }, index * 800); // 800ms giữa mỗi request để tránh Rate limit
         });
     }, [isReady, activeChat, memberList, myUsername, socketActions, onlineStatus]);
 
@@ -295,6 +295,26 @@ export const useChatMessage = () => {
         }
     }, [loadMore, isLoading, hasMore, page]);
 
+    // Effect: Timeout cho tin nhắn đang gửi (15s)
+    useEffect(() => {
+        const checkTimeout = () => {
+            const now = Date.now();
+
+            messages.forEach(msg => {
+                if (msg.status === 'sending' && msg.tempId) {
+                    const sentTime = new Date(msg.createAt).getTime();
+                    if (now - sentTime > 15000) { // 15s timeout
+                        console.warn(`Message ${msg.tempId} timed out`);
+                        dispatch(addMessage({ ...msg, status: 'error' }));
+                    }
+                }
+            });
+        };
+
+        const timer = setInterval(checkTimeout, 5000);
+        return () => clearInterval(timer);
+    }, [messages, dispatch]);
+
     // -- File Handlers --
     const handleSelectFile = useCallback((e) => {
         const file = e.target.files[0];
@@ -347,7 +367,8 @@ export const useChatMessage = () => {
                     createAt: new Date().toISOString(),
                     to: activeChat.name,
                     type: (activeChat.type === 0 || activeChat.type === 'people') ? 'people' : 'room',
-                    tempId: tempId
+                    tempId: tempId,
+                    status: 'sending' // Đánh dấu đang gửi
                 };
                 dispatch(addMessage(optimisticFileMessage));
                 // ------------------------------
@@ -358,6 +379,11 @@ export const useChatMessage = () => {
                 } else {
                     socketActions.sendChat(activeChat.name, fileMessage, 'room');
                 }
+
+                // Server không trả, tự confirm đã gửi sau 600ms
+                setTimeout(() => {
+                    dispatch(addMessage({ ...optimisticFileMessage, status: 'sent' }));
+                }, 600);
 
                 // Clear file
                 handleRemoveFile();
@@ -385,7 +411,8 @@ export const useChatMessage = () => {
                 createAt: new Date().toISOString(),
                 to: activeChat.name,
                 type: (activeChat.type === 0 || activeChat.type === 'people') ? 'people' : 'room',
-                tempId: tempId
+                tempId: tempId,
+                status: 'sending' // Đánh dấu đang gửi
             };
 
             dispatch(addMessage(optimisticMessage));
@@ -395,6 +422,11 @@ export const useChatMessage = () => {
             } else {
                 socketActions.sendChat(activeChat.name, encodedText, 'room');
             }
+
+            // Server không trả Tự động confirm đã gửi sau 600ms
+            setTimeout(() => {
+                dispatch(addMessage({ ...optimisticMessage, status: 'sent' }));
+            }, 600);
 
             setInputText('');
         }
@@ -417,12 +449,37 @@ export const useChatMessage = () => {
         }
     }, [socketActions]);
 
+    const handleRetry = useCallback((msg) => {
+        if (!activeChat || !socketActions) return;
+
+        // Cập nhật lại status sang sending để UI hiển thị lại loading
+        const retryMsg = { ...msg, status: 'sending', createAt: new Date().toISOString() };
+        dispatch(addMessage(retryMsg));
+
+        const content = msg.mes;
+        const type = (activeChat.type === 0 || activeChat.type === 'people') ? 'people' : 'room';
+
+        // Gửi lại qua socket
+        if (type === 'people') {
+            socketActions.sendChat(activeChat.name, content, 'people');
+        } else {
+            socketActions.sendChat(activeChat.name, content, 'room');
+        }
+
+        // Auto confirm, tin server
+        setTimeout(() => {
+            dispatch(addMessage({ ...retryMsg, status: 'sent' }));
+        }, 600);
+
+    }, [activeChat, socketActions, dispatch]);
+
     return {
         activeChat, messages, myUsername, isOnline, memberList,
         showInfo, setShowInfo, inputText, setInputText, page,
         isLoading, hasMore, messagesEndRef, chatContainerRef,
         handleScroll, handleSend, handleAddMember, handleCreateRoom,
         // File props
-        selectedFile, isUploading, handleSelectFile, handleRemoveFile
+        selectedFile, isUploading, handleSelectFile, handleRemoveFile,
+        handleRetry 
     };
 };

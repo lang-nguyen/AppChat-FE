@@ -80,32 +80,35 @@ const chatSlice = createSlice({
 
             // Chỉ thêm tin nhắn nếu nó thuộc phòng đang mở
             if (isRelevant) {
-                // Kiểm tra trùng lặp (QUAN TRỌNG cho Optimistic UI)
-                // 1. Trùng ID tạm (nếu có - do Client sinh ra)
-                // 2. Trùng nội dung + thời gian + người gửi (cho các tin nhắn từ Server về)
-                const isDuplicate = state.messages.some(m => {
-                    if (newMessage.tempId && m.tempId === newMessage.tempId) return true;
-                    return m.createAt === newMessage.createAt &&
-                        m.name === newMessage.name &&
-                        m.mes === newMessage.mes;
-                });
-
-                // Xử lý Optimistic UI:
-                // Tìm tin nhắn tạm (có tempId) của chính mình khớp nội dung
+                // Kiểm tra xem tin nhắn này có phải khớp với tin nhắn tạm (optimistic) không
+                // khớp tempId hoặc cùng nội dung + thời gian gần nhau
                 const optimisticIndex = state.messages.findIndex(m =>
-                    m.tempId &&
-                    m.name === newMessage.name &&
-                    m.mes === newMessage.mes
+                    (newMessage.tempId && m.tempId === newMessage.tempId) ||
+                    (m.status === 'sending' && m.mes === newMessage.mes) // Relaxed: Bo check name de tranh case sensitive
                 );
 
                 if (optimisticIndex !== -1) {
-                    // Tìm thấy tin nhắn tạm tương ứng -> Thay thế bằng tin thật từ Server
-                    // Giữ lại createAt từ server để đảm bảo đồng bộ
-                    state.messages[optimisticIndex] = newMessage;
-                } else if (!isDuplicate) {
-                    // Không tìm thấy tin tạm và không trùng -> Thêm mới vào danh sách
-                    // SPA: Push trực tiếp vào mảng, Redux Toolkit (Immer) sẽ xử lý
-                    state.messages.push(newMessage);
+                    // Cập nhật tin nhắn tạm thành tin nhắn thật
+                    state.messages[optimisticIndex] = {
+                        ...newMessage,
+                        status: newMessage.status || 'sent' // Đánh dấu là đã gửi thành công hoặc theo status server trả về
+                    };
+                } else {
+                    // Kiểm tra trùng lặp, check trùng ID(khác null)
+                    const isDuplicate = state.messages.some(m =>
+                        (m.id && newMessage.id && m.id === newMessage.id) ||
+                        (m.createAt === newMessage.createAt && m.name === newMessage.name && m.mes === newMessage.mes)
+                    );
+
+                    if (!isDuplicate) {
+                        // Thêm tin nhắn mới
+                        // Nếu từ socket về, mặc định là sent
+                        // Nếu từ UI -> sending
+                        state.messages.push({
+                            ...newMessage,
+                            status: newMessage.status || 'sent'
+                        });
+                    }
                 }
             }
 
@@ -155,6 +158,21 @@ const chatSlice = createSlice({
                     };
                     state.people.unshift(newItem);
                 }
+            }
+        },
+        confirmPendingMessage(state) {
+            // Fallback: Nếu server trả status success mà k trả message
+            // Tìm tin nhắn sending cũ nhất hiện tại -> set thành sent
+            const { activeChat, messages } = state;
+            if (!activeChat) return;
+
+            const pendingMsgIndex = messages.findIndex(m =>
+                m.status === 'sending' &&
+                (m.to === activeChat.name || (activeChat.type !== 1 && m.name === activeChat.name))
+            );
+
+            if (pendingMsgIndex !== -1) {
+                messages[pendingMsgIndex].status = 'sent';
             }
         },
         setChatHistory(state, action) {
@@ -240,7 +258,7 @@ export const {
     setPeople, setActiveChat, setMessages, addMessage,
     setChatHistory, clearChat, setOnlineStatus, clearMessages,
     setPendingRoomCreation, clearPendingRoomCreation,
-    setPendingPage, updateRoomData, setPendingConversations, removePendingConversation
+    setPendingPage, updateRoomData, setPendingConversations, removePendingConversation, confirmPendingMessage
 } = chatSlice.actions;
 
 export default chatSlice.reducer;

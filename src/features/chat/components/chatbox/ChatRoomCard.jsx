@@ -26,7 +26,8 @@ const ChatRoomCard = ({
     selectedFile,
     isUploading,
     handleSelectFile,
-    handleRemoveFile
+    handleRemoveFile,
+    onRetry // Nhan onRetry prop
 }) => {
     const { actions: socketActions } = useSocket();
     const fileInputRef = useRef(null);
@@ -283,7 +284,7 @@ const ChatRoomCard = ({
                     const invite = parseRoomInvite(msg.mes);
 
                     return (
-                        <div key={index} className={styles.messageRow}>
+                        <div key={msg.id || msg.tempId || index} className={styles.messageRow}>
                             {showTime && (
                                 <div className={styles.centerTimestamp}>
                                     {formatTimeFull(msg.createAt)}
@@ -333,19 +334,57 @@ const ChatRoomCard = ({
                                                 Tham gia nhóm
                                             </button>
                                         </div>
-                                    ) : (
+                                    ) : (<>
                                         <div className={styles.bubble} style={{
                                             backgroundColor: (msg.mes.startsWith('[IMAGE]') || msg.mes.startsWith('[VIDEO]') || msg.mes.startsWith('[FILE]')) ? 'transparent' : (isMe ? 'var(--theme-sender-bubble, #FF5596)' : '#fff'),
                                             color: isMe ? 'var(--theme-text-on-primary, #fff)' : '#000',
                                             padding: (msg.mes.startsWith('[IMAGE]') || msg.mes.startsWith('[VIDEO]') || msg.mes.startsWith('[FILE]')) ? '0' : undefined,
                                             boxShadow: (msg.mes.startsWith('[IMAGE]') || msg.mes.startsWith('[VIDEO]') || msg.mes.startsWith('[FILE]')) ? 'none' : undefined,
                                             border: (msg.mes.startsWith('[IMAGE]') || msg.mes.startsWith('[VIDEO]') || msg.mes.startsWith('[FILE]')) ? 'none' : undefined,
-                                            maxWidth: (msg.mes.startsWith('[FILE]')) ? '100%' : undefined
-
+                                            maxWidth: (msg.mes.startsWith('[FILE]')) ? '100%' : undefined,
+                                            position: 'relative'
                                         }}>
                                             {renderMessageContent(msg.mes)}
                                         </div>
-                                    )}
+
+                                        {/* Status Tag (Below Bubble) */}
+                                        {isMe && (
+                                            <div className={styles.statusTag}>
+                                                {msg.status === 'sending' && (
+                                                    <>
+                                                        <svg className={styles.sendingIcon} width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                                            <circle cx="12" cy="12" r="10"></circle>
+                                                            <polyline points="12 6 12 12 16 14"></polyline>
+                                                        </svg>
+                                                        <span>Đang gửi</span>
+                                                    </>
+                                                )}
+                                                {msg.status === 'error' && (
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }} onClick={() => onRetry && onRetry(msg)} title="Gửi lại">
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FF4D4F" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                                            <circle cx="12" cy="12" r="10"></circle>
+                                                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                                                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                                        </svg>
+                                                        <span style={{ color: '#FF4D4F', marginRight: 2 }}>Lỗi</span>
+                                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#FF4D4F" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                                            <path d="M23 4v6h-6"></path>
+                                                            <path d="M1 20v-6h6"></path>
+                                                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                                                        </svg>
+                                                    </div>
+                                                )}
+                                                {(msg.status === 'sent' || !msg.status) && (
+                                                    <>
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                                            <polyline points="20 6 9 17 4 12"></polyline>
+                                                        </svg>
+                                                        <span>Đã gửi</span>
+                                                    </>
+                                                )}
+                                            </div>
+                                        )}
+                                    </>)}
                                 </div>
                             </div>
                         </div>
@@ -354,31 +393,32 @@ const ChatRoomCard = ({
                 <div ref={messagesEndRef} style={{ height: 1, width: '100%' }} />
             </div>
 
-            {/* Emoji Picker Box */}
-            {showEmojiPicker && (
-                <div
-                    ref={emojiPickerRef}
-                    className={styles.emojiPickerWrapper}
-                >
-                    <EmojiPicker
-                        onEmojiClick={onEmojiClick}
-                        width={300}
-                        height={400}
-                        searchPlaceHolder="Tìm kiếm biểu tượng cảm xúc"
-                        previewConfig={{ showPreview: false }}
-                        skinTonesDisabled={true}
-                        emojiStyle="native"
-                        style={{
-                            '--epr-category-label-text-color': '#E0407E',
-                            '--epr-picker-border-color': '#E0407E',
-                            '--epr-highlight-color': '#E0407E',
-                            '--epr-focus-bg-color': '#fce4ec',
-                            borderColor: '#E0407E',
-                            width: '100%'
-                        }}
-                    />
-                </div>
-            )}
+            {
+                showEmojiPicker && (
+                    <div
+                        ref={emojiPickerRef}
+                        className={styles.emojiPickerWrapper}
+                    >
+                        <EmojiPicker
+                            onEmojiClick={onEmojiClick}
+                            width={300}
+                            height={400}
+                            searchPlaceHolder="Tìm kiếm biểu tượng cảm xúc"
+                            previewConfig={{ showPreview: false }}
+                            skinTonesDisabled={true}
+                            emojiStyle="native"
+                            style={{
+                                '--epr-category-label-text-color': '#E0407E',
+                                '--epr-picker-border-color': '#E0407E',
+                                '--epr-highlight-color': '#E0407E',
+                                '--epr-focus-bg-color': '#fce4ec',
+                                borderColor: '#E0407E',
+                                width: '100%'
+                            }}
+                        />
+                    </div>
+                )
+            }
 
 
             {/* Khu vực nhập tin nhắn */}

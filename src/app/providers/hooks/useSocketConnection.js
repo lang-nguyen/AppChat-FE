@@ -101,8 +101,8 @@ export const useSocketConnection = (dispatch, lastActivityRef, isOnline) => {
                 try {
                     const response = JSON.parse(event.data);
                     lastActivityRef.current = Date.now();
-                    
-                    const silentEvents = ["GET_USER_LIST", "SEND_CHAT", "CHECK_USER_ONLINE"];
+
+                    const silentEvents = ["GET_USER_LIST", "CHECK_USER_ONLINE"]; // Removed SEND_CHAT from silent
                     if (response.event === "SEND_CHAT") {
                         console.log("SERVER RETURN:", response.data ? response.data.mes : "No data");
                     }

@@ -34,7 +34,7 @@ const LoginPage = () => {
                     color={[1, 1, 1]}
                     mouseReact={false}
                     amplitude={0.1}
-                    speed={0.5}
+                    speed={0.1}
                 />
             </div>
 
