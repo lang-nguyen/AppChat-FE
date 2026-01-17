@@ -49,7 +49,7 @@ export const handleSocketMessage = (response, dispatch, socketActions, socketRef
 
         case "GET_PEOPLE_CHAT_MES":
         case "GET_ROOM_CHAT_MES":
-            handleGetChatHistory(response, dispatch);
+            handleGetChatHistory(response, dispatch, getState);
             break;
 
         case "CREATE_ROOM":

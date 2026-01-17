@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useApi } from '../../../app/providers/useApi';
 import { useSocket } from '../../../app/providers/useSocket';
@@ -16,6 +16,11 @@ export const usePendingActions = () => {
     const dispatch = useDispatch();
     const user = useSelector((s) => s.auth.user);
     const pendingContacts = useSelector((s) => s.chat.pendingConversations);
+
+    // Local state cho flow gửi yêu cầu
+    const [showContactRequest, setShowContactRequest] = useState(false);
+    const [contactRecipient, setContactRecipient] = useState('');
+    const [contactError, setContactError] = useState('');
 
     // Khởi tạo repository với apiActions từ context
     const repository = useMemo(() => createPendingRepository(apiActions), [apiActions]);
@@ -91,18 +96,54 @@ export const usePendingActions = () => {
             setTimeout(() => socketActions.getUserList(), 500);
             setTimeout(() => socketActions.getUserList(), 1500);
 
+            setShowContactRequest(false); // Close modal on success
             return true;
         } catch (err) {
             console.error('[UseCase] Failed to send contact request:', err);
+            setContactError('Không thể gửi yêu cầu liên hệ. Vui lòng thử lại.');
             throw err;
         }
     }, [repository, socketActions]);
+
+    /**
+     * Handler check user exist trước khi mở modal gửi request
+     */
+    const handleCheckUserExist = useCallback((username) => {
+        if (window.__pendingContactCheck) {
+            window.__pendingContactCheck = null;
+        }
+        setContactError('');
+        setContactRecipient(username);
+
+        // Lưu callback vào window để socketHandlers có thể gọi
+        window.__pendingContactCheck = {
+            username: username,
+            onSuccess: () => {
+                setShowContactRequest(true);
+                setContactError('');
+                window.__pendingContactCheck = null;
+            },
+            onError: () => {
+                setContactError('Người dùng không tồn tại');
+                window.__pendingContactCheck = null;
+            }
+        };
+
+        socketActions.checkExist(username);
+    }, [socketActions]);
 
     return {
         pendingContacts,
         fetchIncomingRequests,
         acceptContact,
         rejectContact,
-        sendContactRequest
+        sendContactRequest,
+        // UI State & Actions
+        showContactRequest,
+        setShowContactRequest,
+        contactRecipient,
+        contactError,
+        setContactError,
+        handleCheckUserExist
     };
 };

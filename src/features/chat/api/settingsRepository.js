@@ -15,7 +15,7 @@ export const createSettingsRepository = (apiActions) => {
                     `/chat/settings/theme?user1=${encodeURIComponent(user1)}&user2=${encodeURIComponent(user2)}`
                 );
 
-                // Dùng data.data theo README mới
+
                 const themeId = response?.data?.data || response?.data?.payload;
 
                 if (themeId && THEME_COMBOS[themeId]) {
@@ -48,7 +48,7 @@ export const createSettingsRepository = (apiActions) => {
 
                 return THEME_COMBOS[THEMES.DEFAULT];
             } catch (err) {
-                console.error('[SettingsRepo] Failed to get group theme:', err);
+                console.error('[SettingsRepo] :', err);
                 return THEME_COMBOS[THEMES.DEFAULT];
             }
         },
@@ -69,7 +69,7 @@ export const createSettingsRepository = (apiActions) => {
 
                 return respThemeId === themeId || respData.event === 'SET_THEME_SUCCESS';
             } catch (err) {
-                console.error('[SettingsRepo] Failed to update theme:', err);
+                console.error('[SettingsRepo]:', err);
                 return false;
             }
         },
@@ -91,7 +91,7 @@ export const createSettingsRepository = (apiActions) => {
 
                 return respThemeId === themeId || respData.event === 'SET_GROUP_THEME_SUCCESS';
             } catch (err) {
-                console.error('[SettingsRepo] Failed to update group theme:', err);
+                console.error('[SettingsRepo]:', err);
                 return false;
             }
         }
