@@ -41,6 +41,30 @@ export function useChatSidebar() {
     }
   }, [isReady, user, actions, apiActions, dispatch]);
 
+  // Effect: Tự động check online cho toàn bộ danh sách khi có list mới
+  useEffect(() => {
+    if (!isReady || !people || people.length === 0) return;
+
+    // Lọc ra các user (type 0) và loại bỏ bản thân
+    const currentUserName = user?.user || user?.username || user?.name || localStorage.getItem('user_name');
+    const usersToCheck = people
+      .filter(p => p.type === 0 && p.name !== currentUserName)
+      .map(p => p.name);
+
+    if (usersToCheck.length === 0) return;
+
+    console.log(`[useChatSidebar] Auto-checking online for ${usersToCheck.length} users`);
+
+    // Gửi lần lượt với delay nhỏ để tránh spam socket quá tải
+    usersToCheck.forEach((username, index) => {
+      setTimeout(() => {
+        if (isReady) {
+          actions.checkOnline(username);
+        }
+      }, index * 150); // 150ms giữa mỗi request
+    });
+  }, [isReady, people, user, actions]);
+
   const title = useMemo(() => {
     const fromRedux = user?.name || user?.user || user?.username;
     return fromRedux || localStorage.getItem("user_name") || "Tên người dùng";

@@ -34,14 +34,14 @@ const RoomCard = ({ name, lastMessage, active, badge, onClick, isOnline }) => (
 			{isOnline !== undefined && (
 				<div style={{
 					position: 'absolute',
-					bottom: 0,
-					right: 0,
-					width: 14,
-					height: 14,
+					bottom: -2,
+					right: 2,
+					width: 12,
+					height: 12,
 					borderRadius: '50%',
 					backgroundColor: isOnline ? '#22c55e' : '#9ca3af',
-					border: '3px solid #fff',
-					transform: 'translate(20%, 20%)'
+					border: '2px solid #fff',
+					boxShadow: '0 0 0 1px rgba(0,0,0,0.05)'
 				}} />
 			)}
 		</div>

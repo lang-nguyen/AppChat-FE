@@ -44,9 +44,15 @@ export const useChatMessage = () => {
     }, [user]);
 
     const isOnline = useMemo(() => {
-        return activeChat &&
+        const status = activeChat &&
             (activeChat.type === 0 || activeChat.type === 'people') &&
             !!onlineStatus[activeChat.name];
+
+        if (activeChat && (activeChat.type === 0 || activeChat.type === 'people')) {
+            console.log(`[useChatMessage] isOnline for ${activeChat.name}:`, status, "| onlineStatus:", onlineStatus[activeChat.name]);
+        }
+
+        return status;
     }, [activeChat, onlineStatus]);
 
     const memberList = useMemo(() => {
@@ -116,6 +122,7 @@ export const useChatMessage = () => {
 
 
             if (activeChat.type === 0 || activeChat.type === 'people') {
+                console.log(`[useChatMessage] Calling checkOnline for ${activeChat.name}`);
                 socketActions.chatHistory(activeChat.name, 1);
                 socketActions.checkOnline(activeChat.name);
             } else {
@@ -169,6 +176,7 @@ export const useChatMessage = () => {
         batch.forEach((username, index) => {
             setTimeout(() => {
                 try {
+                    console.log(`[useChatMessage] [Group] calling checkOnline for member: ${username}`);
                     socketActions.checkOnline(username);
                 } catch (e) {
                     console.warn('checkOnline failed for', username, e);
