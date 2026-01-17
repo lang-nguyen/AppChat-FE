@@ -21,14 +21,7 @@ const StickerPicker = ({ onSelect, onClose }) => {
     }, []);
 
     const handleSelectSticker = (stickerObj) => {
-        // Cập nhật ánh xạ (mapping) danh sách gần đây: nên lưu cả object hay chỉ cần URL?
-        // Để đơn giản và tối ưu bộ nhớ, chúng ta có thể chỉ cần lưu URL hoặc ID.
-        // Tuy nhiên, để tab "Gần đây" (Recent) hoạt động được, ta cần biết chính xác URL nào để hiển thị.
-        // Phương án 1: Lưu URL vào danh sách gần đây để hiển thị, nhưng khi người dùng click vào sẽ cần hàm tìm kiếm (lookup) lại ID/Index.
-        // PHƯƠNG ÁN ĐƠN GIẢN HƠN: Component StickerPicker sẽ trả về toàn bộ object, và phía Parent (nơi gọi component) sẽ xử lý.
-
-        // Logic cho phần GẦN ĐÂY: Lưu toàn bộ đối tượng gồm {id, index, url}
-        const newRecent = [stickerObj, ...recentStickers.filter(s => s.url !== stickerObj.url)].slice(0, 24);
+        const newRecent = [stickerObj, ...recentStickers.filter(s => s.url !== stickerObj.url)].slice(0, 12);
         setRecentStickers(newRecent);
         localStorage.setItem(RECENT_STICKERS_KEY, JSON.stringify(newRecent));
 
@@ -195,7 +188,23 @@ const styles = {
         flex: 1,
         overflowY: 'auto',
         padding: 12,
-        backgroundColor: '#fff'
+        backgroundColor: '#fff',
+        scrollbarWidth: 'thin',
+        scrollbarColor: 'transparent transparent',
+        '::-webkit-scrollbar': {
+            width: '8px'
+        },
+        '::-webkit-scrollbar-track': {
+            background: 'transparent'
+        },
+        '::-webkit-scrollbar-thumb': {
+            background: 'transparent',
+            borderRadius: '4px'
+        },
+        ':hover::-webkit-scrollbar-thumb': {
+            background: '#fff',
+            boxShadow: '0 0 0 1px rgba(0,0,0,0.1) inset'
+        }
     },
     grid: {
         display: 'grid',
