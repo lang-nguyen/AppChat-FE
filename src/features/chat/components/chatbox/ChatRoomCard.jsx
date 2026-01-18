@@ -50,18 +50,40 @@ const ChatRoomCard = ({
         return new Date(timeStr);
     };
 
-    // Logic gộp timestamp (15 phút)
+    // Logic gộp timestamp
     const shouldShowTimestamp = (currentMsg, prevMsg) => {
         if (!prevMsg) return true;
+        if (!currentMsg.createAt || !prevMsg.createAt) return true;
+
         const currentTime = parseTime(currentMsg.createAt);
         const prevTime = parseTime(prevMsg.createAt);
+
+        if (isNaN(currentTime.getTime()) || isNaN(prevTime.getTime())) return true;
+
         const diffMinutes = (currentTime - prevTime) / 1000 / 60;
-        return diffMinutes > 15;
+        return diffMinutes > 30;
     };
 
     const formatTimeFull = (timeStr) => {
         const date = parseTime(timeStr);
         return date.toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' });
+    };
+
+    const formatTimeShort = (timeStr) => {
+        if (!timeStr) return '';
+        const date = parseTime(timeStr);
+        return date.toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+    };
+
+    const isSameMinute = (d1Str, d2Str) => {
+        if (!d1Str || !d2Str) return false;
+        const d1 = parseTime(d1Str);
+        const d2 = parseTime(d2Str);
+        return d1.getFullYear() === d2.getFullYear() &&
+            d1.getMonth() === d2.getMonth() &&
+            d1.getDate() === d2.getDate() &&
+            d1.getHours() === d2.getHours() &&
+            d1.getMinutes() === d2.getMinutes();
     };
 
     // Helper: Trigger chọn file
@@ -282,6 +304,9 @@ const ChatRoomCard = ({
                     const prevMsg = index > 0 ? messages[index - 1] : null;
                     const showTime = shouldShowTimestamp(msg, prevMsg);
                     const invite = parseRoomInvite(msg.mes);
+                    const isLastSent = isMe && (msg.status === 'sent' || !msg.status) && !messages.slice(index + 1).some(m => m.name === myUsername && (m.status === 'sent' || !m.status));
+                    const nextMsg = messages[index + 1];
+                    const isLastInMinute = !nextMsg || nextMsg.name !== msg.name || !isSameMinute(msg.createAt, nextMsg.createAt);
 
                     return (
                         <div key={msg.id || msg.tempId || index} className={styles.messageRow}>
@@ -345,11 +370,27 @@ const ChatRoomCard = ({
                                             position: 'relative'
                                         }}>
                                             {renderMessageContent(msg.mes)}
+
+                                            {isLastInMinute && (
+                                                <div style={{
+                                                    fontSize: '10px',
+                                                    marginTop: '4px',
+                                                    textAlign: 'left',
+                                                    color: (msg.mes.startsWith('[IMAGE]') || msg.mes.startsWith('[VIDEO]')) ? '#fff' : (isMe ? 'rgba(255,255,255,0.7)' : '#aaa'),
+                                                    textShadow: (msg.mes.startsWith('[IMAGE]') || msg.mes.startsWith('[VIDEO]')) ? '0 1px 2px rgba(0,0,0,0.5)' : 'none',
+                                                    backgroundColor: (msg.mes.startsWith('[IMAGE]') || msg.mes.startsWith('[VIDEO]')) ? 'rgba(0, 0, 0, 0.3)' : 'transparent',
+                                                    padding: (msg.mes.startsWith('[IMAGE]') || msg.mes.startsWith('[VIDEO]')) ? '2px 6px' : '0',
+                                                    borderRadius: '10px',
+                                                    width: 'fit-content'
+                                                }}>
+                                                    {formatTimeShort(msg.createAt)}
+                                                </div>
+                                            )}
                                         </div>
 
                                         {/* Status Tag (Below Bubble) */}
                                         {isMe && (
-                                            <div className={styles.statusTag}>
+                                            <div className={styles.statusTag} style={{ fontSize: '10px' }}>
                                                 {msg.status === 'sending' && (
                                                     <>
                                                         <svg className={styles.sendingIcon} width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
@@ -374,7 +415,7 @@ const ChatRoomCard = ({
                                                         </svg>
                                                     </div>
                                                 )}
-                                                {(msg.status === 'sent' || !msg.status) && (
+                                                {(msg.status === 'sent' || !msg.status) && isLastSent && (
                                                     <>
                                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                                                             <polyline points="20 6 9 17 4 12"></polyline>
@@ -441,7 +482,7 @@ const ChatRoomCard = ({
                         </div>
                         {isUploading && (
                             <div className={styles.uploadingOverlay}>
-                                <Loading small text="" />
+                                <div className={styles.spinner}></div>
                             </div>
                         )}
                     </div>
