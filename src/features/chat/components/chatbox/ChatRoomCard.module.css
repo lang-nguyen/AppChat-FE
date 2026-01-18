@@ -45,10 +45,10 @@
 
 .onlineDot {
     position: absolute;
-    bottom: 0;
-    right: 0;
-    width: 12px;
-    height: 12px;
+    bottom: 5px;
+    right: 2px;
+    width: 10px;
+    height: 10px;
     background-color: #4cd964;
     border: 2px solid #fff;
     border-radius: 50%;
@@ -56,10 +56,10 @@
 
 .offlineDot {
     position: absolute;
-    bottom: 0;
-    right: 0;
-    width: 12px;
-    height: 12px;
+    bottom: 2px;
+    right: 2px;
+    width: 10px;
+    height: 10px;
     background-color: #ccc;
     border: 2px solid #fff;
     border-radius: 50%;
@@ -470,6 +470,20 @@
     padding: 0 !important;
     font-size: 40px !important;
     line-height: normal;
+}
+
+.stickerPickerWrapper {
+    position: absolute;
+    bottom: 80px;
+    right: 20px;
+    z-index: 100;
+}
+
+.stickerImage {
+    max-width: 100px;
+    border-radius: 8px;
+    cursor: pointer;
+    object-fit: contain;
 }
 
 .spinner {

@@ -23,7 +23,7 @@
 
 
 .chat-sidebar {
-    width: 30%;
+    width: 22%;
     min-width: 280px;
     max-width: 400px;
     /* background: var(--card-bg); */
@@ -242,4 +242,45 @@
     .chat-sidebar {
         width: 100%;
     }
+}
+
+.tabsContainer {
+    display: flex;
+    position: relative;
+    padding: 0 1rem;
+    border-bottom: 2px solid #f0f0f0;
+    margin-top: 0.5rem;
+}
+
+.tab {
+    flex: 1;
+    padding: 10px 0;
+    text-align: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 600;
+    color: #8e939d;
+    transition: color 0.3s ease;
+    outline: none !important;
+    box-shadow: none !important;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.tab:focus {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.activeTab {
+    color: #E0407E;
+}
+
+.tabIndicator {
+    position: absolute;
+    bottom: -2px;
+    height: 2px;
+    background-color: #E0407E;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }

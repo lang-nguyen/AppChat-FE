@@ -44,47 +44,30 @@ const chatSlice = createSlice({
         setMessages(state, action) {
             state.messages = action.payload;
         },
-        addMessage(state, action) {
+        upsertMessage(state, action) {
             const newMessage = action.payload;
-            const { activeChat } = state;
+            const { activeChat, messages } = state;
 
-            // Lấy tên người dùng hiện tại từ localStorage để đảm bảo nhất quán
-            const currentUserName = localStorage.getItem('user_name') || '';
-
-            // 1. Kiểm tra tin nhắn có thuộc phòng đang mở hay không để cập nhật UI ngay lập tức (SPA)
+            // 1. Kiểm tra tin nhắn có thuộc phòng đang mở hay không
             let isRelevant = false;
-
             if (activeChat) {
                 const isActiveChatRoom = activeChat.type === 1 || activeChat.type === 'room';
                 const isActiveChatPeople = activeChat.type === 0 || activeChat.type === 'people';
-
-                // Xác định loại tin nhắn dựa trên dữ liệu trả về
-                // Đôi khi server trả về type='room' nhưng đôi khi chỉ có to='Group...'
-                // Nên ưu tiên check type nếu có, hoặc suy luận từ ngữ cảnh
                 const isMsgRoom = newMessage.type === 'room' || newMessage.type === 1;
 
                 if (isActiveChatPeople && !isMsgRoom) {
-                    // Chat 1-1:
-                    // Case 1: Mình gửi cho họ (to === activeChat.name)
-                    // Case 2: Họ gửi cho mình (name === activeChat.name)
-                    if (newMessage.to === activeChat.name || newMessage.name === activeChat.name) {
-                        isRelevant = true;
-                    }
+                    if (newMessage.to === activeChat.name || newMessage.name === activeChat.name) isRelevant = true;
                 } else if (isActiveChatRoom && isMsgRoom) {
-                    // Chat nhóm: Chỉ cần kiểm tra tên phòng (to === activeChat.name)
-                    if (newMessage.to === activeChat.name) {
-                        isRelevant = true;
-                    }
+                    if (newMessage.to === activeChat.name) isRelevant = true;
                 }
             }
 
             // Chỉ thêm tin nhắn nếu nó thuộc phòng đang mở
             if (isRelevant) {
-                // Kiểm tra xem tin nhắn này có phải khớp với tin nhắn tạm (optimistic) không
-                // khớp tempId hoặc cùng nội dung + thời gian gần nhau
+                // Kiểm tra xem tin nhắn này có phải khớp với tin nhắn tạm không
                 const optimisticIndex = state.messages.findIndex(m =>
                     (newMessage.tempId && m.tempId === newMessage.tempId) ||
-                    (m.status === 'sending' && m.mes === newMessage.mes) // Relaxed: Bo check name de tranh case sensitive
+                    (m.status === 'sending' && m.mes === newMessage.mes) 
                 );
 
                 if (optimisticIndex !== -1) {
@@ -111,53 +94,42 @@ const chatSlice = createSlice({
                     }
                 }
             }
+        },
 
-            // 2. Cập nhật Sidebar (Danh sách người/nhóm) để hiển thị tin nhắn mới nhất
-            // Phần này giúp UI Sidebar cập nhật Real-time
+        updateSidebar(state, action) {
+            const newMessage = action.payload;
+            const currentUserName = localStorage.getItem('user_name') || '';
+
             let targetName = null;
             let targetType = null;
 
             if (newMessage.type === 'room' || newMessage.type === 1) {
-                // Chat nhóm: target là tên phòng
                 targetName = newMessage.to;
-                targetType = 1; // type 1 = group
+                targetType = 1;
             } else {
-                // Chat 1-1
-                if (newMessage.name === currentUserName) {
-                    // Mình gửi -> update dòng của người nhận
-                    targetName = newMessage.to;
-                    targetType = 0; // type 0 = people
-                } else {
-                    // Người khác gửi -> update dòng của người gửi
-                    targetName = newMessage.name;
-                    targetType = 0; // type 0 = people
-                }
+                targetName = newMessage.name === currentUserName ? newMessage.to : newMessage.name;
+                targetType = 0;
             }
 
-            if (targetName) {
-                const index = state.people.findIndex(p => p.name === targetName);
+            if (!targetName) return;
 
-                if (index !== -1) {
-                    // Đã có trong list: Cập nhật message cuối và đưa lên đầu
-                    const item = state.people[index];
-                    item.actionTime = newMessage.createAt || new Date().toISOString();
-                    item.lastMessage = newMessage.mes || newMessage.text || '';
-                    // Xóa vị trí cũ
-                    state.people.splice(index, 1);
-                    // Chèn vào đầu
-                    state.people.unshift(item);
-                } else {
-                    // Chưa có: Thêm mới vào đầu danh sách
-                    // Lưu ý: Chỉ thêm nếu có đủ thông tin, tránh noise
-                    const newItem = {
-                        name: targetName,
-                        type: targetType,
-                        actionTime: newMessage.createAt || new Date().toISOString(),
-                        lastMessage: newMessage.mes || newMessage.text || '',
-                        isOnline: false // Default
-                    };
-                    state.people.unshift(newItem);
-                }
+            const index = state.people.findIndex(p => p.name === targetName);
+            const updateData = {
+                actionTime: newMessage.createAt || new Date().toISOString(),
+                lastMessage: newMessage.mes || newMessage.text || ''
+            };
+
+            if (index !== -1) {
+                const item = { ...state.people[index], ...updateData };
+                state.people.splice(index, 1);
+                state.people.unshift(item);
+            } else {
+                state.people.unshift({
+                    name: targetName,
+                    type: targetType,
+                    ...updateData,
+                    isOnline: false
+                });
             }
         },
         confirmPendingMessage(state) {
@@ -175,6 +147,12 @@ const chatSlice = createSlice({
                 messages[pendingMsgIndex].status = 'sent';
             }
         },
+        // addMessage remains for backward compatibility, but calls the specialized reducers
+        addMessage(state, action) {
+            chatSlice.caseReducers.upsertMessage(state, action);
+            chatSlice.caseReducers.updateSidebar(state, action);
+        },
+
         setChatHistory(state, action) {
             const { messages, page } = action.payload;
             const newMessages = Array.isArray(messages) ? messages : [];
@@ -255,7 +233,7 @@ const chatSlice = createSlice({
 });
 
 export const {
-    setPeople, setActiveChat, setMessages, addMessage,
+    setPeople, setActiveChat, setMessages, addMessage, upsertMessage, updateSidebar,
     setChatHistory, clearChat, setOnlineStatus, clearMessages,
     setPendingRoomCreation, clearPendingRoomCreation,
     setPendingPage, updateRoomData, setPendingConversations, removePendingConversation, confirmPendingMessage

@@ -1,4 +1,6 @@
 import React, { useCallback, useState, useRef, useEffect } from 'react';
+import { useDispatch } from 'react-redux';
+import { addMessage } from '../../../../state/chat/chatSlice';
 import EmojiPicker from 'emoji-picker-react';
 import styles from './ChatRoomCard.module.css';
 import Loading from '../../../../shared/components/Loading';
@@ -7,6 +9,8 @@ import { useSocket } from '../../../../app/providers/useSocket.js';
 import { parseRoomInvite } from '../../../../shared/utils/parseRoomInvite.js';
 import { getAvatarUrl } from '../../../../shared/utils/avatarUtils.js';
 import { decodeEmoji } from '../../../../shared/utils/emojiUtils.js';
+import { createStickerCode, getStickerUrl, isStickerMessage } from '../../../../shared/utils/stickerUtils';
+import StickerPicker from './StickerPicker';
 
 const ChatRoomCard = ({
     activeChat,
@@ -27,11 +31,14 @@ const ChatRoomCard = ({
     isUploading,
     handleSelectFile,
     handleRemoveFile,
-    onRetry // Nhan onRetry prop
+    onRetry, // Nhan onRetry prop
+    isSocketReady
 }) => {
+    const dispatch = useDispatch();
     const { actions: socketActions } = useSocket();
     const fileInputRef = useRef(null);
     const [previewImage, setPreviewImage] = useState(null);
+    const [selectedSticker, setSelectedSticker] = useState(null);
 
     const handleJoinRoom = useCallback((roomName) => {
         if (!roomName || !socketActions) return;
@@ -95,8 +102,26 @@ const ChatRoomCard = ({
 
     // Helper: Render nội dung tin nhắn (Text / Image / Video)
     const renderMessageContent = (mes) => {
+        // 1. Kiểm tra mã Sticker [STICKER]:packId:index
+        if (isStickerMessage(mes)) {
+            const stickerUrl = getStickerUrl(mes);
+            if (stickerUrl) {
+                return (
+                    <img
+                        src={stickerUrl}
+                        alt="sticker"
+                        className={styles.stickerImage}
+                        onClick={() => setPreviewImage(stickerUrl)}
+                    />
+                );
+            }
+            return <span>[Sticker lỗi]</span>;
+        }
+
+        // 2. Kiểm tra ảnh thông thường [IMAGE]url
         if (mes.startsWith('[IMAGE]')) {
             const url = mes.replace('[IMAGE]', '');
+            // Hiển thị ảnh tải lên kích thước bình thường
             return (
                 <img
                     src={url}
@@ -106,6 +131,8 @@ const ChatRoomCard = ({
                 />
             );
         }
+
+        // 3. Kiểm tra Video
         if (mes.startsWith('[VIDEO]')) {
             const url = mes.replace('[VIDEO]', '');
             return (
@@ -206,12 +233,34 @@ const ChatRoomCard = ({
     const emojiPickerRef = useRef(null);
     const emojiButtonRef = useRef(null);
 
+    // State cho Sticker Picker
+    const [showStickerPicker, setShowStickerPicker] = useState(false);
+    const stickerPickerRef = useRef(null);
+    const stickerButtonRef = useRef(null);
+
     const onEmojiClick = (emojiObject) => {
         setInputText((prev) => prev + emojiObject.emoji);
     };
 
+    const handleStickerSelect = (stickerObj) => {
+        if (!activeChat) return;
+        // stickerObj = { id, index, url }
+        setSelectedSticker(stickerObj); // Lưu lại để xem trước
+        setShowStickerPicker(false);
+    };
+
+    const handleRemoveSticker = () => {
+        setSelectedSticker(null);
+    };
+
+    const isEmojiOnly = (str) => {
+        if (!str) return false;
+        const emojiRegex = /^(\p{Emoji_Presentation}|\p{Extended_Pictographic}|\s)+$/u;
+        return emojiRegex.test(str);
+    };
+
     useEffect(() => {
-        if (!showEmojiPicker) return;
+        if (!showEmojiPicker && !showStickerPicker) return;
 
         const handleClickOutside = (event) => {
             if (
@@ -222,19 +271,27 @@ const ChatRoomCard = ({
             ) {
                 setShowEmojiPicker(false);
             }
+            if (
+                stickerPickerRef.current &&
+                !stickerPickerRef.current.contains(event.target) &&
+                stickerButtonRef.current &&
+                !stickerButtonRef.current.contains(event.target)
+            ) {
+                setShowStickerPicker(false);
+            }
         };
 
         document.addEventListener('mousedown', handleClickOutside);
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [showEmojiPicker]);
+    }, [showEmojiPicker, showStickerPicker]);
 
     if (!activeChat) return null;
 
     return (
         <div className={styles.container}>
-            {/* Loader Overlay (bao phủ toàn bộ card khi đang tải trang đầu tiên) */}
+            {/* Overlay nạp dữ liệu */}
             {isLoading && page === 1 && (
                 <div className={styles.loadingOverlay}>
                     <div className={styles.loadingContent}>
@@ -243,7 +300,7 @@ const ChatRoomCard = ({
                 </div>
             )}
 
-            {/* Phần Header */}
+            {/* Header phòng chat */}
             <div className={styles.header}>
                 <div className={styles.headerLeft}>
                     <div className={styles.avatarContainer}>
@@ -281,12 +338,12 @@ const ChatRoomCard = ({
                 </div>
             </div>
 
+            {/* Vùng hiển thị tin nhắn */}
             <div
                 className={styles.messagesArea}
                 ref={chatContainerRef}
                 onScroll={handleScroll}
             >
-                {/* Loader ở đầu danh sách khi load more */}
                 {isLoading && page > 1 && (
                     <div style={{ padding: '10px', textAlign: 'center' }}>
                         <Loading text="Đang tải thêm tin nhắn..." />
@@ -317,7 +374,6 @@ const ChatRoomCard = ({
                             )}
 
                             <div className={styles.messageContent} style={{ flexDirection: isMe ? 'row-reverse' : 'row', alignItems: 'flex-start' }}>
-                                {/* Avatar và tên người gửi (nếu không phải mình) */}
                                 {!isMe && (
                                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 64 }}>
                                         <div style={{ position: 'relative' }}>
@@ -360,14 +416,15 @@ const ChatRoomCard = ({
                                             </button>
                                         </div>
                                     ) : (<>
-                                        <div className={styles.bubble} style={{
-                                            backgroundColor: (msg.mes.startsWith('[IMAGE]') || msg.mes.startsWith('[VIDEO]') || msg.mes.startsWith('[FILE]')) ? 'transparent' : (isMe ? 'var(--theme-sender-bubble, #FF5596)' : '#fff'),
+                                        <div className={`${styles.bubble} ${isEmojiOnly(msg.mes) ? styles.emojiOnly : ''}`} style={{
+                                            backgroundColor: (msg.mes.startsWith('[IMAGE]') || msg.mes.startsWith('[VIDEO]') || msg.mes.startsWith('[FILE]') || isStickerMessage(msg.mes) || isEmojiOnly(msg.mes)) ? 'transparent' : (isMe ? 'var(--theme-sender-bubble, #FF5596)' : '#fff'),
                                             color: isMe ? 'var(--theme-text-on-primary, #fff)' : '#000',
-                                            padding: (msg.mes.startsWith('[IMAGE]') || msg.mes.startsWith('[VIDEO]') || msg.mes.startsWith('[FILE]')) ? '0' : undefined,
-                                            boxShadow: (msg.mes.startsWith('[IMAGE]') || msg.mes.startsWith('[VIDEO]') || msg.mes.startsWith('[FILE]')) ? 'none' : undefined,
-                                            border: (msg.mes.startsWith('[IMAGE]') || msg.mes.startsWith('[VIDEO]') || msg.mes.startsWith('[FILE]')) ? 'none' : undefined,
+                                            padding: (msg.mes.startsWith('[IMAGE]') || msg.mes.startsWith('[VIDEO]') || msg.mes.startsWith('[FILE]') || isStickerMessage(msg.mes) || isEmojiOnly(msg.mes)) ? '0' : undefined,
+                                            boxShadow: (msg.mes.startsWith('[IMAGE]') || msg.mes.startsWith('[VIDEO]') || msg.mes.startsWith('[FILE]') || isStickerMessage(msg.mes) || isEmojiOnly(msg.mes)) ? 'none' : undefined,
+                                            border: (msg.mes.startsWith('[IMAGE]') || msg.mes.startsWith('[VIDEO]') || msg.mes.startsWith('[FILE]') || isStickerMessage(msg.mes) || isEmojiOnly(msg.mes)) ? 'none' : undefined,
                                             maxWidth: (msg.mes.startsWith('[FILE]')) ? '100%' : undefined,
-                                            position: 'relative'
+                                            position: 'relative',
+                                            fontSize: isEmojiOnly(msg.mes) ? '40px' : undefined
                                         }}>
                                             {renderMessageContent(msg.mes)}
 
@@ -461,23 +518,68 @@ const ChatRoomCard = ({
                 )
             }
 
+            {/* Sticker Picker */}
+            {
+                showStickerPicker && (
+                    <div ref={stickerPickerRef} className={styles.stickerPickerWrapper}>
+                        <StickerPicker
+                            onSelect={handleStickerSelect}
+                            onClose={() => setShowStickerPicker(false)}
+                        />
+                    </div>
+                )
+            }
 
-            {/* Khu vực nhập tin nhắn */}
-            <form className={styles.inputArea} onSubmit={handleSend}>
-                {/* Preview File Area */}
-                {selectedFile && (
+            {/* Form nhập tin nhắn */}
+            <form className={styles.inputArea} onSubmit={(e) => {
+                e.preventDefault();
+                if (selectedSticker) {
+                    if (!activeChat || !socketActions) return;
+                    const type = (activeChat.type === 0 || activeChat.type === 'people') ? 'people' : 'room';
+                    const shortCode = createStickerCode(selectedSticker.id, selectedSticker.index);
+
+                    // Optimistic UI
+                    const optimisticMessage = {
+                        name: myUsername || localStorage.getItem('user_name') || 'Tôi',
+                        mes: shortCode,
+                        createAt: new Date().toISOString(),
+                        to: activeChat.name,
+                        type: type === 'people' ? 'people' : 'room',
+                        tempId: Date.now().toString()
+                    };
+                    dispatch(addMessage(optimisticMessage));
+
+                    socketActions.sendChat(activeChat.name, shortCode, type);
+                    setSelectedSticker(null);
+
+                    if (messagesEndRef.current) {
+                        messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+                    }
+                } else {
+                    handleSend(e);
+                }
+            }}>
+                {/* Xem trước Sticker / Ảnh */}
+                {(selectedFile || selectedSticker) && (
                     <div className={styles.previewContainer}>
                         <div className={styles.previewContent}>
-                            {selectedFile.type.startsWith('image/') ? (
-                                <img src={URL.createObjectURL(selectedFile)} alt="Preview" className={styles.previewImage} />
+                            {selectedFile ? (
+                                selectedFile.type.startsWith('image/') ? (
+                                    <img src={URL.createObjectURL(selectedFile)} alt="Preview" className={styles.previewImage} />
+                                ) : (
+                                    <div className={styles.previewFileIcon}>
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                        <span style={{ fontSize: '10px', marginTop: '4px', maxWidth: '70px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }} title={selectedFile.name}>{selectedFile.name}</span>
+                                    </div>
+                                )
                             ) : (
-                                <div className={styles.previewFileIcon}>
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                                    <span style={{ fontSize: '10px', marginTop: '4px', maxWidth: '70px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }} title={selectedFile.name}>{selectedFile.name}</span>
-                                </div>
+                                <img src={selectedSticker.url} alt="Sticker Preview" className={styles.previewImage} style={{ objectFit: 'contain', backgroundColor: 'transparent', border: 'none', boxShadow: 'none' }} />
                             )}
-                            <button type="button" className={styles.removeFileButton} onClick={handleRemoveFile}>
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            <button type="button" className={styles.removeFileButton} onClick={selectedFile ? handleRemoveFile : handleRemoveSticker}>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <line x1="18" y1="6" x2="6" y2="18" />
+                                    <line x1="6" y1="6" x2="18" y2="18" />
+                                </svg>
                             </button>
                         </div>
                         {isUploading && (
@@ -489,17 +591,13 @@ const ChatRoomCard = ({
                 )}
 
                 <div className={styles.inputContainer}>
-                    {/* Input file ẩn */}
                     <input
                         type="file"
                         ref={fileInputRef}
-                        id="chat-file-input"
                         onChange={handleSelectFile}
                         accept="*"
                         style={{ display: 'none' }}
                     />
-
-                    {/* Emoji icon */}
                     <button
                         ref={emojiButtonRef}
                         type="button"
@@ -508,13 +606,12 @@ const ChatRoomCard = ({
                         onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                     >
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
-                            <line x1="9" y1="9" x2="9.01" y2="9"></line>
-                            <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                            <circle cx="12" cy="12" r="10" />
+                            <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+                            <line x1="9" y1="9" x2="9.01" y2="9" />
+                            <line x1="15" y1="9" x2="15.01" y2="9" />
                         </svg>
                     </button>
-
                     <input
                         type="text"
                         className={styles.input}
@@ -523,48 +620,45 @@ const ChatRoomCard = ({
                         onChange={(e) => setInputText(e.target.value)}
                         disabled={isUploading}
                     />
-
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                        {/* Mic icon */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                            {/* Mic icon */}
-                            <button type="button" className={styles.actionButton} title="Ghi âm">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-                                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                                    <line x1="12" y1="19" x2="12" y2="23"></line>
-                                    <line x1="8" y1="23" x2="16" y2="23"></line>
-                                </svg>
-                            </button>
-                            {/* Generic File - Paperclip */}
-                            <button type="button" className={styles.actionButton} title="Đính kèm file" onClick={triggerFileSelect}>
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M15 7h6a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h6" />
-                                    <path d="M13 3.6a2.1 2.1 0 1 1 4 4L7.5 17.1a3.3 3.3 0 1 1-6-6l9.5-9.5" />
-                                </svg>
-                            </button>
-                            {/* Image icon - Click trigger select file */}
-                            <button type="button" className={styles.actionButton} title="Đính kèm ảnh/video" onClick={triggerFileSelect}>
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-                            </button>
-                            {/* Sticker icon */}
-                            <button type="button" className={styles.actionButton} title="Stickers">
-                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142L16.4142 20.4142C16.0391 20.7893 15.5304 21 15 21H7C4.79086 21 3 19.2091 3 17V7C3 4.79086 4.79086 3 7 3H17C19.2091 3 21 4.79086 21 7V15Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                    <path d="M21 15H18C16.3431 15 15 16.3431 15 18V21L21 15Z" fill="currentColor" stroke="currentColor" strokeWidth="0.6" strokeLinejoin="round" />
-                                    <circle cx="8.5" cy="10.5" r="1.5" fill="currentColor" />
-                                    <circle cx="15.5" cy="10.5" r="1.5" fill="currentColor" />
-                                    <path d="M8 15.5C9.5 17.5 14 17.5 15.5 15.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                                </svg>
-                            </button>
-                        </div>
+                        {/* Generic File - Paperclip */}
+                        <button type="button" className={styles.actionButton} title="Đính kèm file" onClick={triggerFileSelect}>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M15 7h6a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h6" />
+                                <path d="M13 3.6a2.1 2.1 0 1 1 4 4L7.5 17.1a3.3 3.3 0 1 1-6-6l9.5-9.5" />
+                            </svg>
+                        </button>
+                        {/* Image icon - Click trigger select file */}
+                        <button type="button" className={styles.actionButton} title="Đính kèm ảnh/video" onClick={triggerFileSelect}>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                        </button>
+                        {/* Sticker icon */}
+                        <button
+                            ref={stickerButtonRef}
+                            type="button"
+                            className={`${styles.actionButton} ${showStickerPicker ? styles.active : ''}`}
+                            title="Stickers"
+                            onClick={() => setShowStickerPicker(!showStickerPicker)}
+                        >
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142L16.4142 20.4142C16.0391 20.7893 15.5304 21 15 21H7C4.79086 21 3 19.2091 3 17V7C3 4.79086 4.79086 3 7 3H17C19.2091 3 21 4.79086 21 7V15Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                <path d="M21 15H18C16.3431 15 15 16.3431 15 18V21L21 15Z" fill="currentColor" stroke="currentColor" strokeWidth="0.6" strokeLinejoin="round" />
+                                <circle cx="8.5" cy="10.5" r="1.5" fill="currentColor" />
+                                <circle cx="15.5" cy="10.5" r="1.5" fill="currentColor" />
+                                <path d="M8 15.5C9.5 17.5 14 17.5 15.5 15.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                            </svg>
+                        </button>
                     </div>
                 </div>
-                {/* Nút gửi tin nhắn */}
-                <button type="submit" className={styles.sendButton} title="Gửi (Enter)" disabled={(!inputText.trim() && !selectedFile) || isUploading}>
+                <button
+                    type="submit"
+                    className={styles.sendButton}
+                    title="Gửi (Enter)"
+                    disabled={(!inputText.trim() && !selectedFile && !selectedSticker) || isUploading || !isSocketReady}
+                >
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="22" y1="2" x2="11" y2="13"></line>
-                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        <line x1="22" y1="2" x2="11" y2="13" />
+                        <polygon points="22 2 15 22 11 13 2 9 22 2" />
                     </svg>
                 </button>
             </form>
