@@ -8,7 +8,7 @@ const HeaderInfo = () => (
         color: 'var(--theme-text-on-primary, #FFFFFF)',
         fontWeight: 'bold',
         fontSize: 18,
-        height: 77,
+        height: 71,
         boxSizing: 'border-box',
         display: 'flex',
         alignItems: 'center'

@@ -11,34 +11,24 @@ import ChatInfo from "../components/chatbox/ChatInfo.jsx";
 import { useChatSidebar } from "../hooks/useChatSidebar.js";
 import { useChatMessage } from "../hooks/useChatMessage.js";
 import { useSocket } from '../../../app/providers/useSocket';
+import { useApi } from '../../../app/providers/useApi';
+import CreateRoomModal from "../components/sidebar/CreateRoomModal.jsx";
 import SearchResult from "../components/sidebar/SearchResult.jsx";
+import ContactRequestModal from "../components/sidebar/ContactRequestModal.jsx";
+import ContactRequestsModal from "../components/sidebar/ContactRequestsModal.jsx";
 import { usePendingActions } from "../hooks/usePendingActions";
 import { useChatTheme } from "../hooks/useChatTheme";
+import AddMemberModal from "../components/chatbox/AddMemberModal.jsx";
 import PageHeader from "../components/headerChat/PageHeader.jsx"; // Import PageHeader
-import ChatModals from "../components/ChatModals.jsx";
+import LogoutModal from "../components/headerChat/LogoutModal.jsx"; // Import LogoutModal
+import Iridescence from "../../../shared/components/Iridescence.jsx"; // Hiệu ứng nền
 
 const ChatPage = () => {
     const navigate = useNavigate();
-    const {
-        title,
-        rooms,
-        selectRoom,
-        searchQuery,
-        setSearchQuery,
-        activeTab: activeSidebarTab,
-        setActiveTab: setActiveSidebarTab
-    } = useChatSidebar();
+    const { title, rooms, selectRoom } = useChatSidebar();
     const { actions: socketActions, isReady } = useSocket();
-    const {
-        sendContactRequest,
-        handleCheckUserExist,
-        showContactRequest,
-        setShowContactRequest,
-        contactRecipient,
-        contactError,
-        setContactError
-    } = usePendingActions();
-    const { changeTheme } = useChatTheme(); // Get changeTheme action
+    const { sendContactRequest } = usePendingActions();
+    const { changeTheme } = useChatTheme(); // Initialize theme management
     const user = useSelector((s) => s.auth.user);
 
     // Hook ChatMessage (Quản lý chi tiết chat: message, member, actions)
@@ -58,16 +48,22 @@ const ChatPage = () => {
         chatContainerRef,
         handleScroll,
         handleSend,
+        handleAddMember,
         // File props
         selectedFile,
         isUploading,
         handleSelectFile,
-        handleRemoveFile
+        handleRemoveFile,
+        handleRetry
     } = useChatMessage();
 
     // States cho phần liên hệ
     const [showCreateRoom, setShowCreateRoom] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [showContactRequest, setShowContactRequest] = useState(false);
+    const [contactRecipient, setContactRecipient] = useState('');
     const [showContactRequests, setShowContactRequests] = useState(false);
+    const [contactError, setContactError] = useState('');
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const [showAddMember, setShowAddMember] = useState(false);
 
@@ -90,22 +86,56 @@ const ChatPage = () => {
         setShowCreateRoom(true);
     };
 
+    // Filter rooms theo search query
+    const filteredRooms = useMemo(() => {
+        if (!searchQuery.trim()) return rooms;
+        const query = searchQuery.toLowerCase();
+        return rooms.filter(room =>
+            room.name.toLowerCase().includes(query)
+        );
+    }, [rooms, searchQuery]);
+
     // Kiểm tra xem có nên hiển thị SearchResult không
     const shouldShowSearchResult = useMemo(() => {
-        return searchQuery.trim().length > 0 && rooms.length === 0;
-    }, [searchQuery, rooms]);
+        return searchQuery.trim().length > 0 && filteredRooms.length === 0;
+    }, [searchQuery, filteredRooms]);
 
-    // Handler khi bấm "Liên hệ" - Pass through to hook
+    // Handler khi bấm "Liên hệ" - Check user exist trước
     const handleContact = (username) => {
-        handleCheckUserExist(username);
+        // Clear callback cũ và error cũ nếu có (tránh xung đột khi click nhiều lần)
+        if (window.__pendingContactCheck) {
+            window.__pendingContactCheck = null;
+        }
+        setContactError('');
+
+        // Lưu username để xử lý khi nhận response
+        setContactRecipient(username);
+
+        // Lưu callback vào window để socketHandlers có thể gọi
+        window.__pendingContactCheck = {
+            username: username,
+            onSuccess: () => {
+                setShowContactRequest(true);
+                setContactError('');
+                window.__pendingContactCheck = null;
+            },
+            onError: () => {
+                setContactError('Người dùng không tồn tại');
+                window.__pendingContactCheck = null;
+            }
+        };
+
+        // Kiểm tra user có tồn tại không trước khi mở modal
+        socketActions.checkExist(username);
     };
 
     const handleSendContactRequest = async (recipientName, message) => {
         try {
             await sendContactRequest(recipientName, message);
+            setShowContactRequest(false);
             setSearchQuery('');
-        } catch {
-            // Error handling is now inside the hook's state
+        } catch (err) {
+            setContactError('Không thể gửi yêu cầu liên hệ. Vui lòng thử lại.');
         }
     };
 
@@ -136,120 +166,146 @@ const ChatPage = () => {
 
     return (
         <div className={styles.page}>
-            <PageHeader onLogout={handleLogoutClick} />
-            <div className={styles["chat-container"]}>
-                <div className={styles["chat-sidebar"]}>
-                    {/* Sidebar Header có nút tạo phòng và yêu cầu liên hệ */}
-                    <UserHeader
-                        name={title}
-                        onAdd={handleCreateRoom}
-                        onContactRequests={handleOpenContactRequests}
-                    />
-                    <SearchBox
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-
-                    {/* Sidebar Tabs */}
-                    <div className={styles.tabsContainer}>
-                        <button
-                            className={`${styles.tab} ${activeSidebarTab === 'all' ? styles.activeTab : ''}`}
-                            onClick={() => setActiveSidebarTab('all')}
-                        >
-                            Tất cả
-                        </button>
-                        <button
-                            className={`${styles.tab} ${activeSidebarTab === 'group' ? styles.activeTab : ''}`}
-                            onClick={() => setActiveSidebarTab('group')}
-                        >
-                            Nhóm
-                        </button>
-                        <div
-                            className={styles.tabIndicator}
-                            style={{
-                                width: 'calc(50% - 1rem)',
-                                left: activeSidebarTab === 'all' ? '1rem' : '50%'
-                            }}
-                        />
-                    </div>
-                    {/* Hiển thị SearchResult nếu không tìm thấy room nào, ngược lại hiển thị RoomList với nút Liên hệ ở cuối nếu có search query */}
-                    {shouldShowSearchResult ? (
-                        <SearchResult
-                            searchQuery={searchQuery}
-                            onContact={handleContact}
-                            contactError={contactError}
-                        />
-                    ) : (
-                        <RoomList
-                            rooms={rooms}
-                            onSelect={selectRoom}
-                            searchQuery={searchQuery}
-                            onContact={handleContact}
-                            contactError={contactError}
-                        />
-                    )}
-                </div>
-                <div className={styles["chat-main"]}>
-                    {activeChat ? (
-                        <ChatRoomCard
-                            activeChat={activeChat}
-                            messages={messages}
-                            myUsername={myUsername}
-                            isOnline={isOnline}
-                            inputText={inputText}
-                            setInputText={setInputText}
-                            page={page}
-                            isLoading={isLoading}
-                            handleSend={handleSend}
-                            handleScroll={handleScroll}
-                            messagesEndRef={messagesEndRef}
-                            chatContainerRef={chatContainerRef}
-                            onInfoClick={() => setShowInfo(!showInfo)}
-                            // File props
-                            selectedFile={selectedFile}
-                            isUploading={isUploading}
-                            handleSelectFile={handleSelectFile}
-                            handleRemoveFile={handleRemoveFile}
-                            isSocketReady={isReady}
-                        />
-                    ) : (
-                        <ChatPlaceholder />
-                    )}
-                </div>
-                {/* Sidebar thông tin chat (ChatInfo) */}
-                {activeChat && showInfo && (
-                    <div className={styles["chat-info-sidebar"]}>
-                        <ChatInfo
-                            isGroup={activeChat.type === 1 || activeChat.type === 'group' || activeChat.type === 'room'}
-                            members={memberList}
-                            onAddMember={handleAddMemberClick}
-                            onChangeTheme={changeTheme}
-                        />
-                    </div>
-                )}
+            {/* Lớp nền hiệu ứng Iridescence */}
+            <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
+                <Iridescence
+                    color={[1, 1, 1]}
+                    speed={0.1}
+                    amplitude={0.1}
+                    mouseReact={false}
+                />
             </div>
-            <ChatModals
-                modals={{
-                    showCreateRoom,
-                    showContactRequest,
-                    showContactRequests,
-                    showLogoutConfirm,
-                    showAddMember,
-                    activeChat,
-                    contactRecipient,
-                    memberList
-                }}
-                handlers={{
-                    setShowCreateRoom,
-                    setShowContactRequest,
-                    setShowContactRequests,
-                    setShowLogoutConfirm,
-                    setShowAddMember,
-                    handleSendContactRequest,
-                    handleSelectContactRequest,
-                    handleConfirmLogout
-                }}
-            />
+
+            {/* Container chính chứa nội dung chat - Nổi lên trên nền */}
+            <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}>
+                <PageHeader onLogout={handleLogoutClick} />
+                <div className={styles["chat-container"]}>
+                    <div className={styles["chat-sidebar"]}>
+                        {/* Sidebar Header có nút tạo phòng và yêu cầu liên hệ */}
+                        <UserHeader
+                            name={title}
+                            onAdd={handleCreateRoom}
+                            onContactRequests={handleOpenContactRequests}
+                        />
+                        <SearchBox
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                        {/* Hiển thị SearchResult nếu không tìm thấy room nào, ngược lại hiển thị RoomList với nút Liên hệ ở cuối nếu có search query */}
+                        {shouldShowSearchResult ? (
+                            <SearchResult
+                                searchQuery={searchQuery}
+                                onContact={handleContact}
+                                contactError={contactError}
+                            />
+                        ) : (
+                            <RoomList
+                                rooms={filteredRooms}
+                                onSelect={selectRoom}
+                                searchQuery={searchQuery}
+                                onContact={handleContact}
+                                contactError={contactError}
+                            />
+                        )}
+                    </div>
+                    <div className={styles["chat-main"]}>
+                        {activeChat ? (
+                            <ChatRoomCard
+                                activeChat={activeChat}
+                                messages={messages}
+                                myUsername={myUsername}
+                                isOnline={isOnline}
+                                inputText={inputText}
+                                setInputText={setInputText}
+                                page={page}
+                                isLoading={isLoading}
+                                handleSend={handleSend}
+                                handleScroll={handleScroll}
+                                messagesEndRef={messagesEndRef}
+                                chatContainerRef={chatContainerRef}
+                                onInfoClick={() => setShowInfo(!showInfo)}
+                                // File props
+                                selectedFile={selectedFile}
+                                isUploading={isUploading}
+                                handleSelectFile={handleSelectFile}
+                                handleRemoveFile={handleRemoveFile}
+                                onRetry={handleRetry}
+                                isSocketReady={isReady}
+                            />
+                        ) : (
+                            <ChatPlaceholder />
+                        )}
+                    </div>
+                    {/* Sidebar thông tin chat (ChatInfo) */}
+                    {activeChat && showInfo && (
+                        <div className={styles["chat-info-sidebar"]}>
+                            <ChatInfo
+                                isGroup={activeChat.type === 1 || activeChat.type === 'group' || activeChat.type === 'room'}
+                                members={memberList}
+                                onAddMember={handleAddMemberClick}
+                                onChangeTheme={changeTheme}
+                            />
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Create Room Modal */}
+            {showCreateRoom && (
+                <>
+                    <div className={styles["create-room-modal-backdrop"]} onClick={() => setShowCreateRoom(false)} />
+                    <div className={styles["create-room-modal-container"]}>
+                        <CreateRoomModal onClose={() => setShowCreateRoom(false)} />
+                    </div>
+                </>
+            )}
+            {/* Contact Request Modal - Gửi tin nhắn liên hệ */}
+            {showContactRequest && (
+                <>
+                    <div className={styles["contact-request-modal-backdrop"]} onClick={() => setShowContactRequest(false)} />
+                    <div className={styles["contact-request-modal-container"]}>
+                        <ContactRequestModal
+                            recipientName={contactRecipient}
+                            onClose={() => setShowContactRequest(false)}
+                            onSend={handleSendContactRequest}
+                        />
+                    </div>
+                </>
+            )}
+            {/* Contact Requests Modal - Danh sách yêu cầu liên hệ */}
+            {showContactRequests && (
+                <>
+                    <div className={styles["create-room-modal-backdrop"]} onClick={() => setShowContactRequests(false)} />
+                    <div className={styles["create-room-modal-container"]}>
+                        <ContactRequestsModal
+                            onClose={() => setShowContactRequests(false)}
+                            onSelectUser={handleSelectContactRequest}
+                        />
+                    </div>
+                </>
+            )}
+
+            {/* Logout Confirm Modal */}
+            {showLogoutConfirm && (
+                <LogoutModal
+                    onClose={() => setShowLogoutConfirm(false)}
+                    onConfirm={handleConfirmLogout}
+                />
+            )}
+
+            {/* Add Member Modal */}
+            {showAddMember && activeChat && (
+                <>
+                    <div className={styles["add-member-modal-backdrop"]} onClick={() => setShowAddMember(false)} />
+                    <div className={styles["add-member-modal-container"]}>
+                        <AddMemberModal
+                            onClose={() => setShowAddMember(false)}
+                            roomName={activeChat.name}
+                            existingMembers={memberList}
+                        />
+                    </div>
+                </>
+            )}
         </div>
     );
 };

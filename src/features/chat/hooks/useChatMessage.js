@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useSocket } from "../../../app/providers/useSocket.js";
 import { clearMessages, addMessage, setPendingPage } from "../../../state/chat/chatSlice.js";
 import { encodeEmoji } from "../../../shared/utils/emojiUtils.js";
+import { getAvatarUrl } from "../../../shared/utils/avatarUtils.js";
 import { useChatScroll } from "./useChatScroll.js";
 import { useChatFileUpload } from "./useChatFileUpload.js";
 import { useChatPresence } from "./useChatPresence.js";
@@ -72,8 +73,18 @@ export const useChatMessage = () => {
 
         if (activeChat.type === 0 || activeChat.type === 'people') {
             return [
-                { name: currentUserName, isOnline: true },
-                { name: activeChat.name, isOnline: !!onlineStatus[activeChat.name] }
+                {
+                    id: currentUserName, // Dùng tên làm ID
+                    name: currentUserName,
+                    avatar: getAvatarUrl(currentUserName),
+                    isOnline: true
+                },
+                {
+                    id: activeChat.name,
+                    name: activeChat.name,
+                    avatar: getAvatarUrl(activeChat.name),
+                    isOnline: !!onlineStatus[activeChat.name]
+                }
             ];
         } else {
             const roomData = people.find(p => p.name === activeChat.name && p.type === activeChat.type);
@@ -81,7 +92,13 @@ export const useChatMessage = () => {
             return userList.map(m => {
                 const name = typeof m === 'string' ? m : m.name;
                 const isOwner = typeof m === 'object' ? m.isOwner : false;
-                return { name, isOnline: !!onlineStatus[name], isOwner };
+                return {
+                    id: name, // Dùng tên làm ID
+                    name,
+                    avatar: getAvatarUrl(name),
+                    isOnline: !!onlineStatus[name],
+                    isOwner
+                };
             });
         }
     }, [activeChat, people, onlineStatus, user]);
@@ -140,6 +157,49 @@ export const useChatMessage = () => {
 
     // Effect: Tắt loading sau khi scroll đã xử lý (chỉ check logic loading ở đây)
     useEffect(() => {
+        if (!isReady || !activeChat) return;
+        const isRoom = activeChat.type === 1 || activeChat.type === 'room' || activeChat.type === 'group';
+        if (!isRoom) return;
+
+        // Lấy danh sách tên thành viên và loại bỏ bản thân
+        const names = (memberList || [])
+            .map(m => m?.name)
+            .filter(Boolean)
+            .filter(n => n !== myUsername);
+
+        if (names.length === 0) return;
+
+        // Chỉ check những người chưa có trạng thái trong store để tránh spam
+        const toCheck = [];
+        const seen = new Set();
+        for (const n of names) {
+            if (!seen.has(n)) {
+                seen.add(n);
+                if (onlineStatus[n] === undefined) {
+                    toCheck.push(n);
+                }
+            }
+        }
+
+        // Giới hạn số lượng mỗi lượt để nhẹ nhàng (ví dụ 10 người)
+        const MAX_BATCH = 10;
+        const batch = toCheck.slice(0, MAX_BATCH);
+
+        // Gửi lần lượt với delay nhỏ để tránh nghẽn
+        batch.forEach((username, index) => {
+            setTimeout(() => {
+                try {
+                    socketActions.checkOnline(username);
+                } catch (e) {
+                    console.warn('checkOnline failed for', username, e);
+                }
+            }, index * 800); // 800ms giữa mỗi request để tránh Rate limit
+        });
+    }, [isReady, activeChat, memberList, myUsername, socketActions, onlineStatus]);
+
+    // Effect: Xử lý mượt mà khi dữ liệu tin nhắn về
+    useEffect(() => {
+        // CHỈ xử lý khi đang loading (tránh vòng lặp)
         if (!isLoading) return;
 
         const shouldStopLoading = (page === 1 && (messages.length > 0 || !hasMore)) ||
@@ -201,6 +261,7 @@ export const useChatMessage = () => {
     }, [loadMore, isLoading, hasMore, page]);
 
 
+
     const handleSend = useCallback(async (e) => {
         e.preventDefault();
         const hasText = inputText.trim().length > 0;
@@ -209,11 +270,19 @@ export const useChatMessage = () => {
         // --- XỬ LÝ FILE ---
         if (selectedFile) {
             try {
+                // Sử dụng uploadSelectedFile từ hook để đảm bảo state isUploading được cập nhật
                 const result = await uploadSelectedFile();
                 if (!result) return;
 
-                const prefix = result.type === 'video' ? '[VIDEO]' : '[IMAGE]';
-                const fileMessage = `${prefix}${result.url}`;
+                let fileMessage = '';
+                if (result.type === 'video') {
+                    fileMessage = `[VIDEO]${result.url}`;
+                } else if (result.type === 'image' && result.format !== 'pdf') {
+                    fileMessage = `[IMAGE]${result.url}`;
+                } else {
+                    // [FILE]URL|FileName|Size
+                    fileMessage = `[FILE]${result.url}|${result.original_filename || selectedFile.name}|${result.bytes || selectedFile.size}`;
+                }
 
                 // --- OPTIMISTIC UI CHO FILE ---
                 const tempId = Date.now().toString();
@@ -225,14 +294,26 @@ export const useChatMessage = () => {
                     createAt: new Date().toISOString(),
                     to: activeChat.name,
                     type: (activeChat.type === 0 || activeChat.type === 'people') ? 'people' : 'room',
-                    tempId: tempId
+                    tempId: tempId,
+                    status: 'sending' // Đánh dấu đang gửi
                 };
                 dispatch(addMessage(optimisticFileMessage));
 
                 // Gửi file 
-                socketActions.sendChat(activeChat.name, fileMessage, (activeChat.type === 0 || activeChat.type === 'people') ? 'people' : 'room');
+                if (activeChat.type === 0 || activeChat.type === 'people') {
+                    socketActions.sendChat(activeChat.name, fileMessage, 'people');
+                } else {
+                    socketActions.sendChat(activeChat.name, fileMessage, 'room');
+                }
+
+                // Server không trả, tự confirm đã gửi sau 600ms
+                setTimeout(() => {
+                    dispatch(addMessage({ ...optimisticFileMessage, status: 'sent' }));
+                }, 600);
+
+                // handleRemoveFile đã được gọi trong uploadSelectedFile
             } catch (error) {
-                // Error already handled in hook
+                // Error already handled in useChatFileUpload hook (alert)
                 return;
             }
         }
@@ -251,7 +332,8 @@ export const useChatMessage = () => {
                 createAt: new Date().toISOString(),
                 to: activeChat.name,
                 type: (activeChat.type === 0 || activeChat.type === 'people') ? 'people' : 'room',
-                tempId: tempId
+                tempId: tempId,
+                status: 'sending' // Đánh dấu đang gửi
             };
 
             dispatch(addMessage(optimisticMessage));
@@ -261,6 +343,11 @@ export const useChatMessage = () => {
             } else {
                 socketActions.sendChat(activeChat.name, encodedText, 'room');
             }
+
+            // Server không trả Tự động confirm đã gửi sau 600ms
+            setTimeout(() => {
+                dispatch(addMessage({ ...optimisticMessage, status: 'sent' }));
+            }, 600);
 
             setInputText('');
         }
@@ -283,12 +370,37 @@ export const useChatMessage = () => {
         }
     }, [socketActions]);
 
+    const handleRetry = useCallback((msg) => {
+        if (!activeChat || !socketActions) return;
+
+        // Cập nhật lại status sang sending để UI hiển thị lại loading
+        const retryMsg = { ...msg, status: 'sending', createAt: new Date().toISOString() };
+        dispatch(addMessage(retryMsg));
+
+        const content = msg.mes;
+        const type = (activeChat.type === 0 || activeChat.type === 'people') ? 'people' : 'room';
+
+        // Gửi lại qua socket
+        if (type === 'people') {
+            socketActions.sendChat(activeChat.name, content, 'people');
+        } else {
+            socketActions.sendChat(activeChat.name, content, 'room');
+        }
+
+        // Auto confirm, tin server
+        setTimeout(() => {
+            dispatch(addMessage({ ...retryMsg, status: 'sent' }));
+        }, 600);
+
+    }, [activeChat, socketActions, dispatch]);
+
     return {
         activeChat, messages, myUsername, isOnline, memberList,
         showInfo, setShowInfo, inputText, setInputText, page,
         isLoading, hasMore, messagesEndRef, chatContainerRef,
         handleScroll, handleSend, handleAddMember, handleCreateRoom,
         // File props
-        selectedFile, isUploading, handleSelectFile, handleRemoveFile
+        selectedFile, isUploading, handleSelectFile, handleRemoveFile,
+        handleRetry
     };
 };

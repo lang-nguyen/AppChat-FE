@@ -14,6 +14,10 @@ export const handleSocketMessage = (response, dispatch, socketActions, socketRef
     }
 
     if (!response.event) {
+        if (response.action === 'error') {
+            console.error("[Socket Error]", response.data);
+            return;
+        }
         console.warn("[Socket Handler] Response không có field 'event':", response);
         return;
     }

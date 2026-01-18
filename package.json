@@ -11,9 +11,11 @@
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.11.2",
+    "@tabler/icons-react": "^3.36.1",
     "dom": "^0.0.3",
     "emoji-dictionary": "^1.0.12",
     "emoji-picker-react": "^4.16.1",
+    "ogl": "^1.0.11",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-redux": "^9.2.0",

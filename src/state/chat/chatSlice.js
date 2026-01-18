@@ -16,7 +16,22 @@ const chatSlice = createSlice({
     initialState,
     reducers: {
         setPeople(state, action) {
-            state.people = action.payload ?? [];
+            const newPeople = action.payload ?? [];
+
+            state.people = newPeople.map(newItem => {
+                const existingItem = state.people.find(p => p.name === newItem.name && p.type === newItem.type);
+
+                if (existingItem) {
+                    return {
+                        ...newItem,
+                        // Giu lai userList neu server gui thieu
+                        userList: (newItem.userList && newItem.userList.length > 0) ? newItem.userList : existingItem.userList,
+                        own: newItem.own !== undefined ? newItem.own : existingItem.own,
+                        isOnline: existingItem.isOnline // Giữ trạng thái online 
+                    };
+                }
+                return newItem;
+            });
         },
         setOnlineStatus(state, action) {
             const { user, isOnline } = action.payload;
@@ -47,22 +62,37 @@ const chatSlice = createSlice({
                 }
             }
 
-            if (!isRelevant) return;
+            // Chỉ thêm tin nhắn nếu nó thuộc phòng đang mở
+            if (isRelevant) {
+                // Kiểm tra xem tin nhắn này có phải khớp với tin nhắn tạm không
+                const optimisticIndex = state.messages.findIndex(m =>
+                    (newMessage.tempId && m.tempId === newMessage.tempId) ||
+                    (m.status === 'sending' && m.mes === newMessage.mes) 
+                );
 
-            // 2. Xử lý Trùng lặp & Optimistic UI
-            const isDuplicate = messages.some(m =>
-                (newMessage.tempId && m.tempId === newMessage.tempId) ||
-                (m.createAt === newMessage.createAt && m.name === newMessage.name && m.mes === newMessage.mes)
-            );
+                if (optimisticIndex !== -1) {
+                    // Cập nhật tin nhắn tạm thành tin nhắn thật
+                    state.messages[optimisticIndex] = {
+                        ...newMessage,
+                        status: newMessage.status || 'sent' // Đánh dấu là đã gửi thành công hoặc theo status server trả về
+                    };
+                } else {
+                    // Kiểm tra trùng lặp, check trùng ID(khác null)
+                    const isDuplicate = state.messages.some(m =>
+                        (m.id && newMessage.id && m.id === newMessage.id) ||
+                        (m.createAt === newMessage.createAt && m.name === newMessage.name && m.mes === newMessage.mes)
+                    );
 
-            const optimisticIndex = messages.findIndex(m =>
-                m.tempId && m.name === newMessage.name && m.mes === newMessage.mes
-            );
-
-            if (optimisticIndex !== -1) {
-                state.messages[optimisticIndex] = newMessage;
-            } else if (!isDuplicate) {
-                state.messages.push(newMessage);
+                    if (!isDuplicate) {
+                        // Thêm tin nhắn mới
+                        // Nếu từ socket về, mặc định là sent
+                        // Nếu từ UI -> sending
+                        state.messages.push({
+                            ...newMessage,
+                            status: newMessage.status || 'sent'
+                        });
+                    }
+                }
             }
         },
 
@@ -102,11 +132,27 @@ const chatSlice = createSlice({
                 });
             }
         },
+        confirmPendingMessage(state) {
+            // Fallback: Nếu server trả status success mà k trả message
+            // Tìm tin nhắn sending cũ nhất hiện tại -> set thành sent
+            const { activeChat, messages } = state;
+            if (!activeChat) return;
+
+            const pendingMsgIndex = messages.findIndex(m =>
+                m.status === 'sending' &&
+                (m.to === activeChat.name || (activeChat.type !== 1 && m.name === activeChat.name))
+            );
+
+            if (pendingMsgIndex !== -1) {
+                messages[pendingMsgIndex].status = 'sent';
+            }
+        },
         // addMessage remains for backward compatibility, but calls the specialized reducers
         addMessage(state, action) {
             chatSlice.caseReducers.upsertMessage(state, action);
             chatSlice.caseReducers.updateSidebar(state, action);
         },
+
         setChatHistory(state, action) {
             const { messages, page } = action.payload;
             const newMessages = Array.isArray(messages) ? messages : [];
@@ -190,7 +236,7 @@ export const {
     setPeople, setActiveChat, setMessages, addMessage, upsertMessage, updateSidebar,
     setChatHistory, clearChat, setOnlineStatus, clearMessages,
     setPendingRoomCreation, clearPendingRoomCreation,
-    setPendingPage, updateRoomData, setPendingConversations, removePendingConversation
+    setPendingPage, updateRoomData, setPendingConversations, removePendingConversation, confirmPendingMessage
 } = chatSlice.actions;
 
 export default chatSlice.reducer;
