@@ -26,9 +26,9 @@ import Iridescence from "../../../shared/components/Iridescence.jsx"; // Hiệu 
 const ChatPage = () => {
     const navigate = useNavigate();
     const { title, rooms, selectRoom } = useChatSidebar();
-    const { actions: socketActions } = useSocket();
+    const { actions: socketActions, isReady } = useSocket();
     const { sendContactRequest } = usePendingActions();
-    useChatTheme(); // Initialize theme management
+    const { changeTheme } = useChatTheme(); // Initialize theme management
     const user = useSelector((s) => s.auth.user);
 
     // Hook ChatMessage (Quản lý chi tiết chat: message, member, actions)
@@ -230,6 +230,7 @@ const ChatPage = () => {
                                 handleSelectFile={handleSelectFile}
                                 handleRemoveFile={handleRemoveFile}
                                 onRetry={handleRetry}
+                                isSocketReady={isReady}
                             />
                         ) : (
                             <ChatPlaceholder />
@@ -242,6 +243,7 @@ const ChatPage = () => {
                                 isGroup={activeChat.type === 1 || activeChat.type === 'group' || activeChat.type === 'room'}
                                 members={memberList}
                                 onAddMember={handleAddMemberClick}
+                                onChangeTheme={changeTheme}
                             />
                         </div>
                     )}
