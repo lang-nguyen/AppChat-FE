@@ -99,7 +99,7 @@ export const usePendingActions = () => {
             setShowContactRequest(false); // Close modal on success
             return true;
         } catch (err) {
-            console.error('[UseCase] Failed to send contact request:', err);
+            console.error('[UseCase] Failed to send request:', err);
             setContactError('Không thể gửi yêu cầu liên hệ. Vui lòng thử lại.');
             throw err;
         }

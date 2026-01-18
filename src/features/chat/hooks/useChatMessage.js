@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/preserve-manual-memoization */
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useSocket } from "../../../app/providers/useSocket.js";
@@ -132,9 +133,8 @@ export const useChatMessage = () => {
 
 
             if (activeChat.type === 0 || activeChat.type === 'people') {
-                console.log(`[useChatMessage] Calling checkOnline for ${activeChat.name}`);
+                console.log(`[useChatMessage] Initializing chat with ${activeChat.name}`);
                 socketActions.chatHistory(activeChat.name, 1);
-                socketActions.checkOnline(activeChat.name);
             } else {
                 // Join room trước khi lấy lịch sử
                 socketActions.joinRoom(activeChat.name);
@@ -154,48 +154,6 @@ export const useChatMessage = () => {
 
     // Presence Sync for groups
     useChatPresence(isReady, activeChat, memberList, myUsername, onlineStatus, socketActions);
-
-    // Effect: Tắt loading sau khi scroll đã xử lý (chỉ check logic loading ở đây)
-    useEffect(() => {
-        if (!isReady || !activeChat) return;
-        const isRoom = activeChat.type === 1 || activeChat.type === 'room' || activeChat.type === 'group';
-        if (!isRoom) return;
-
-        // Lấy danh sách tên thành viên và loại bỏ bản thân
-        const names = (memberList || [])
-            .map(m => m?.name)
-            .filter(Boolean)
-            .filter(n => n !== myUsername);
-
-        if (names.length === 0) return;
-
-        // Chỉ check những người chưa có trạng thái trong store để tránh spam
-        const toCheck = [];
-        const seen = new Set();
-        for (const n of names) {
-            if (!seen.has(n)) {
-                seen.add(n);
-                if (onlineStatus[n] === undefined) {
-                    toCheck.push(n);
-                }
-            }
-        }
-
-        // Giới hạn số lượng mỗi lượt để nhẹ nhàng (ví dụ 10 người)
-        const MAX_BATCH = 10;
-        const batch = toCheck.slice(0, MAX_BATCH);
-
-        // Gửi lần lượt với delay nhỏ để tránh nghẽn
-        batch.forEach((username, index) => {
-            setTimeout(() => {
-                try {
-                    socketActions.checkOnline(username);
-                } catch (e) {
-                    console.warn('checkOnline failed for', username, e);
-                }
-            }, index * 800); // 800ms giữa mỗi request để tránh Rate limit
-        });
-    }, [isReady, activeChat, memberList, myUsername, socketActions, onlineStatus]);
 
     // Effect: Xử lý mượt mà khi dữ liệu tin nhắn về
     useEffect(() => {
@@ -238,12 +196,10 @@ export const useChatMessage = () => {
                 socketActions.roomHistory(activeChat.name, nextPage);
             }
         }
-    }, [page, hasMore, isLoading, isReady, activeChat, socketActions]);
+    }, [page, hasMore, isLoading, isReady, activeChat, socketActions, captureScrollHeight, dispatch]);
 
     const handleScroll = useCallback(() => {
         if (!chatContainerRef.current || isLoading || !hasMore) return;
-
-
         const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
 
 
@@ -299,7 +255,7 @@ export const useChatMessage = () => {
                 };
                 dispatch(addMessage(optimisticFileMessage));
 
-                // Gửi file 
+                // Gửi file
                 if (activeChat.type === 0 || activeChat.type === 'people') {
                     socketActions.sendChat(activeChat.name, fileMessage, 'people');
                 } else {
@@ -312,17 +268,17 @@ export const useChatMessage = () => {
                 }, 600);
 
                 // handleRemoveFile đã được gọi trong uploadSelectedFile
-            } catch (error) {
-                // Error already handled in useChatFileUpload hook (alert)
+            } catch {
+
                 return;
             }
         }
-        // --- XỬ LÝ TEXT 
+        // --- XỬ LÝ TEXT
         if (hasText) {
-            // Encode Emoji 
+            // Encode Emoji
             const encodedText = encodeEmoji ? encodeEmoji(inputText) : inputText;
 
-            // Optimistic UI: Hiển thị ngay lập tức 
+            // Optimistic UI: Hiển thị ngay lập tức
             const tempId = Date.now().toString();
             const currentName = user?.name || user?.user || user?.username || localStorage.getItem('user_name') || 'Tôi';
 
@@ -351,7 +307,7 @@ export const useChatMessage = () => {
 
             setInputText('');
         }
-        // Scroll 
+        // Scroll
         requestAnimationFrame(() => {
             scrollToBottom('smooth');
         });

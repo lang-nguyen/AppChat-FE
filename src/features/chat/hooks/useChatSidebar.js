@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useSocket } from "../../../app/providers/useSocket.js";
 import { useApi } from "../../../app/providers/useApi.js";
 import { setActiveChat, setPendingConversations } from "../../../state/chat/chatSlice.js";
+import { PresenceCache } from "../utils/presenceCache.js";
 
 export function useChatSidebar() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -43,28 +44,40 @@ export function useChatSidebar() {
     }
   }, [isReady, user, actions, apiActions, dispatch]);
 
-  // Effect: Tự động check online cho toàn bộ danh sách khi có list mới
+  // Effect: Tự động check online định kỳ (Sử dụng Global Cache để chặn spam)
   useEffect(() => {
-    if (!isReady || !people || people.length === 0) return;
+    // Hàm thực hiện check logic
+    const performCheck = () => {
+        if (!isReady || !people || people.length === 0) return;
 
-    // Lọc ra các user (type 0) và loại bỏ bản thân
-    const currentUserName = user?.user || user?.username || user?.name || localStorage.getItem('user_name');
-    const usersToCheck = people
-      .filter(p => p.type === 0 && p.name !== currentUserName)
-      .map(p => p.name);
+        const currentUserName = user?.user || user?.username || user?.name || localStorage.getItem('user_name');
+        
+        const usersToCheck = people
+          .filter(p => p.type === 0 && p.name !== currentUserName)
+          .map(p => p.name)
+          .filter(name => PresenceCache.shouldCheck(name));
 
-    if (usersToCheck.length === 0) return;
+        if (usersToCheck.length === 0) return;
+        console.log(`[useChatSidebar] Kiểm tra online cho người dùng:`, usersToCheck);
 
-    console.log(`[useChatSidebar] Auto-checking online for ${usersToCheck.length} users`);
+        // Gửi lần lượt với tốc độ an toàn (200ms)
+        usersToCheck.forEach((username, index) => {
 
-    // Gửi lần lượt với delay nhỏ để tránh spam socket quá tải
-    usersToCheck.forEach((username, index) => {
-      setTimeout(() => {
-        if (isReady) {
-          actions.checkOnline(username);
-        }
-      }, index * 150); // 150ms giữa mỗi request
-    });
+          PresenceCache.markAsChecked(username);
+
+          setTimeout(() => {
+            if (isReady) {
+              actions.checkOnline(username);
+            }
+          }, index * 200); 
+        });
+    };
+    // 1. Thực hiện check ngay khi effect này được kích hoạt
+    performCheck();
+
+    const intervalId = setInterval(performCheck, 2 * 60 * 1000); // 2 phút
+
+    return () => clearInterval(intervalId);
   }, [isReady, people, user, actions]);
 
   const title = useMemo(() => {
@@ -99,7 +112,7 @@ export function useChatSidebar() {
         // Quá 1 tuần: hiển thị ngày/tháng/năm
         return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
       }
-    } catch (e) {
+    } catch {
       return "";
     }
   };
