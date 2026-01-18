@@ -6,7 +6,7 @@ import styles from '../../pages/ChatPage.module.css';
 
 const RoomList = ({ rooms, onSelect, searchQuery, onContact, contactError }) => {
 	// Kiểm tra xem có search query và không có khớp chính xác không
-	const hasExactMatch = searchQuery && rooms.some(room => 
+	const hasExactMatch = searchQuery && rooms.some(room =>
 		room.name.toLowerCase() === searchQuery.toLowerCase().trim()
 	);
 	const shouldShowContactButton = searchQuery && searchQuery.trim().length > 0 && !hasExactMatch;
@@ -40,14 +40,15 @@ const RoomList = ({ rooms, onSelect, searchQuery, onContact, contactError }) => 
 			{rooms.map(r => {
 				const { key, ...roomProps } = r;
 				return (
-			<RoomCard
+					<RoomCard
 						key={key ?? `${r.type}:${r.name}`}
 						{...roomProps}
-				onClick={() => {
-					console.log('Room clicked:', r);
-					onSelect?.(r);
-				}}
-			/>
+						transparent={true}
+						onClick={() => {
+							console.log('Room clicked:', r);
+							onSelect?.(r);
+						}}
+					/>
 				);
 			})}
 			{shouldShowContactButton && (
@@ -85,8 +86,8 @@ const RoomList = ({ rooms, onSelect, searchQuery, onContact, contactError }) => 
 					</Button>
 				</div>
 			)}
-	</div>
-);
+		</div>
+	);
 };
 
 export default RoomList;

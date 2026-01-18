@@ -14,6 +14,10 @@ export const handleSocketMessage = (response, dispatch, socketActions, socketRef
     }
 
     if (!response.event) {
+        if (response.action === 'error') {
+            console.error("[Socket Error]", response.data);
+            return;
+        }
         console.warn("[Socket Handler] Response không có field 'event':", response);
         return;
     }
@@ -49,7 +53,7 @@ export const handleSocketMessage = (response, dispatch, socketActions, socketRef
 
         case "GET_PEOPLE_CHAT_MES":
         case "GET_ROOM_CHAT_MES":
-            handleGetChatHistory(response, dispatch);
+            handleGetChatHistory(response, dispatch, getState);
             break;
 
         case "CREATE_ROOM":

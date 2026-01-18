@@ -12,11 +12,23 @@ export const handleGetUserList = (response, dispatch) => {
 };
 
 export const handleCheckUserOnline = (response, dispatch) => {
+    console.log("[Socket Handler] CHECK_USER_ONLINE response:", response);
+
     if (response.status === 'success' && response.data) {
-        dispatch(setOnlineStatus({
-            user: response.data.user,
-            isOnline: response.data.status
-        }));
+        // Fallback: Nếu response.data.user bị null hoặc undefined, dùng giá trị đã lưu trong window khi gửi request
+        const userName = response.data.user || window.__pendingCheckOnline;
+        const isOnline = response.data.status === true || response.data.status === 'true';
+
+        console.log(`[Socket Handler] Updating online status for [${userName}]: ${isOnline}`);
+
+        if (userName) {
+            dispatch(setOnlineStatus({
+                user: userName,
+                isOnline: isOnline
+            }));
+        } else {
+            console.warn("[Socket Handler] Cannot determine user name for online status update");
+        }
     }
 };
 

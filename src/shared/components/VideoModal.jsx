@@ -1,13 +1,11 @@
-
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import styles from './ImageModal.module.css';
 
 import { downloadMedia, copyToClipboard } from '../utils/mediaUtils';
 
-// Modal de xem anh phong to
-const ImageModal = ({ imageUrl, onClose }) => {
-    // Đóng modal khi bấm ESC
+// Modal để xem video phóng to
+const VideoModal = ({ videoUrl, onClose }) => {
     useEffect(() => {
         const handleKeyDown = (e) => {
             if (e.key === 'Escape') {
@@ -20,15 +18,15 @@ const ImageModal = ({ imageUrl, onClose }) => {
 
     const handleDownload = (e) => {
         e.stopPropagation();
-        downloadMedia(imageUrl, 'image', 'jpg');
+        downloadMedia(videoUrl, 'video', 'mp4');
     };
 
     const handleCopyLink = (e) => {
         e.stopPropagation();
-        copyToClipboard(imageUrl, 'Đã sao chép liên kết ảnh!');
+        copyToClipboard(videoUrl, 'Đã sao chép liên kết video!');
     };
 
-    if (!imageUrl) return null;
+    if (!videoUrl) return null;
 
     const actionButtonStyle = {
         background: 'rgba(255, 255, 255, 0.2)',
@@ -101,11 +99,17 @@ const ImageModal = ({ imageUrl, onClose }) => {
             </div>
 
             <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-                <img src={imageUrl} alt="Zoomed" className={styles.image} />
+                <video
+                    src={videoUrl}
+                    controls
+                    autoPlay
+                    className={styles.image}
+                    style={{ maxHeight: '80vh', maxWidth: '90vw' }}
+                />
             </div>
         </div>,
         document.body
     );
 };
 
-export default ImageModal;
+export default VideoModal;

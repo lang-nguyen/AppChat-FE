@@ -70,7 +70,7 @@ export const socketActions = {
     },
 
     checkExist: (socketRef, username) => {
-        sendRawData(socketRef, "CHECK_USER_EXIST", { user: username }); //+1 Đổi name thành user
+        sendRawData(socketRef, "CHECK_USER_EXIST", { user: username });
     },
 
     getUserList: (socketRef) => {
