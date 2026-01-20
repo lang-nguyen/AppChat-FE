@@ -1,169 +1,175 @@
-# LangChat — Realtime Web Chat (Frontend)
+# LangChat - SubeoApp (Frontend)
 
-LangChat là một web chat realtime. Repo này là phần **Front-end (FE)**, mục tiêu là xây UI chat + kiến trúc code rõ ràng để dễ mở rộng (auth, room, nhắn tin 1-1, phân trang lịch sử chat, reconnect).
+**LangChat - SubeoApp** là ứng dụng nhắn tin trực tuyến thời gian thực (Real-time Web Chat) hiện đại, được xây dựng với kiến trúc hướng sự kiện (Event-driven) qua WebSocket. Dự án tập trung vào trải nghiệm người dùng mượt mà, giao diện đẹp mắt và hiệu suất cao.
 
-FE giao tiếp với Backend bằng **WebSocket (WSS)** theo cơ chế **event-based**: client gửi “event + payload”, server phản hồi theo event tương ứng.
+---
+
+## Tính năng nổi bật
+
+### Chat Real-time
+- **Nhắn tin 1-1 & Nhóm**: Hỗ trợ trao đổi tin nhắn tức thời với cá nhân hoặc trong phòng chat (Room).
+- **Lịch sử tin nhắn**: Tải lại lịch sử chat mượt mà với phân trang.
+- **Trạng thái Online**: Theo dõi trạng thái hoạt động của bạn bè trong thời gian thực.
+- **Phản hồi tức thì**: Tốc độ gửi/nhận tin nhắn cực nhanh nhờ WebSocket.
+
+### Giao diện & Trải nghiệm (UI/UX)
+- **Thiết kế hiện đại**: Giao diện đẹp, hiệu ứng nền _Iridescence_ sống động.
+- **Theme tùy biến**: Hỗ trợ thay đổi chủ đề (Theme) cho cuộc trò chuyện (Bubble, Gradient, v.v.).
+- **Responsive**: Tương thích tốt trên nhiều kích thước màn hình.
+- **UX thân thiện**: Từ modal tạo phòng, tìm kiếm bạn bè đến thông báo lỗi đều được chăm chút.
+
+### Đa phương tiện & Tiện ích
+- **Gửi Sticker & Emoji**: Tích hợp bộ Sticker vui nhộn và Emoji phong phú.
+- **Chia sẻ File**: Hỗ trợ gửi ảnh, video và tệp tin với thanh tiến trình upload.
+- **Media Gallery**: Xem lại toàn bộ ảnh/video đã gửi trong kho lưu trữ gọn gàng.
+- **Modal xem ảnh/video**: Trình xem media (Lightbox) tích hợp sẵn với các thao tác zoom, tải xuống, copy link.
+
+### Kết nối & Cộng đồng
+- **Tìm kiếm người dùng**: Dễ dàng tìm bạn bè qua tên người dùng hoặc email.
+- **Yêu cầu liên hệ**: Gửi, nhận và quản lý danh sách lời mời kết bạn.
+- **Quản lý phòng chat**: Tạo phòng, thêm thành viên vào nhóm chat dễ dàng.
 
 ---
 
 ## Công nghệ sử dụng
-- **React**: `19.2.0`
-- **React DOM**: `19.2.0`
-- **Vite**: `7.2.4`
 
-> Phiên bản lấy từ `package.json`.
+Dự án được xây dựng trên nền tảng các công nghệ Web hiện đại nhất:
+
+- **Core**: [React 19](https://react.dev/) - Thư viện UI mới nhất.
+- **Build Tool**: [Vite 7](https://vitejs.dev/) - Môi trường phát triển siêu tốc.
+- **State Management**: [Redux Toolkit](https://redux-toolkit.js.org/) - Quản lý trạng thái ứng dụng tập trung.
+- **Routing**: [React Router 7](https://reactrouter.com/) - Điều hướng SPA.
+- **Icons**: [Tabler Icons](https://tabler-icons.io/) - Bộ icon nhất quán, đẹp mắt.
+- **Styling**: CSS Modules - Scoped CSS, tránh xung đột style.
+- **Real-time**: WebSocket (Native) - Giao thức truyền tin thời gian thực.
 
 ---
 
-## Backend Realtime API (WebSocket)
-### Endpoint
-- **WSS URL**: `wss://chat.longapp.site/chat/chat`
+## Cài đặt & Chạy dự án
 
-### “API format” (cấu trúc JSON chuẩn khi gửi)
-Mọi request từ FE → BE đều bọc trong 1 cấu trúc JSON thống nhất:
+Đảm bảo bạn đã cài đặt [Node.js](https://nodejs.org/) (khuyến nghị phiên bản LTS v18+).
+
+### 1. Clone dự án
+```bash
+git clone https://github.com/lang-nguyen/AppChat-FE.git
+cd AppChat-FE
+```
+
+### 2. Cài đặt dependencies
+```bash
+npm install
+```
+
+### 3. Chạy môi trường phát triển (Development)
+```bash
+npm run dev
+```
+Truy cập ứng dụng tại: `http://localhost:5173`
+
+### 4. Build cho Production
+```bash
+npm run build
+```
+
+---
+
+## Cấu trúc dự án
+
+Kiến trúc source code được tổ chức theo module chức năng (Feature-based), giúp dễ dàng quản lý, mở rộng và bảo trì.
+
+```text
+src/
+├── app/                        # Cấu hình & Global Providers
+│   ├── providers/              # React Context & Hooks (Socket, API, UI)
+│   ├── store.js                # Redux Store Configuration
+│   ├── App.jsx                 # Main App Component
+│   └── App.css                 # App Styles
+│
+├── features/                   # Module tính năng chính
+│   ├── auth/                   # Module Xác thực
+│   │   ├── login/              # Login Screen & Logic
+│   │   ├── register/           # Register Screen & Logic
+│   │   ├── components/         # Auth-specific UI
+│   │   ├── services/           # Auth API Services
+│   │   ├── hooks/              # Auth Logic Hooks
+│   │   └── pages/              # Auth Pages
+│   │
+│   ├── chat/                   # Module Chat (Core Feature)
+│   │   ├── api/                # Chat API Definitions
+│   │   ├── components/         # Chat UI Components (Chatbox, Sidebar, Header...)
+│   │   ├── pages/              # Chat Page Screens
+│   │   ├── hooks/              # Chat Logic Hooks
+│   │   ├── utils/              # Chat Helper Functions
+│   │   └── constants/          # Chat Constants
+│   │
+│   └── test/                   # Test Feature
+│
+├── realtime/                   # WebSocket Layer
+│   ├── handlers/               # Xử lý sự kiện từ Server
+│   ├── socketActions.js        # Action gửi lên Server
+│   └── socketHandlers.js       # Dispatcher sự kiện
+│
+├── shared/                     # Tài nguyên dùng chung
+│   ├── components/             # UI Kit (Button, Modal, Loading...)
+│   ├── utils/                  # Tiện ích chung
+│   ├── services/               # Services chung
+│   ├── hooks/                  # Hooks chung
+│   └── constants/              # Global Constants
+│
+├── state/                      # Redux Slices
+│   ├── auth/                   # Auth State Folder
+│   │   └── authSlice.js        # Auth Slice Logic
+│   └── chat/                   # Chat State Folder
+│       └── chatSlice.js        # Chat Slice Logic
+│
+├── styles/                     # Global Styles
+│   └── theme.css               # Theme Variables
+│
+├── assets/                     # Static Assets
+│   └── react.svg               # Images/Icons
+│
+├── main.jsx                    # Application Entry Point
+└── index.css                   # Root Styles
+```
+
+---
+
+## WebSocket API Protocol
+
+Frontend giao tiếp với Backend thông qua kết nối WebSocket (WSS). Mọi gói tin (Packet) gửi đi đều tuân theo định dạng JSON thống nhất.
+
+**WebSocket URL**: `wss://chat.longapp.site/chat/chat`
+
+### Định dạng Request (Client → Server)
 
 ```json
 {
   "action": "onchat",
   "data": {
     "event": "EVENT_NAME",
-    "data": {}
+    "data": { ...payload }
   }
 }
 ```
 
-#### Ý nghĩa từng trường
-- **action**: tên “channel/handler” phía server. Hiện tại luôn là `"onchat"`.
-- **data**: phần nội dung request.
-  - **data.event**: tên sự kiện cần thực hiện (ví dụ: `LOGIN`, `REGISTER`, `SEND_CHAT`…).
-  - **data.data**: payload của sự kiện.
-    - Có thể là object (vd `{ user, pass }`)
-    - Hoặc có thể rỗng/không có tuỳ event (vd `LOGOUT`, `GET_USER_LIST`).
+### Danh sách Event chính
 
-Nói cách khác: **`event` quyết định kiểu dữ liệu của `data.data`**. Đây là điểm chính của “event-based protocol”.
-
----
-
-## Danh sách event hiện có (BE)
-Các event dưới đây đều dùng chung format như trên, chỉ khác `event` và `data.data`.
-
-### Auth
-- `REGISTER`: tạo user mới (`{ user, pass }`)
-- `LOGIN`: đăng nhập (`{ user, pass }`)
-- `RE_LOGIN`: đăng nhập lại khi mất kết nối (`{ user, code }`)
-- `LOGOUT`: đăng xuất (không cần payload)
-
-### Room
-- `CREATE_ROOM`: tạo phòng (`{ name }`)
-- `JOIN_ROOM`: vào phòng (`{ name }`)
-- `GET_ROOM_CHAT_MES`: lấy lịch sử chat của room có phân trang (`{ name, page }`)
-
-### People (chat 1-1)
-- `GET_PEOPLE_CHAT_MES`: lấy lịch sử chat với 1 user có phân trang (`{ name, page }`)
-- `SEND_CHAT`: gửi tin nhắn (2 kiểu payload)
-  - gửi vào room: `{ type: "room", to: "<roomName>", mes: "<text>" }`
-  - gửi cho người: `{ type: "people", to: "<username>", mes: "<text>" }`
-
-### User
-- `CHECK_USER`: kiểm tra user tồn tại (`{ user }`)
-- `GET_USER_LIST`: lấy danh sách user (không cần payload)
+| Nhóm | Event | Payload (`data.data`) | Mô tả |
+|------|-------|-----------------------|-------|
+| **Auth** | `REGISTER` | `{ user, pass }` | Đăng ký tài khoản mới. |
+| | `LOGIN` | `{ user, pass }` | Đăng nhập hệ thống. |
+| | `RE_LOGIN` | `{ user, code }` | Khôi phục phiên làm việc khi mất kết nối. |
+| | `LOGOUT` | `{}` | Đăng xuất. |
+| **Chat** | `SEND_CHAT` | `{ type, to, mes }` | Gửi tin nhắn (`type`: "room" hoặc "people"). |
+| | `GET_PEOPLE_CHAT_MES`| `{ name, page }` | Lấy lịch sử chat cá nhân (phân trang). |
+| | `GET_ROOM_CHAT_MES` | `{ name, page }` | Lấy lịch sử chat phòng (phân trang). |
+| **Room** | `CREATE_ROOM` | `{ name }` | Tạo phòng chat nhiều người. |
+| | `JOIN_ROOM` | `{ name }` | Tham gia vào một phòng chat có sẵn. |
+| **User** | `CHECK_USER_EXIST` | `{ user }` | Kiểm tra tên người dùng có tồn tại không. |
+| | `CHECK_USER_ONLINE` | `{ user }` | Kiểm tra trạng thái online của người dùng. |
 
 ---
 
-## Ví dụ request theo từng nhóm
-### 1) REGISTER
-```json
-{
-  "action": "onchat",
-  "data": { "event": "REGISTER", "data": { "user": "long", "pass": "12345" } }
-}
-```
+## Đóng góp (Contributing)
 
-### 2) LOGIN
-```json
-{
-  "action": "onchat",
-  "data": { "event": "LOGIN", "data": { "user": "long", "pass": "12345" } }
-}
-```
-
-### 3) RE_LOGIN (dùng code để tự khôi phục phiên)
-```json
-{
-  "action": "onchat",
-  "data": { "event": "RE_LOGIN", "data": { "user": "long", "code": "nlu_2055829137" } }
-}
-```
-
-### 4) LOGOUT (event không cần payload)
-```json
-{
-  "action": "onchat",
-  "data": { "event": "LOGOUT" }
-}
-```
-
-### 5) Gửi tin nhắn (2 kiểu)
-Gửi room:
-```json
-{
-  "action": "onchat",
-  "data": { "event": "SEND_CHAT", "data": { "type": "room", "to": "abc", "mes": "helooooo" } }
-}
-```
-
-Gửi người:
-```json
-{
-  "action": "onchat",
-  "data": { "event": "SEND_CHAT", "data": { "type": "people", "to": "ti", "mes": "helooooo" } }
-}
-```
----
-
-## Kiến trúc source code (frontend)
-Mục tiêu chính: UI không phải “cầm” WebSocket trực tiếp. Realtime được gom vào một lớp riêng để dễ reconnect, dễ mapping event, và dễ mở rộng.
-
-```text
-src/
-  main.jsx                          # entry Vite: mount React root
-  index.css                         # global styles
-
-  app/                              # khung ứng dụng (root/providers/bootstrap)
-    providers/                      # gom Provider (Redux/Router/Toast...) bọc toàn app
-    bootstrap/                      # luồng khởi động: connect ws, re-login, preload...
-
-  realtime/                         # tầng realtime/WebSocket (gateway)
-                                    # ws client + protocol + các hàm gọi event (REGISTER/LOGIN/...)
-
-  state/                            # quản lý state (dự kiến Redux ở phase sau)
-    auth/                           # state đăng nhập/relogin code
-    chat/                           # state chat (messages/conversations/paging...)
-    ui/                             # state UI thuần
-
-  features/                         # UI theo tính năng/màn hình
-    auth/                           # màn login/register
-    chat/                           # màn chat
-      components/                   # component con của chat
-
-  shared/                           # dùng chung
-    components/                     # UI components tái sử dụng
-    utils/                          # helpers (storage/logger/time...)
-    constants/                      # hằng số dùng chung
-
-  assets/                           # icons/images import từ code
-    icons/
-    images/
-```
-
-> Note: Một số folder có file `.gitkeep` để Git track folder rỗng trong giai đoạn dựng khung.
-
----
-
-## Scripts
-```bash
-npm install
-npm run dev
-npm run build
-npm run preview
-```
+Mọi đóng góp đều được hoan nghênh! Nếu bạn phát hiện lỗi hoặc muốn cải thiện dự án, vui lòng tạo Pull Request hoặc Issue trên GitHub.
